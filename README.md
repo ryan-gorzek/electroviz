@@ -1,1 +1,1 @@
-# ephys-viz
+# ecephys_viz
