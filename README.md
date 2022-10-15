@@ -1,1 +1,1 @@
-# ecephys_viz
+# electro_viz
