@@ -3,9 +3,11 @@
 # https://github.com/gorzek-ryan/electro_viz/blob/main/LICENSE
 # https://opensource.org/licenses/MIT
 
-[build-system]
-requires = [
-    "setuptools>=61.2.0",
-    "wheel"
-]
-build-backend = "setuptools.build_meta"
+class VisualStim:
+    '''
+    docstring
+    '''
+    
+    def __init__(self):
+        # ?
+        
