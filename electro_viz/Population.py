@@ -3,17 +3,11 @@
 # https://github.com/gorzek-ryan/electro_viz/blob/main/LICENSE
 # https://opensource.org/licenses/MIT
 
-class Probe:
+class Population:
     '''
     docstring
     '''
     
     def __init__(self):
-        print('Probe')
-        self.id = []
-        # ?
-
-    # def plot_current_source_density(self):
-        
-    # def plot_probe_summary(self):
+        print('Population')
         

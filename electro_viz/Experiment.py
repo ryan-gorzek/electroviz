@@ -9,7 +9,7 @@ class Experiment:
     '''
     
     def __init__(self, SourceData):
-        # parse source data
+        print('Experiment')
         
-    def append(self, SourceData):
+    # def append(self, SourceData):
         

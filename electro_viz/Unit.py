@@ -9,17 +9,18 @@ class Unit:
     '''
     
     def __init__(self):
+        print('Unit')
         self.id = []
         self.stats = []
         # raw data?
         # spike data?
         # mean waveform?
 
-    def plot_channel_waveforms(self):
+    # def plot_channel_waveforms(self):
         
-    def plot_mean_waveform(self):
+    # def plot_mean_waveform(self):
         
-    def plot_spike_raster(self):
+    # def plot_spike_raster(self):
         
-    def plot_unit_summary(self):
+    # def plot_unit_summary(self):
         
