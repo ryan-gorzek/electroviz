@@ -36,14 +36,16 @@ class Population:
         """"""
         parsed_index = self._parse_index(index_slice_or_unit_ids)
         if isinstance(parsed_index, slice):
-            item = self.__copy__()
+            import copy
+            item = copy.copy(self)
             item._Units = item._Units[parsed_index]
             item.unit_ids = item.unit_ids[parsed_index]
             item.info_df = item.info_df.iloc[parsed_index]
             item.quality_df = item.quality_df.iloc[parsed_index]
             item.stats_df = item.stats_df.iloc[parsed_index]
         elif isinstance(parsed_index, (list, tuple)):
-            item = self.__copy__()
+            import copy
+            item = copy.copy(self)
             item._Units = [item._Units[idx] for idx in parsed_index]
             item.unit_ids = item.unit_ids[parsed_index]
             item.info_df = item.info_df.iloc[parsed_index]
@@ -51,11 +53,12 @@ class Population:
             item.stats_df = item.stats_df.iloc[parsed_index]
         else:
             item = self._Units[parsed_index]
+        return item
             
             
-    def __copy__(self):
-        import copy
-        return copy.copy(self)
+    # def __copy__(self):
+    #     import copy
+    #     return copy.copy(self)
             
     def _get_unit_probe_id(self, electrodes_df, unit_df):
         """Get a unit's probe_id by finding the probe_id containing its peak_channel_id"""

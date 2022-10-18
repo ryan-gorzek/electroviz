@@ -14,7 +14,7 @@ class Unit:
         self.info_df = unit_df.loc[[self.id], 
             ["peak_channel_id", "local_index", "cluster_id"]]
         self.info_df.insert(0, "probe_id", unit_probe_id)
-        self.info_df.rename(columns={"local_index":"probe_channel_number"})
+        self.info_df.rename(columns={"local_index":"probe_channel_number"}, inplace=True)
         self.quality_df = unit_df.loc[[self.id], 
             ["quality", "firing_rate", "presence_ratio", "max_drift",
              "cumulative_drift", "silhouette_score", "isi_violations", 
@@ -24,7 +24,7 @@ class Unit:
             ["firing_rate", "waveform_duration", "spread", "waveform_halfwidth",
              "snr", "PT_ratio", "repolarization_slope", "recovery_slope", 
              "velocity_above", "velocity_below"]]
-        self.stats_df.rename(columns={"spread":"waveform_spread"})
+        self.stats_df.rename(columns={"spread":"waveform_spread"}, inplace=True)
         self.spike_times = unit_df.at[self.id, "spike_times"]
         self.spike_amplitudes = unit_df.at[self.id, "spike_amplitudes"]
         self.mean_waveform = unit_df.at[self.id, "waveform_mean"]
