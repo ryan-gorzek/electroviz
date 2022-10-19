@@ -22,7 +22,8 @@ class Population:
         for uid in self.unit_ids:
             curr_unit_df = units_df.loc[[uid], :]
             unit_probe_id = self._get_unit_probe_id(electrodes_df, curr_unit_df)
-            curr_unit = Unit(curr_unit_df, unit_probe_id)
+            unit_location = self._get_unit_location(electrodes_df, curr_unit_df)
+            curr_unit = Unit(curr_unit_df, unit_probe_id, unit_location)
             self._Units.append(curr_unit)
             # get full dataframes for easy Population manipulation
             self.info_df = pd.concat([self.info_df, 
@@ -64,6 +65,11 @@ class Population:
         """Get a unit's probe_id by finding the probe_id containing its peak_channel_id"""
         peak_channel_id = unit_df.at[unit_df.index[0], "peak_channel_id"]
         return electrodes_df.at[peak_channel_id, "probe_id"]
+    
+    def _get_unit_location(self, electrodes_df, unit_df):
+        """Get a unit's location by finding the location of its peak_channel_id"""
+        peak_channel_id = unit_df.at[unit_df.index[0], "peak_channel_id"]
+        return electrodes_df.at[peak_channel_id, "location"]
     
     def _parse_index(self, index):
         if isinstance(index, slice):

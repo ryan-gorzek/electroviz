@@ -8,12 +8,13 @@ class Unit:
     docstring
     '''
     
-    def __init__(self, unit_df, unit_probe_id):
+    def __init__(self, unit_df, unit_probe_id, unit_location):
         print('Unit')
         self.id = unit_df.index[0]
         self.info_df = unit_df.loc[[self.id], 
             ["peak_channel_id", "local_index", "cluster_id"]]
         self.info_df.insert(0, "probe_id", unit_probe_id)
+        self.info_df["location"] = unit_location
         self.info_df.rename(columns={"local_index":"probe_channel_number"}, inplace=True)
         self.quality_df = unit_df.loc[[self.id], 
             ["quality", "firing_rate", "presence_ratio", "max_drift",
