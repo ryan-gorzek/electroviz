@@ -4,21 +4,17 @@
 # https://opensource.org/licenses/MIT
 
 import pandas as pd
+import numpy as np
 
 class Stimulus:
     '''
     docstring
     '''
     
-    def __init__(self, time_intervals_object):
+    def __init__(self, time_intervals_obj):
         print('Stimulus')
         self.info_df = pd.DataFrame()
-        start_times = time_intervals_object['start_time'].data
-        stop_times = time_intervals_object['stop_time'].data
-        num_times = start_times.shape[0]
-        for ts in range(num_times):
-            self.info_df = pd.concat([self.info_df,
-                                      pd.DataFrame(index=[ts],
-                                                   data={'start_time':start_times[ts],
-                                                         'stop_time':stop_times[ts]})])
+        self.info_df["stimulus_name"] = list(time_intervals_obj['stimulus_name'].data)
+        self.info_df["start_time"] = np.array(time_intervals_obj['start_time'].data)
+        self.info_df["stop_time"] = np.array(time_intervals_obj['stop_time'].data)
         
