@@ -33,14 +33,19 @@ class Unit:
         self.spike_amplitudes = unit_df.at[self.id, "spike_amplitudes"]
         self.mean_waveforms = unit_df.at[self.id, "waveform_mean"]
         
-    def plot_mean_waveform(self, channel='peak'):
+    def plot_mean_waveform(self, channel="peak", color="k"):
         time_series = np.linspace(0, 2.7, num=82)
-        if channel == 'peak':
+        if channel == "peak":
             plot_channel = self.info_df.at[self.id, "probe_channel_number"]
-        fig, ax = plt.subplots()
-        ax.plot(time_series, self.mean_waveforms[plot_channel, :], color = 'k')
-        # decorate plot
+        plt.plot(time_series, self.mean_waveforms[plot_channel, :], color=color)
+        plt.xlabel("Time (ms)")
+        plt.ylabel("Membrane Potential ($\mu$V)")
+        # add unit id, channel (w/ peak indication), and location to lower right
+        fig = plt.gcf()
         fig.set_size_inches(4, 4)
+        plt.tight_layout()
+        ax = plt.gca()
+        ax.set_aspect(1./ax.get_data_ratio())
 
     # def plot_channel_waveforms(self):
         
