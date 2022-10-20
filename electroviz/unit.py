@@ -46,6 +46,7 @@ class Unit:
         plt.tight_layout()
         ax = plt.gca()
         ax.set_aspect(1./ax.get_data_ratio())
+        return ax
 
     # def plot_channel_waveforms(self):
         
