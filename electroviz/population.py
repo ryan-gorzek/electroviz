@@ -57,9 +57,12 @@ class Population:
         return item
             
             
-    # def __copy__(self):
-    #     import copy
-    #     return copy.copy(self)
+    def plot_mean_waveforms(self, channels="peak", colors=[[0.7,0.2,0.2],[0.2,0.7,0.2],[0.2,0.2,0.7],[0.7,0.2,0.7]]):
+        if channels == "peak":
+            channels = [channels]*self.info_df.shape[0]
+        color_idx = np.tile(np.arange(len(colors)), (1, int(np.ceil(self.info_df.shape[0]/len(colors)))))[0]
+        for unit_num,unit in enumerate(self._Units):
+            unit.plot_mean_waveform(channel=channels[unit_num], color=colors[color_idx[unit_num]])
             
     def _get_unit_probe_id(self, electrodes_df, unit_df):
         """Get a unit's probe_id by finding the probe_id containing its peak_channel_id"""
