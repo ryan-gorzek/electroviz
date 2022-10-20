@@ -3,6 +3,9 @@
 # https://github.com/gorzek-ryan/electroviz/blob/main/LICENSE
 # https://opensource.org/licenses/MIT
 
+import numpy as np
+import matplotlib.pyplot as plt
+
 class Unit:
     '''
     docstring
@@ -28,11 +31,18 @@ class Unit:
         self.stats_df.rename(columns={"spread":"waveform_spread"}, inplace=True)
         self.spike_times = unit_df.at[self.id, "spike_times"]
         self.spike_amplitudes = unit_df.at[self.id, "spike_amplitudes"]
-        self.mean_waveform = unit_df.at[self.id, "waveform_mean"]
+        self.mean_waveforms = unit_df.at[self.id, "waveform_mean"]
+        
+    def plot_mean_waveform(self, channel='peak'):
+        time_series = np.linspace(0, 2.7, num=82)
+        if channel == 'peak':
+            plot_channel = self.info_df.at[self.id, "probe_channel_number"]
+        fig, ax = plt.subplots()
+        ax.plot(time_series, self.mean_waveforms[plot_channel, :], color = 'k')
+        # decorate plot
+        fig.set_size_inches(4, 4)
 
     # def plot_channel_waveforms(self):
-        
-    # def plot_mean_waveform(self):
         
     # def plot_spike_raster(self):
         
