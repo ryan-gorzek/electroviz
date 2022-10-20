@@ -12,6 +12,7 @@ class Unit:
     '''
     
     def __init__(self, unit_df, unit_probe_id, unit_location):
+        """"""
         print('Unit')
         self.id = unit_df.index[0]
         self.info_df = unit_df.loc[[self.id], 
@@ -34,6 +35,7 @@ class Unit:
         self.mean_waveforms = unit_df.at[self.id, "waveform_mean"]
         
     def plot_mean_waveform(self, channel="peak", color="k"):
+        """"""
         time_series = np.linspace(0, 2.7, num=82)
         if channel == "peak":
             plot_channel = self.info_df.at[self.id, "probe_channel_number"]

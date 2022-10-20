@@ -6,14 +6,18 @@
 from electroviz.unit import Unit
 import pandas as pd
 import numpy as np
+import copy
 
 class Population:
     '''
     docstring
     '''
 
-    def __init__(self, units_df, electrodes_df):
+    def __init__(self, parent, units_df, electrodes_df, population_name):
         print('Population')
+        self.name = population_name
+        self.from_population = None
+        self.parent = parent
         self._Units = []
         self.unit_ids = units_df.index.values
         self.info_df = pd.DataFrame()
@@ -37,7 +41,6 @@ class Population:
         """"""
         parsed_index = self._parse_index(index_slice_or_unit_ids)
         if isinstance(parsed_index, slice):
-            import copy
             item = copy.copy(self)
             item._Units = item._Units[parsed_index]
             item.unit_ids = item.unit_ids[parsed_index]
@@ -45,7 +48,6 @@ class Population:
             item.quality_df = item.quality_df.iloc[parsed_index]
             item.stats_df = item.stats_df.iloc[parsed_index]
         elif isinstance(parsed_index, (list, tuple)):
-            import copy
             item = copy.copy(self)
             item._Units = [item._Units[idx] for idx in parsed_index]
             item.unit_ids = item.unit_ids[parsed_index]
@@ -54,9 +56,9 @@ class Population:
             item.stats_df = item.stats_df.iloc[parsed_index]
         else:
             item = self._Units[parsed_index]
+        item.from_population = self
         return item
-            
-            
+
     def plot_mean_waveforms(self, channels="peak", colors=[[0.7,0.2,0.2],[0.2,0.7,0.2],[0.2,0.2,0.7],[0.7,0.2,0.7]]):
         if channels == "peak":
             channels = [channels]*self.info_df.shape[0]
@@ -64,7 +66,39 @@ class Population:
         for unit_num,unit in enumerate(self._Units):
             ax = unit.plot_mean_waveform(channel=channels[unit_num], color=colors[color_idx[unit_num]])
         return ax
-            
+    
+    # def filter()
+    
+    def clone(self, name="default"):
+        """"""
+        if name == "default":
+            name = self.name + "_clone"
+        self.parent.population_names.append(name)
+        setattr(self.parent, name, copy.copy(self))
+    
+    def split(self, this_name="default", rest_name="default"):
+        """"""
+        if this_name == "default":
+            this_name = self.name + "_split1"
+        setattr(self.parent, this_name, copy.copy(self))
+        if rest_name == "default":
+            rest_name = self.name + "_split0"
+        # self.from_population.rename(rest_name)
+        self.delete()
+        
+    def delete(self):
+        """"""
+        unit_ids = self.unit_ids
+        from_unit_ids = self.from_population.unit_ids
+        del_idx = np.where(np.isin(from_unit_ids, unit_ids))[0]
+        self.from_population._Units = list(np.delete(np.array(self.from_population._Units), del_idx))
+        self.from_population.unit_ids = np.delete(from_unit_ids, del_idx)
+        self.from_population.info_df.drop(from_unit_ids[del_idx], inplace=True)
+        self.from_population.quality_df.drop(from_unit_ids[del_idx], inplace=True)
+        self.from_population.stats_df.drop(from_unit_ids[del_idx], inplace=True)
+    
+    # def rename()
+    
     def _get_unit_probe_id(self, electrodes_df, unit_df):
         """Get a unit's probe_id by finding the probe_id containing its peak_channel_id"""
         peak_channel_id = unit_df.at[unit_df.index[0], "peak_channel_id"]
@@ -76,6 +110,7 @@ class Population:
         return electrodes_df.at[peak_channel_id, "location"]
     
     def _parse_index(self, index):
+        """"""
         if isinstance(index, slice):
             parsed_index = index
         elif isinstance(index, int) and index < self.unit_ids.shape[0]:
@@ -89,6 +124,4 @@ class Population:
             for idx in index:
                 parsed_index.append(np.where(self.unit_ids == idx)[0][0])
         return parsed_index
-    
-    # def split
         
