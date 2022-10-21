@@ -96,8 +96,13 @@ class Population:
         self.from_population.info_df.drop(from_unit_ids[del_idx], inplace=True)
         self.from_population.quality_df.drop(from_unit_ids[del_idx], inplace=True)
         self.from_population.stats_df.drop(from_unit_ids[del_idx], inplace=True)
+        if np.all(np.isin(from_unit_ids, unit_ids)):
+            delattr(self.from_population.parent, self.from_population.name)
     
-    # def rename()
+    def rename(self, new_name):
+        """"""
+        self.clone(name=new_name)
+        self[:].delete()
     
     def _get_unit_probe_id(self, electrodes_df, unit_df):
         """Get a unit's probe_id by finding the probe_id containing its peak_channel_id"""
