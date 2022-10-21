@@ -7,6 +7,7 @@ from electroviz.unit import Unit
 import pandas as pd
 import numpy as np
 import copy
+import operator
 
 class Population:
     '''
@@ -47,7 +48,7 @@ class Population:
             item.info_df = item.info_df.iloc[parsed_index]
             item.quality_df = item.quality_df.iloc[parsed_index]
             item.stats_df = item.stats_df.iloc[parsed_index]
-        elif isinstance(parsed_index, (list, tuple)):
+        elif isinstance(parsed_index, (list, tuple, np.ndarray)):
             item = copy.copy(self)
             item._Units = [item._Units[idx] for idx in parsed_index]
             item.unit_ids = item.unit_ids[parsed_index]
@@ -67,7 +68,11 @@ class Population:
             ax = unit.plot_mean_waveform(channel=channels[unit_num], color=colors[color_idx[unit_num]])
         return ax
     
-    # def filter()
+    def query(self, statement):
+        """"""
+        full_array = pd.concat([self.info_df, self.quality_df, self.stats_df], axis=1)
+        queried_unit_ids = full_array.query(statement).index.values
+        return self[queried_unit_ids]
     
     def clone(self, name="default"):
         """"""
@@ -76,16 +81,16 @@ class Population:
         self.parent.population_names.append(name)
         setattr(self.parent, name, copy.copy(self))
     
-    def split(self, this_name="default", rest_name="default"):
+    def split(self, this_name="default", that_name="default"):
         """"""
         if this_name == "default":
             this_name = self.name + "_split1"
         setattr(self.parent, this_name, copy.copy(self))
-        if rest_name == "default":
-            rest_name = self.name + "_split0"
-        # self.from_population.rename(rest_name)
+        if that_name == "default":
+            that_name = self.name + "_split0"
         self.delete()
-        
+        self.from_population.rename(that_name)
+
     def delete(self):
         """"""
         unit_ids = self.unit_ids
@@ -122,9 +127,9 @@ class Population:
             parsed_index = index
         elif isinstance(index, int) and index >= self.unit_ids.shape[0]:
             parsed_index = np.where(self.unit_ids == index)[0][0]
-        elif isinstance(index, (list, tuple)) and np.all(np.array(index) < self.unit_ids.shape[0]):
+        elif isinstance(index, (list, tuple, np.ndarray)) and np.all(np.array(index) < self.unit_ids.shape[0]):
             parsed_index = index
-        elif isinstance(index, (list, tuple)) and np.all(np.array(index) >= self.unit_ids.shape[0]):
+        elif isinstance(index, (list, tuple, np.ndarray)) and np.all(np.array(index) >= self.unit_ids.shape[0]):
             parsed_index = []
             for idx in index:
                 parsed_index.append(np.where(self.unit_ids == idx)[0][0])
