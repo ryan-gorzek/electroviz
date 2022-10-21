@@ -12,6 +12,7 @@ class OptogeneticStimulus(Stimulus):
     '''
     
     def __init__(self, time_intervals_obj):
+        """"""
         print('OptogeneticStimulus')
         super().__init__(time_intervals_obj)
         self.info_df.insert(1, "condition", list(time_intervals_obj['condition'].data))

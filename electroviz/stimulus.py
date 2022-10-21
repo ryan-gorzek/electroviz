@@ -12,6 +12,7 @@ class Stimulus:
     '''
     
     def __init__(self, time_intervals_obj):
+        """"""
         print('Stimulus')
         self.info_df = pd.DataFrame()
         self.info_df["stimulus_name"] = list(time_intervals_obj['stimulus_name'].data)
