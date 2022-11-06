@@ -12,15 +12,13 @@ class Dataset:
     docstring
     '''
     
-    def __init__(self, nwb_file_path, experiment_name="default"):
+    def __init__(self, nwb_file_path):
         print('Dataset')
         if os.path.isfile(nwb_file_path) == True:
             nwb_io = NWBHDF5IO(nwb_file_path, mode='r', load_namespaces=True)
             nwb_file = nwb_io.read()
             # add metadata
-            if experiment_name == "default":
-                exp_name = "Experiment"
-            setattr(self, exp_name, Experiment(self, nwb_file, experiment_name=exp_name))
+            self.Experiment = Experiment(self, nwb_file)
         else:
             raise Exception('Cannot load the specified file.')
         
