@@ -5,6 +5,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.stats import zscore
 
 class Unit:
     '''
@@ -31,9 +32,8 @@ class Unit:
              "snr", "PT_ratio", "repolarization_slope", "recovery_slope", 
              "velocity_above", "velocity_below"]]
         self.stats_df.rename(columns={"spread":"waveform_spread"}, inplace=True)
-        self._bin_spikes(unit_df.at[self.id, "spike_times"], 
-                         unit_df.at[self.id, "spike_amplitudes"], 
-                         bin_size_s = 0.0005)
+        self.spike_times = unit_df.at[self.id, "spike_times"]
+        self.spike_amplitudes = unit_df.at[self.id, "spike_amplitudes"]
         self.mean_waveforms = unit_df.at[self.id, "waveform_mean"].T
         
     def plot_mean_waveform(self, channel="peak", color="k"):
@@ -54,9 +54,13 @@ class Unit:
 
     # def plot_channel_waveforms(self):
         
-    def plot_spike_raster(self, bins=0.0005, binary=False):
+    def plot_spike_raster(self, bin_size_s=0.0005, binary=False):
         """"""
-        plt.imshow(self.spike_times, self.spike_amplitudes, color="k")
+        times, counts, amplitudes = self._bin_spikes(bin_size_s=bin_size_s)
+        plt.imshow(np.expand_dims(amplitudes, axis=0), 
+                   aspect=0.2*amplitudes.size, 
+                   cmap="gray",
+                   clim=[0, np.nanmean(amplitudes)])
         plt.xlabel("Time (s)")
         plt.ylabel("Spike Amplitude (?)")
         # add unit id, channel (w/ peak indication), and location to lower right
@@ -68,15 +72,17 @@ class Unit:
         
     # def plot_unit_summary(self):
         
-    def _bin_spikes(self, spike_times, spike_amplitudes, bin_size_s=0.0005):
-        max_time = max(spike_times) # Round this to nearest bin_size_s
-        times = np.linspace(0, max_time, num=max_time/bin_size_s)
-        bin_idx = np.digitize(spike_times, times)
-        amplitudes = np.full((times.size,), 0)
-        np.add.at(amplitudes, bin_idx, spike_amplitudes)
-        counts = np.histogram(bin_idx, bins=times)
-        amplitudes /= counts
-        self.spike_times = times
-        self.spike_counts = counts
-        self.spike_amplitudes = amplitudes
+    def _bin_spikes(self, bin_size_s=0.0005):
+        """"""
+        # add time windowing
+        bin_mult = 1000 # make this dynamic
+        max_time = np.ceil(max(self.spike_times)*bin_mult)/bin_mult
+        times = np.linspace(0, max_time, num=int(max_time/bin_size_s))
+        bin_idx = np.digitize(self.spike_times, times)
+        amplitudes = np.full((times.size,), 0, dtype=np.float64)
+        np.add.at(amplitudes, bin_idx.tolist(), self.spike_amplitudes)
+        counts = np.histogram(bin_idx, bins=np.arange(times.size))[0]
+        counts = np.concatenate((np.array([1]), counts))
+        amplitudes[counts > 0] = amplitudes[counts > 0]/counts[counts > 0]
+        return times, counts, amplitudes
         
