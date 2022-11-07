@@ -5,7 +5,8 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.stats import zscore
+from math import floor, log10
+# from scipy.stats import zscore
 
 class Unit:
     '''
@@ -54,33 +55,70 @@ class Unit:
 
     # def plot_channel_waveforms(self):
         
-    def plot_spike_raster(self, bin_size_s=0.0005, binary=False):
+    def plot_spike_raster(self, bin_size_s=0.0005, time_window_s=(None, None), raster_type="amplitudes"):
         """"""
-        times, counts, amplitudes = self._bin_spikes(bin_size_s=bin_size_s)
-        plt.imshow(np.expand_dims(amplitudes, axis=0), 
-                   aspect=0.2*amplitudes.size, 
-                   cmap="gray",
-                   clim=[0, np.nanmean(amplitudes)])
+        if raster_type == "amplitudes":
+            _, _, amplitudes = self._bin_spikes(bin_size_s=bin_size_s, time_window_s=time_window_s)
+            plt.imshow(np.expand_dims(amplitudes, axis=0), 
+                       aspect=0.2*amplitudes.size, 
+                       cmap="gray_r",
+                       clim=[0, np.nanmean(amplitudes)])
+        # elif raster_type == "counts":
+        # elif raster_type == "binary":
         plt.xlabel("Time (s)")
-        plt.ylabel("Spike Amplitude (?)")
+        plt.yticks([])
+        # set x limits and ticks dynamically
         # add unit id, channel (w/ peak indication), and location to lower right
         fig = plt.gcf()
         fig.set_size_inches(10, 4)
         plt.tight_layout()
-        # ax = plt.gca()
-        # ax.set_aspect(1./ax.get_data_ratio())
+        ax = plt.gca()
+        return ax
+    
+    def plot_aligned_response(self, align_to=None, rel_window_s=(None, None), bin_size_s=0.0005, raster_type="amplitudes"):
+        if align_to != None:
+            if raster_type == "amplitudes":
+                amplitudes = []
+                for start, stop in align_to.info_df[["start_time", "stop_time"]].values:
+                    time_window_s = (start + rel_window_s[0], start + rel_window_s[1])
+                    _, _, curr_amp = self._bin_spikes(bin_size_s=bin_size_s, time_window_s=time_window_s)
+                    amplitudes.append(curr_amp)
+                amplitudes = np.array(amplitudes, dtype=object)
+                plt.imshow(amplitudes.astype(np.float64), 
+                           # aspect=(0.4*amplitudes.shape[1]), 
+                           cmap="gray_r",
+                           clim=[0, np.nanmean(amplitudes.astype(np.float64), axis=(0,1))])
+                plt.xlabel("Time (s)")
+                plt.yticks([])
+                # set x limits and ticks dynamically
+                # add unit id, channel (w/ peak indication), and location to lower right
+                fig = plt.gcf()
+                fig.set_size_inches(10, 4)
+                plt.tight_layout()
+                ax = plt.gca()
+        return ax
+    
+    # def plot_averaged_response
         
     # def plot_unit_summary(self):
         
-    def _bin_spikes(self, bin_size_s=0.0005):
+    def _bin_spikes(self, bin_size_s=0.0005, time_window_s=(None, None)):
         """"""
-        # add time windowing
-        bin_mult = 1000 # make this dynamic
-        max_time = np.ceil(max(self.spike_times)*bin_mult)/bin_mult
-        times = np.linspace(0, max_time, num=int(max_time/bin_size_s))
-        bin_idx = np.digitize(self.spike_times, times)
+        time_start = 0 if time_window_s[1] == None else time_window_s[0]
+        time_stop = max(self.spike_times) if time_window_s[1] == None else time_window_s[1]
+        num_decimals = -floor(log10(abs(bin_size_s)))
+        bin_mult = 10**(num_decimals - 1)
+        min_time = np.floor(time_start*bin_mult)/bin_mult
+        max_time = np.ceil(time_stop*bin_mult)/bin_mult
+        times = np.linspace(min_time, max_time, 
+                            num=int(np.around(max_time - min_time, decimals=num_decimals)/bin_size_s))
+        spike_times = self.spike_times[(self.spike_times >= min_time) & 
+                                       (self.spike_times <= max_time)]
+        bin_idx = np.digitize(spike_times, times)
         amplitudes = np.full((times.size,), 0, dtype=np.float64)
-        np.add.at(amplitudes, bin_idx.tolist(), self.spike_amplitudes)
+        spike_amplitudes = self.spike_amplitudes[(self.spike_times >= min_time) & 
+                                                 (self.spike_times <= max_time)]
+        np.add.at(amplitudes, bin_idx.tolist(), spike_amplitudes)
         counts = np.histogram(bin_idx, bins=np.arange(times.size))[0]
         counts = np.concatenate((np.array([1]), counts))
         amplitudes[counts > 0] = amplitudes[counts > 0]/counts[counts > 0]
