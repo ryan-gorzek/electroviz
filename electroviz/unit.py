@@ -9,9 +9,9 @@ from math import floor, log10
 # from scipy.stats import zscore
 
 class Unit:
-    '''
+    """
     docstring
-    '''
+    """
     
     def __init__(self, unit_df, unit_probe_id, unit_local_index, unit_location):
         """"""
@@ -76,22 +76,28 @@ class Unit:
         return ax
     
     def plot_aligned_response(self, align_to=None, rel_window_s=(None, None), bin_size_s=0.0005, raster_type="amplitudes"):
+        """"""
         if align_to != None:
             if raster_type == "amplitudes":
                 amplitudes = []
                 for start, stop in align_to.info_df[["start_time", "stop_time"]].values:
                     time_window_s = (start + rel_window_s[0], start + rel_window_s[1])
-                    _, _, curr_amp = self._bin_spikes(bin_size_s=bin_size_s, time_window_s=time_window_s)
-                    amplitudes.append(curr_amp)
+                    curr_times, _, curr_amps = self._bin_spikes(bin_size_s=bin_size_s, time_window_s=time_window_s)
+                    print(np.where(np.abs(curr_times - start) == np.min(np.abs(curr_times - start))))
+                    amplitudes.append(curr_amps)
                 amplitudes = np.array(amplitudes, dtype=object)
+                print(amplitudes.shape)
+                # amplitudes[:,200] = 1000
                 plt.imshow(amplitudes.astype(np.float64), 
-                           # aspect=(0.4*amplitudes.shape[1]), 
+                           # aspect=(0.4*amplitudes.shape[1])/amplitudes.shape[1], 
                            cmap="gray_r",
                            clim=[0, np.nanmean(amplitudes.astype(np.float64), axis=(0,1))])
-                plt.xlabel("Time (s)")
+                plt.xlabel("Time to Onset (s)\n")
                 plt.yticks([])
-                # set x limits and ticks dynamically
+                plt.xticks(ticks=np.linspace(0, amplitudes.shape[1], num=11), 
+                           labels=np.around(np.linspace(*rel_window_s, num=11), decimals=1))
                 # add unit id, channel (w/ peak indication), and location to lower right
+                plt.tight_layout()
                 fig = plt.gcf()
                 fig.set_size_inches(10, 4)
                 plt.tight_layout()
