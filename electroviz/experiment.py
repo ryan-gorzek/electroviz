@@ -11,18 +11,24 @@ class Experiment:
     docstring
     '''
     
-    def __init__(self, dataset, nwb_file):
+    def __init__(
+            self, 
+            Dataset, 
+            data_in, 
+            data_type, 
+        ):
         """"""
         print('Experiment')
-        # Create Population instance
-        electrodes_df = nwb_file.electrodes.to_dataframe()
-        # get units dataframe
-        units_df = nwb_file.units.to_dataframe()
-        # create population
-        self.Population = Population(self, units_df, electrodes_df)
-        
-        # Create Stimulus instance(s)
-        if 'optotagging' in list(nwb_file.processing.keys()):
-            optotagging = nwb_file.processing['optotagging'].data_interfaces['optogenetic_stimulation']
-            self.Stimulus = OptogeneticStimulus(optotagging)
+        if data_type == "Allen_NWB":
+            # Create Population instance
+            electrodes_df = data_in.electrodes.to_dataframe()
+            # get units dataframe
+            units_df = data_in.units.to_dataframe()
+            # create population
+            self.Population = Population(self, units_df, electrodes_df)
+            
+            # Create Stimulus instance(s)
+            if 'optotagging' in list(data_in.processing.keys()):
+                optotagging = data_in.processing['optotagging'].data_interfaces['optogenetic_stimulation']
+                self.Stimulus = OptogeneticStimulus(optotagging)
         

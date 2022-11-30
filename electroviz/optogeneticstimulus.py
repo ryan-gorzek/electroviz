@@ -11,11 +11,16 @@ class OptogeneticStimulus(Stimulus):
     docstring
     '''
     
-    def __init__(self, time_intervals_obj):
+    def __init__(
+            self, 
+            time_intervals_obj,
+        ):
         """"""
         print('OptogeneticStimulus')
         super().__init__(time_intervals_obj)
         self.info_df.insert(1, "condition", list(time_intervals_obj['condition'].data))
         self.info_df["duration"] = np.array(time_intervals_obj['duration'].data)
         self.info_df["level"] = np.array(time_intervals_obj['duration'].data)
+        
+    # def query
         
