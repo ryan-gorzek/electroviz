@@ -13,7 +13,13 @@ class Unit:
     docstring
     """
     
-    def __init__(self, unit_df, unit_probe_id, unit_local_index, unit_location):
+    def __init__(
+            self, 
+            unit_df, 
+            unit_probe_id, 
+            unit_local_index, 
+            unit_location, 
+        ):
         """"""
         print('Unit')
         self.id = unit_df.index[0]
@@ -37,7 +43,11 @@ class Unit:
         self.spike_amplitudes = unit_df.at[self.id, "spike_amplitudes"]
         self.mean_waveforms = unit_df.at[self.id, "waveform_mean"].T
         
-    def plot_mean_waveform(self, channel="peak", color="k"):
+    def plot_mean_waveform(
+            self, 
+            channel="peak", 
+            color="k",
+        ):
         """"""
         if channel == "peak":
             plot_channel = self.info_df.at[self.id, "probe_channel_number"]
@@ -55,7 +65,12 @@ class Unit:
 
     # def plot_channel_waveforms(self):
         
-    def plot_spike_raster(self, bin_size_s=0.0005, time_window_s=(None, None), raster_type="amplitudes"):
+    def plot_spike_raster(
+            self, 
+            bin_size_s=0.0005, 
+            time_window_s=(None, None), 
+            raster_type="amplitudes",
+        ):
         """"""
         if raster_type == "amplitudes":
             _, _, amplitudes = self._bin_spikes(bin_size_s=bin_size_s, time_window_s=time_window_s)
@@ -75,7 +90,13 @@ class Unit:
         ax = plt.gca()
         return ax
     
-    def plot_aligned_response(self, align_to=None, rel_window_s=(None, None), bin_size_s=0.0005, raster_type="amplitudes"):
+    def plot_aligned_response(
+            self, 
+            align_to=None, 
+            rel_window_s=(None, None), 
+            bin_size_s=0.0005, 
+            raster_type="amplitudes", 
+        ):
         """"""
         if align_to != None:
             if raster_type == "amplitudes":
@@ -83,14 +104,12 @@ class Unit:
                 for start, stop in align_to.info_df[["start_time", "stop_time"]].values:
                     time_window_s = (start + rel_window_s[0], start + rel_window_s[1])
                     curr_times, _, curr_amps = self._bin_spikes(bin_size_s=bin_size_s, time_window_s=time_window_s)
-                    print(np.where(np.abs(curr_times - start) == np.min(np.abs(curr_times - start))))
                     amplitudes.append(curr_amps)
                 amplitudes = np.array(amplitudes, dtype=object)
-                print(amplitudes.shape)
-                # amplitudes[:,200] = 1000
+                shape_ratio = amplitudes.shape[1] / amplitudes.shape[0]
                 plt.imshow(amplitudes.astype(np.float64), 
-                           # aspect=(0.4*amplitudes.shape[1])/amplitudes.shape[1], 
-                           cmap="gray_r",
+                           aspect=(0.4*shape_ratio), 
+                           cmap="gray_r", 
                            clim=[0, np.nanmean(amplitudes.astype(np.float64), axis=(0,1))])
                 plt.xlabel("Time to Onset (s)\n")
                 plt.yticks([])
@@ -99,16 +118,62 @@ class Unit:
                 # add unit id, channel (w/ peak indication), and location to lower right
                 plt.tight_layout()
                 fig = plt.gcf()
-                fig.set_size_inches(10, 4)
+                fig.set_size_inches(10, 5)
                 plt.tight_layout()
                 ax = plt.gca()
         return ax
     
-    # def plot_averaged_response
+    def plot_averaged_response(
+            self, 
+            align_to=None, 
+            rel_window_s=(None, None), 
+            bin_size_s=0.0005, 
+            bound_type="STD",
+        ):
+        """"""
+        if align_to != None:
+            amplitudes = []
+            for start, stop in align_to.info_df[["start_time", "stop_time"]].values:
+                time_window_s = (start + rel_window_s[0], start + rel_window_s[1])
+                curr_times, _, curr_amps = self._bin_spikes(bin_size_s=bin_size_s, time_window_s=time_window_s)
+                amplitudes.append(curr_amps)
+            amplitudes = np.array(amplitudes)
+            response_avg = np.mean(amplitudes, axis=0)
+            if bound_type == "STD":
+                bound_upper = response_avg + np.std(amplitudes, axis=0)
+                bound_lower = response_avg - np.std(amplitudes, axis=0)
+            elif bound_type == "SEM":
+                bound_upper = response_avg + np.std(amplitudes, axis=0)/np.sqrt(amplitudes.shape[0])
+                bound_lower = response_avg - np.std(amplitudes, axis=0)/np.sqrt(amplitudes.shape[0])
+            elif bound_type == "range":
+                bound_upper = np.max(amplitudes, axis=0)
+                bound_lower = np.min(amplitudes, axis=0)
+            plt.plot(np.arange(0, amplitudes.shape[1], 1), 
+                     response_avg, 
+                     color="r")
+            plt.fill_between(np.arange(0, amplitudes.shape[1], 1), 
+                             bound_lower, 
+                             bound_upper, 
+                             color=(1,0,0,0.1))
+            plt.xlabel("Time to Onset (s)\n")
+            plt.yticks([])
+            plt.xticks(ticks=np.linspace(0, amplitudes.shape[1], num=11), 
+                       labels=np.around(np.linspace(*rel_window_s, num=11), decimals=1))
+            # add unit id, channel (w/ peak indication), and location to lower right
+            plt.tight_layout()
+            fig = plt.gcf()
+            fig.set_size_inches(10, 5)
+            plt.tight_layout()
+            ax = plt.gca()
+        return ax
         
     # def plot_unit_summary(self):
         
-    def _bin_spikes(self, bin_size_s=0.0005, time_window_s=(None, None)):
+    def _bin_spikes(
+            self, 
+            bin_size_s=0.0005, 
+            time_window_s=(None, None), 
+        ):
         """"""
         time_start = 0 if time_window_s[1] == None else time_window_s[0]
         time_stop = max(self.spike_times) if time_window_s[1] == None else time_window_s[1]
