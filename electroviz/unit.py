@@ -43,6 +43,8 @@ class Unit:
         self.spike_amplitudes = unit_df.at[self.id, "spike_amplitudes"]
         self.mean_waveforms = unit_df.at[self.id, "waveform_mean"].T
         
+    #### Plotting methods ####
+        
     def plot_mean_waveform(
             self, 
             channel="peak", 
@@ -168,6 +170,12 @@ class Unit:
         return ax
         
     # def plot_unit_summary(self):
+        
+    #### Quantification methods ####
+    
+    
+        
+    #### Utility methods ####
         
     def _bin_spikes(
             self, 
