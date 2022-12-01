@@ -13,6 +13,8 @@ class Unit:
     docstring
     """
     
+    #### Special Methods ####
+    
     def __init__(
             self, 
             unit_df, 
@@ -43,7 +45,7 @@ class Unit:
         self.spike_amplitudes = unit_df.at[self.id, "spike_amplitudes"]
         self.mean_waveforms = unit_df.at[self.id, "waveform_mean"].T
         
-    #### Plotting methods ####
+    #### Plotting Methods ####
         
     def plot_mean_waveform(
             self, 
@@ -171,11 +173,11 @@ class Unit:
         
     # def plot_unit_summary(self):
         
-    #### Quantification methods ####
+    #### Quantification Methods ####
     
     
         
-    #### Utility methods ####
+    #### Private Methods ####
         
     def _bin_spikes(
             self, 
