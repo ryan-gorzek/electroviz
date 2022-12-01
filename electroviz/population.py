@@ -109,14 +109,15 @@ class Population:
     #     ):
     #     """"""
     
-    # def query(
-    #         self, 
-    #         statement, 
-    #     ):
-    #     """"""
-    #     full_array = pd.concat([self.info_df, self.quality_df, self.stats_df], axis=1)
-    #     queried_unit_ids = full_array.query(statement).index.values
-    #     return self[queried_unit_ids]
+    def query(
+            self, 
+            feature, 
+            value, 
+        ):
+        """"""
+        full_df = pd.concat([self.info_df, self.quality_df, self.stats_df], axis=1)
+        queried_unit_ids = full_df.loc[full_df[feature] == value].index.values
+        return self[queried_unit_ids]
     
     # def clone(
     #         self, 
