@@ -14,6 +14,8 @@ class Population:
     '''
     docstring
     '''
+    
+    #### Special Methods ####
 
     def __init__(
             self, 
@@ -79,6 +81,8 @@ class Population:
             item = self._Units[parsed_index]
         item.from_population = self
         return item
+    
+    #### Plotting Methods ####
 
     def plot_mean_waveform(
             self, 
@@ -108,6 +112,10 @@ class Population:
     #         raster_type="amplitudes", 
     #     ):
     #     """"""
+    
+    #### Quantification Methods ####
+    
+    #### Data Management Methods ####
     
     def query(
             self, 
@@ -165,6 +173,8 @@ class Population:
     #     """"""
     #     self.clone(name=new_name)
     #     self[:].delete()
+    
+    #### Private Methods ####
     
     def _get_unit_probe_id(
             self, 
