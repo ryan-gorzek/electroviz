@@ -24,15 +24,17 @@ class Stimulus:
         Take diff of pc_clock and photodiode (buffer matters here) and match onset/offset with bTsS timestamps
         """
 
-class SparseNoise:
+# class SparseNoise:
 
-class Orientation:
+# class Orientation:
 
-class SpatialFreq:
+# class SpatialFrequency:
 
-class TemporalFreq:
+# class TemporalFrequency:
 
-class ContrastRev:
+# class ContrastReversal:
 
-class Optogenetic:
+# class LightSquarePulse:
+
+# class LightSineWave:
         
