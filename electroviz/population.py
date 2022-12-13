@@ -106,6 +106,17 @@ class Population:
         ax.set_aspect(1./ax.get_data_ratio())
         return ax
     
+    def plot_averaged_response(
+            self, 
+            align_to=None, 
+            rel_window_s=(None, None), 
+            bin_size_s=0.0005, 
+            bound_type="STD",
+        ):
+        """"""
+        for uid in self.unit_ids:
+
+    
     # def plot_spike_raster(
     #         self, 
     #         bin_size_s=0.5, 
@@ -114,6 +125,8 @@ class Population:
     #     """"""
     
     #### Quantification Methods ####
+    
+    
     
     #### Data Management Methods ####
     
@@ -210,9 +223,9 @@ class Population:
         """"""
         if isinstance(index, slice):
             parsed_index = index
-        elif isinstance(index, int) and index < self.unit_ids.shape[0]:
+        elif isinstance(index, (int, np.int64)) and index < self.unit_ids.shape[0]:
             parsed_index = index
-        elif isinstance(index, int) and index >= self.unit_ids.shape[0]:
+        elif isinstance(index, (int, np.int64)) and index >= self.unit_ids.shape[0]:
             parsed_index = np.where(self.unit_ids == index)[0][0]
         elif isinstance(index, (list, tuple, np.ndarray)) and np.all(np.array(index) < self.unit_ids.shape[0]):
             parsed_index = index
