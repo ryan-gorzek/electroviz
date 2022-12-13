@@ -6,7 +6,10 @@
 import os
 import glob
 from .utils import SGLXReader
-from skimage.measure import regionprops
+import numpy as np
+from skimage.morphology import label as sk_label
+from matplotlib import use as mpl_use
+import matplotlib.pyplot as plt
 
 class NIDAQ:
     """
@@ -50,12 +53,14 @@ class NIDAQ:
 
     def check_sampling_rate(
             self, 
+            plot=False, 
         ):
         """
         Check the sampling rate over time using the sync signal.
-        This signal should be a 1 Hz pulse. 
+        This signal should be a 1 Hz pulse with a 0.5 s duration.
         If the length of the pulse varies, the sampling rate is inconsistent across the recording.
         """
+        # Get the sync digital signal.
         sync_idx = self.digital_signals["sync"]["line_num"]
         signal = SGLXReader.ExtractDigital(SGLXReader(), 
                                            self.bin_memmap, 
@@ -63,8 +68,28 @@ class NIDAQ:
                                            0, 
                                            [sync_idx], 
                                            self.meta_dict)
-        regions = regionprops(signal)
-        return regions, signal
+        # Interleave sample counts per 0.5 s depending on 0 or 1 starting point.
+        labels = sk_label(signal[0])
+        labels_a = np.abs(labels - signal[0, 0])
+        _, counts_a = np.unique(labels - signal[0, 0], return_counts=True)
+        labels_b = np.abs(labels - signal[0, 0])
+        _, counts_b = np.unique(labels - np.abs(signal[0, 0]-1), return_counts=True)
+        counts_full = np.zeros(counts_a.size + counts_b.size - 2, dtype=int)
+        # Counting 1's in both cases, so leave out the 0 (first) count either way
+        counts_full[0::2] += counts_a[1:]
+        counts_full[1::2] += counts_b[1:]
+        # Make a line plot to show the sampling rate stability over the recording.
+        if plot == True:
+            X = np.linspace(0, self.recording_len, counts_full.size)
+            mpl_use("Qt5Agg")
+            fig, ax = plt.subplots()
+            ax.plot(X, counts_full)
+            ax.set_title("Sampling Rate Stability over Recording")
+            ax.set_xlabel("Time (s)")
+            ax.set_ylabel("# of Samples in Sync Pulse")
+            fig.set_size_inches(10, 4)
+            plt.show()
+        return counts_full
 
     # def get_times(
     #         self,
