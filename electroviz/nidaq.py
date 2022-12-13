@@ -51,6 +51,7 @@ class NIDAQ:
         self.recording_len = float(self.meta_dict["fileTimeSecs"])
         self.total_samples = int(self.sampling_rate * self.recording_len)
 
+    #### Potentially rename and configure for checking any digital signal's stability over recording
     def check_sampling_rate(
             self, 
             plot=False, 
@@ -91,14 +92,23 @@ class NIDAQ:
             plt.show()
         return counts_full
 
-    # def get_times(
-    #         self,
-    #         signals=self.digital_signals.keys(),
-    #         sets=["on", "off"], 
-    #         blank=False, 
-    #     ):
-    #     """"""
-    #     for sig in signals:
+    def get_times(
+            self,
+            signals=self.digital_signals.keys(),
+            sets=["on", "off"], 
+            blank=False, 
+        ):
+        """
+        
+        """
+
+        signal = SGLXReader.ExtractDigital(SGLXReader(), 
+                                    self.bin_memmap, 
+                                    0, self.total_samples-1, 
+                                    0, 
+                                    [sync_idx], 
+                                    self.meta_dict)
+        for sig in signals:
             
     # get_channels
 
