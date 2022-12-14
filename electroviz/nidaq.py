@@ -49,8 +49,19 @@ class NIDAQ:
         self.bin_memmap = SGLXReader.makeMemMapRaw(bin_file[0], self.meta_dict)
         # Get some basic parameters from metadata for easy access.
         self.sampling_rate = float(self.meta_dict["niSampRate"])
-        self.recording_len = float(self.meta_dict["fileTimeSecs"])
-        self.total_samples = int(self.sampling_rate * self.recording_len)
+        self.total_time = float(self.meta_dict["fileTimeSecs"])
+        self.total_samples = int(self.sampling_rate * self.total_time)
+        # Get parameters from each digital signal.
+        self._get_digital_times(
+            signal_names=["sync", "camera", "pc_clock", "photodiode"], 
+            update_digital_signals=True, 
+            )
+
+    # def view():
+
+    # get_channels():
+
+    # plot_channels():
 
     def check_time_stability(
             self, 
@@ -105,7 +116,7 @@ class NIDAQ:
         # If specified, make a line plot to show the sampling rate stability over the recording.
         if plot == True:
             #### Need to align X with center of pulses (not regionprops, maybe manual)
-            X = np.linspace(0, self.recording_len, counts_full.size)
+            X = np.linspace(0, self.total_time, counts_full.size)
             mpl_use("Qt5Agg")
             fig, ax = plt.subplots()
             ax.plot(X, counts_full)
@@ -121,6 +132,7 @@ class NIDAQ:
             self,
             signal_names=["sync", "camera", "pc_clock", "photodiode"],
             blank=False, 
+            update_digital_signals=True,
         ):
         """
         
@@ -134,6 +146,9 @@ class NIDAQ:
                                             0, 
                                             line_num, 
                                             self.meta_dict)
+
+        # Create a dictionary to store parameters for each signal.
+        signals_dict = {}
         # Iterate through digital signals and extract onsets and offsets.
         for signal_name, signal in zip(signal_names, signals):
             # Get value for digital signal at recording start and end.
@@ -174,29 +189,51 @@ class NIDAQ:
             else:
                 raise Exception("Onsets and offsets could not be extracted for {0}, " + 
                                     "check this signal and parameters for errors.".format(signal_name))
-
-            # Create dataframe for each digital signal, storing:
-            #     index (implicit)
-            #     samples to onset    (#, from sample 0, the start of recording)
-            #     samples to offset   (#, from sample 0, the start of recording)
-            #     sample duration     (#, from onset to offset, inclusive)
-            #     time (s) to onset   (s, from time 0, the start of recording)
-            #     time (s) to offset  (s, from time 0, the start of recording)
-            #     time duration       (s, from onset to offset, inclusive)
-            #     value               (0 or 1, should alternate when there is no blank)
-        
             
-    # get_channels
+            # Get the number of samples in each pulse.
+            sample_duration = sample_offsets - sample_onsets + 1
+            # Get the onset and offset times (in seconds) relative to the start of the recording.
+            time_onsets = self._get_sample_time(sample_onsets)
+            time_offsets = self._get_sample_time(sample_offsets)
+            # Get the duration of each pulse in seconds.
+            time_duration = time_offsets - time_onsets
+            # Get the value of each pulse by taking the mean of each range (onset, offset).
+            value_array = np.zeros((sample_onsets.size,))
+            for idx, (onset, offset) in enumerate(zip(sample_onsets, sample_offsets)):
+                value_array[idx] = np.mean(signal[onset:offset+1])
 
-    # plot_channels
+            # Add signal parameters to a dictionary:
+            params_dict = {
+                "sample_onsets" :   sample_onsets,   # (# of samples to onset from sample 0, the start of recording)
+                "sample_offsets" :  sample_offsets,  # (# of samples to onset from sample 0, the start of recording)
+                "sample_duration" : sample_duration, # (# of samples from onset to offset, inclusive)
+                "time_onsets" :     time_onsets,     # (seconds to sample onset, from time 0, the start of recording)
+                "time_offsets" :    time_offsets,    # (seconds to sample onset, from time 0, the start of recording)
+                "time_duration" :   time_duration,   # (seconds from onset to offset, ???)
+                "signal_value" :    value_array,    # (0 or 1, should alternate when there is no blank)
+                            }
+            # Append signals dictionary to be returned by this function.
+            signals_dict[signal_name] = params_dict
+            # Update class attribute dictionary if specified.
+            if update_digital_signals == True:
+                self.digital_signals[signal_name].update(params_dict)
+        return signals_dict
 
-    # def _get_sample_recording_time(
-    #         self, 
-    #         sample_num, 
-    #     ):
-    #     """
 
-    #     """
+    def _get_sample_time(
+            self, 
+            sample_num, 
+        ):
+        """
+
+        """
+
+        sample_length = 1/self.sampling_rate
+        sample_times_all = np.arange(0, self.total_time, sample_length, dtype=float)
+        if self.total_samples != sample_times_all.size:
+            warn("Sample times array does not match the total number of samples.")
+        sample_times = sample_times_all[sample_num]
+        return sample_times
         
 
     def _parse_signal_IDs(
