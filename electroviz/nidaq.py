@@ -35,7 +35,7 @@ class NIDAQ:
             "camera" :     {"line_num":5}, 
             "pc_clock" :   {"line_num":4}, 
             "photodiode" : {"line_num":1}, 
-                                 })
+                                    })
 
         # Load SpikeGLX binary and metadata files.
         assert os.path.exists(nidq_path), "Could not find the specified path to SpikeGLX NI-DAQ data."
@@ -51,7 +51,6 @@ class NIDAQ:
         self.sampling_rate = float(self.meta_dict["niSampRate"])
         self.recording_len = float(self.meta_dict["fileTimeSecs"])
         self.total_samples = int(self.sampling_rate * self.recording_len)
-
 
     def check_time_stability(
             self, 
@@ -113,11 +112,12 @@ class NIDAQ:
             ax.set_title("Sampling Rate Stability over Recording")
             ax.set_xlabel("Time (s)")
             ax.set_ylabel("# of Samples in Sync Pulse")
+            #### Add probability-normalized histogram?
             fig.set_size_inches(10, 4)
             plt.show()
         return counts_full #### Make this into a df with numbered index and 0/1 indicator column
 
-    def get_digital_times(
+    def _get_digital_times(
             self,
             signal_names=["sync", "camera", "pc_clock", "photodiode"],
             blank=False, 
@@ -139,56 +139,64 @@ class NIDAQ:
             # Get value for digital signal at recording start and end.
             value_start = signal[0]
             value_end = signal[-1]
-            # Sync can start or end at 1, but raise if this happens for camera, pc_clock, or photodiode.
-            value_error = "The {0} signal unexpectedly has a starting value of {1:b} in this recording, " + 
+            # Sync runs continuously and can start or end at 1, CHECK ON CAMERA???
+            # Raise if this happens for the pc_clock or photodiode because it could indicate an issue.
+            value_error = "The {0} signal unexpectedly has a {1} value of {2:b} in this recording, " + \
                               "inspect the data in SpikeGLX for potential problems."
-            if (signal_name != "sync") & (value_start != 0):
-                 raise Exception(value_warning.format(signal_name, value_start))
-            if (signal_name != "sync") & (value_end != 0):
-                 raise Exception(value_warning.format(signal_name, value_start))
+            if (signal_name != "sync") & (signal_name != "camera") & (value_start != 0):
+                raise Exception(value_error.format(signal_name, "starting", value_start))
+            if (signal_name != "sync") & (signal_name != "camera") & (value_end != 0):
+                raise Exception(value_error.format(signal_name, "ending", value_end))
             
             # Take temporal difference of digital signal for locating onsets and offsets.
             signal_diff = np.insert(np.diff(signal), 0, 0)
             # Immediately check for blank.
             #     sync should never have a blank, while camera should always have a blank.
             if (blank == True) | (signal == "camera"):
-                 (sample_onsets,) = np.where(signal_diff == 1)
-                 (sample_offsets,) = np.where(signal_diff == -1) -= 1
-            elif (blank == False) | (signal != "sync"):
-                 # A stimulus without a blank should start 0->1
-
-            elif signal == "sync"
-                # Check whether sync starts on 0 or 1
-
-                # The first and last sample of sync will always be an onset and offset, respectively
-                sample_onsets = np.insert(sample_onsets, 0, 0)
-                sample_offsets = np.append(sample_offsets, signal.size - 1)
+                (sample_onsets,) = np.where(signal_diff == 1)
+                (sample_offsets,) = np.where(signal_diff == -1) - 1
+            elif (blank == False) | (signal == "sync"):
+                # A stimulus without a blank should start 0->1, then flip up-and-down, 
+                #     making any non-zero value of the diff an onset, except the last.
+                (sample_onsets_all,) = np.where(signal_diff != 0)
+                # The last "onset" (non-zero value) is really the first sample after the final stimulus, 
+                #     so we drop it.
+                sample_onsets = sample_onsets_all[:-1]
+                # Without a blank, the offsets always immediately precede the onsets by one sample, 
+                #     except the first onset, which is the first stimulus.
+                sample_offsets = sample_onsets_all[1:] - 1
+                # The sync signal is different. It runs continuously and the recording might start
+                #     while it is 0 or 1, so we also include the onsets and offsets that we excluded 
+                #     for the triggered stimuli that always begin with 0->1.
+                if signal == "sync":
+                    sample_onsets = sample_onsets_all
+                    sample_offsets = sample_onsets_all - 1
             else:
-                raise Exception("Onsets and offsets could not be extracted for {s}, " + 
-                                    "check this signal and parameters for errors.".format(s=sig))
+                raise Exception("Onsets and offsets could not be extracted for {0}, " + 
+                                    "check this signal and parameters for errors.".format(signal_name))
 
-        # Create dataframe for each digital signal, storing:
-        #     index (implicit)
-        #     samples to onset    (#, from sample 0, the start of recording)
-        #     samples to offset   (#, from sample 0, the start of recording)
-        #     sample duration     (#, from onset to offset, inclusive)
-        #     time (s) to onset   (s, from time 0, the start of recording)
-        #     time (s) to offset  (s, from time 0, the start of recording)
-        #     time duration       (s, from onset to offset, inclusive)
-        #     value               (0 or 1, should alternate when there is no blank)
+            # Create dataframe for each digital signal, storing:
+            #     index (implicit)
+            #     samples to onset    (#, from sample 0, the start of recording)
+            #     samples to offset   (#, from sample 0, the start of recording)
+            #     sample duration     (#, from onset to offset, inclusive)
+            #     time (s) to onset   (s, from time 0, the start of recording)
+            #     time (s) to offset  (s, from time 0, the start of recording)
+            #     time duration       (s, from onset to offset, inclusive)
+            #     value               (0 or 1, should alternate when there is no blank)
         
             
     # get_channels
 
     # plot_channels
 
-    def _get_sample_time(
-            self, 
-            sample_num, 
-        ):
-        """
+    # def _get_sample_recording_time(
+    #         self, 
+    #         sample_num, 
+    #     ):
+    #     """
 
-        """
+    #     """
         
 
     def _parse_signal_IDs(
@@ -207,5 +215,3 @@ class NIDAQ:
                        if isinstance(ID, str) else ID
                        for ID in signal_IDs]
         return line_numbers
-
-
