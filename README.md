@@ -9,9 +9,8 @@ these objects enables fast, consistent, and scalable analysis.
 
 First, "low-level" data streams from acquisition software (e.g., SpikeGLX, bTsS) are parsed for relevant information by specific class constructors.
 
-    For example, digital signals recorded from a National Instruments DAQ by SpikeGLX are read and parsed by:
-    ```
+For example, digital signals recorded from a National Instruments DAQ by SpikeGLX are read and parsed by:
+
     nidq = NIDAQ(path_to_binary_and_metadata_files)
-    ```
 
 analysis-ready domains 
