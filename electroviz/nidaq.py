@@ -23,7 +23,7 @@ class NIDAQ:
 
     def __init__(
             self, 
-            nidq_path=os.getcwd(), 
+            exp_path=os.getcwd(), 
         ):
         """
         Constructor reads NI-DAQ binary and metadata files (both must be present) from SpikeGLX.
@@ -39,13 +39,18 @@ class NIDAQ:
                                     })
 
         # Load SpikeGLX binary and metadata files.
-        assert os.path.exists(nidq_path), "Could not find the specified path to SpikeGLX NI-DAQ data."
+        assert os.path.exists(exp_path), "Could not find the specified path to SpikeGLX NI-DAQ data."
+        # Check for folder containing "ephys".
+        ephys_name = None
+        for subdir in os.listdir(exp_path):
+            if "ephys" in subdir:
+                ephys_subdir = subdir
         # Locate and read the meta file into a Python dictionary.
-        meta_file = glob.glob(nidq_path + "/*.nidq.meta")
+        meta_file = glob.glob(exp_path + ephys_subdir + "/*.nidq.meta")
         assert len(meta_file) == 1, "The **.nidq.meta file could not be read properly, check that it exists in the path without conflicts."
         self.meta_dict = SGLXReader.readMeta(meta_file[0])
         # Locate and read the binary file into a numpy memory map.
-        bin_file = glob.glob(nidq_path + "/*.nidq.bin")
+        bin_file = glob.glob(exp_path + ephys_subdir + "/*.nidq.bin")
         assert len(bin_file) == 1, "The **.nidq.bin file could not be read properly, check that it exists in the path without conflicts."
         self.bin_memmap = SGLXReader.makeMemMapRaw(bin_file[0], self.meta_dict)
         # Get some basic parameters from metadata for easy access.
@@ -239,8 +244,8 @@ class NIDAQ:
                 #     while it is 0 or 1, so we also include the onsets and offsets that we excluded 
                 #     for the triggered stimuli that always begin with 0->1.
                 if signal_name == "sync":
-                    sample_onsets = sample_onsets_all
-                    sample_offsets = sample_onsets_all - 1
+                    sample_onsets = sample_onsets_all[:-1]
+                    sample_offsets = sample_onsets_all[1:] - 1
             else:
                 raise Exception("Onsets and offsets could not be extracted for {0}, " + 
                                     "check this signal and parameters for errors.".format(signal_name))
@@ -255,17 +260,24 @@ class NIDAQ:
             # Get the value of each pulse by taking the mean of each range (onset, offset).
             value_array = np.zeros((sample_onsets.size,))
             for idx, (onset, offset) in enumerate(zip(sample_onsets, sample_offsets)):
-                value_array[idx] = np.mean(signal[onset:offset+1])
+                value = np.mean(signal[onset:offset+1])
+                if (value == 0) | (value == 1):
+                    value_array[idx] = int(value)
+                else:
+                    warnings.warn("Mean digital signal during a pulse is expected to be 0 or 1 but has a value of {0:f}.\n".format(value) + 
+                                  "    Assigning anyway, but this may indicate a problem with NI-DAQ digital data streams.")
+                    print(signal_name, signal, onset, offset, value)
+                    value_array[idx] = value
 
             # Add signal parameters to a dictionary:
             params_dict = {
-                "sample_onsets" :   sample_onsets,    # (# of samples to onset from sample 0, the start of recording)
-                "sample_offsets" :  sample_offsets,   # (# of samples to onset from sample 0, the start of recording)
-                "sample_durations" : sample_duration, # (# of samples from onset to offset, inclusive)
-                "time_onsets" :     time_onsets,      # (seconds to sample onset, from time 0, the start of recording)
-                "time_offsets" :    time_offsets,     # (seconds to sample onset, from time 0, the start of recording)
-                "time_durations" :   time_duration,   # (seconds from onset to offset, ???)
-                "digital_value" :    value_array,     # (0 or 1, should alternate when there is no blank)
+                "sample_onsets" :    sample_onsets.astype(int),    # (# of samples to onset from sample 0, the start of recording)
+                "sample_offsets" :   sample_offsets.astype(int),   # (# of samples to onset from sample 0, the start of recording)
+                "sample_durations" : sample_duration.astype(int),  # (# of samples from onset to offset, inclusive)
+                "time_onsets" :      time_onsets,       # (seconds to sample onset, from time 0, the start of recording)
+                "time_offsets" :     time_offsets,      # (seconds to sample onset, from time 0, the start of recording)
+                "time_durations" :   time_duration,     # (seconds from onset to offset, ???)
+                "digital_value" :    value_array,       # (0 or 1, should alternate when there is no blank)
                             }
             # Append signals dictionary to be returned by this function.
             signals_dict[signal_name] = params_dict

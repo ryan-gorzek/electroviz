@@ -16,7 +16,7 @@ class bTsS:
 
     def __init__(
             self,
-            btss_path=os.getcwd(), 
+            exp_path=os.getcwd(), 
             protocol_names=["contra_random_squares", "ipsi_random_squares"]
         ):
         """
@@ -24,17 +24,17 @@ class bTsS:
         """
 
         # Load bTsS vislog (stimulus identity) and riglog (timestamp) files.
-        assert os.path.exists(btss_path), "Could not find the specified path to bTsS data."
+        assert os.path.exists(exp_path), "Could not find the specified path to bTsS data."
         # Check for folder containing one of the protocol names.
-        protocol_name = None
-        for btss_subdir in os.listdir(btss_path):
-            if btss_subdir in protocol_names:
-                protocol_name = btss_subdir
+        protocol_subdir = None
+        for subdir in os.listdir(exp_path):
+            if subdir in protocol_names:
+                protocol_subdir = subdir
         # assert protocol_name is not None, 
         #     "bTsS folder exists, but could not find protocol folder. Check that protocol_names is correct."
 
         # Get the protocol name as a string and append it to the bTsS path.
-        protocol_path = btss_path + "/" + protocol_name
+        protocol_path = exp_path + "/" + protocol_subdir
         # Read the visprot file from the protocol folder.
         visprot_file = glob.glob(protocol_path + "/" + "*.visprot")
         assert len(visprot_file) == 1, "The **.visprot file could not be read properly, check that it exists in the path without conflicts."

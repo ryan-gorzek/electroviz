@@ -22,26 +22,12 @@ class Stimulus:
         """
 
         if nidaq_obj is not None:
-            # Parse the NI-DAQ first. Map the digital signal keys to dataframe column names.
-            #### This might be kind of pointless.
-            names_map = {"sample_onsets" : "onset_sample", 
-                         "sample_offsets" : "offset_sample", 
-                         "sample_durations" : "duration_sample", 
-                         "time_onsets" : "onset_time", 
-                         "time_offsets" : "offset_time", 
-                         "time_durations" : "duration_time", 
-                         "digital_value" : "digital_value"
-                        }
-            column_order = ["onset_sample", "offset_sample", "duration_sample", 
-                            "onset_time", "offset_time", "duration_time", 
-                            "digital_value"]
+            # Parse the NI-DAQ first.
             # Get sync signal from the NI-DAQ, needed to align to neural data.
             # Keep all sync data but digital line number.
             self.sync_df = self._dict_to_df(
                                nidaq_obj.digital_signals["sync"], 
                                omit_keys=["line_num"], 
-                               names_map=names_map, 
-                               column_order=column_order, 
                                )
             # Get stimulus (pc_clock and photodiode) signals from the NI-DAQ.
             # This will be aligned to stimulus information.
@@ -49,27 +35,25 @@ class Stimulus:
             pc_clock_df = self._dict_to_df(
                                  nidaq_obj.digital_signals["pc_clock"], 
                                  omit_keys=["line_num"], 
-                                 names_map=names_map, 
-                                 column_order=column_order, 
                                  )
             photodiode_df = self._dict_to_df(
                                  nidaq_obj.digital_signals["photodiode"], 
                                  omit_keys=["line_num"], 
-                                 names_map=names_map, 
-                                 column_order=column_order, 
                                  )
             # Build a multi-index dataframe with top-level indices for pc_clock and photodiode.
-            self.stim_df = self._build_multiindex_df(
+            self.digital_df = self._build_multiindex_df(
                                     (pc_clock_df, photodiode_df), 
                                     ("pc_clock", "photodiode"), 
                                     )
+            # Reference the NIDAQ object.
+            self.nidaq_obj = nidaq_obj
         elif time_intervals_obj is not None:
             self.info_df = pd.DataFrame()
             self.info_df["stimulus_name"] = list(time_intervals_obj['stimulus_name'].data)
             self.info_df["start_time"] = np.array(time_intervals_obj['start_time'].data)
             self.info_df["stop_time"] = np.array(time_intervals_obj['stop_time'].data)
         else:
-            raise Exception("Failed to build Stimulus, verify that data streams are specified correctly.")
+            raise Exception("Can't construct Stimulus, verify that data streams are specified correctly.")
 
 
     def _dict_to_df(
@@ -85,12 +69,9 @@ class Stimulus:
 
         keep_keys = set(dict_in.keys()).difference(omit_keys)
         df_out = pd.DataFrame.from_dict(
-            {key : val for (key, val) in dict_in.items() if key in keep_keys}
+            {key : val for (key, val) in dict_in.items() if key in keep_keys}, 
+            orient="index", 
                                        )
-        if names_map is not None:
-            df_out.rename(columns=names_map)
-        # if column_order is not None:
-        #     df_out = df_out.reindex(column_order, axis=1)
         return df_out
 
     def _build_multiindex_df(
@@ -109,36 +90,94 @@ class Stimulus:
             if isinstance(df.columns, pd.core.indexes.multi.MultiIndex):
                 dfs_multi.append(df)
             else:
-                # Construct the top-level index from the specified name and the existing column names.
-                num_columns = len(df.columns)
-                top_level_names = np.repeat(name, num_columns)
-                # Build the multi-index dataframe.
-                columns = [top_level_names, np.array(df.columns)]
-                df_converted = pd.DataFrame(df, columns=columns)
-                dfs_multi.append(df_converted)
+                # Construct the top-level index from the specified name and the existing index names.
+                num_idx = len(df.index)
+                top_level_names = np.repeat(name, num_idx)
+                df["event"] = top_level_names
+                df.index.name = "param"
+                # Add the top-level index to dataframe.
+                df_multi = df.set_index(["event", df.index])
+                dfs_multi.append(df_multi)
         # Concatenate now that dataframes are all multi-index.
-        df_out = pd.concat(dfs_multi, axis=1)
+        df_out = pd.concat(dfs_multi, axis=0)
         return df_out
 
 
+class VisualStimulus(Stimulus):
+    """
 
-class VisualStimulus
+    """
+
+    def __init__(
+            self, 
+            nidaq_obj=None, 
+            btss_obj=None, 
+            time_intervals_obj=None,
+        ):
+
+        super().__init__(
+                    nidaq_obj, 
+                    btss_obj, 
+                    time_intervals_obj, 
+                    )
+
+        if btss_obj is None:
+            raise Exception("Failed to build VisualStimulus, verify that data streams are specified correctly.")
+        # Reference the bTsS object.
+        self.btss_obj = btss_obj
+        # Map the visual stimulus (vstim) dataframe from the bTsS rig log to the NIDAQ pulses.
+        self.stim_df = self._map_btss_vstim(
+                                btss_obj.riglog[0]["vstim"]
+                            )
+
+
+    def _map_btss_vstim(
+            self, 
+            vstim_df, 
+        ):
+        """
+
+        """
+
+        # Initialize list for stacking visual stimulus parameters.
+        params_list = []
+        vstim_times = np.array(vstim_df["timereceived"])
+        # Get the pc_clock dataframe for aligning bTsS trigger data.
+        df_align = self.digital_df.loc[("pc_clock"), :]
+        # Iterate through pc_clock pulses and find vstim entries that occur during the pulse.
+        # Thoroughly check for 
+        for (onset_time, offset_time) in df_align.loc[["time_onsets", "time_offsets"]].T.to_numpy():
+            (vstim_logical,) = np.where((onset_time <= vstim_times) &
+                                        (vstim_times <= offset_time))
+            if np.any(vstim_logical):
+                print("Found some!")
+
+    def _verify_vstim_capture(
+            self,
+            vstim_df, 
+            vstim_logical, 
+        ):
+        
+
+
+
+
 
 # class OptogeneticStimulus
 
 # class ParallelStimulus
 
-# class SparseNoise:
+# class SparseNoise(VisualStimulus):
 
-# class Orientation:
+# class Orientation(VisualStimulus):
 
-# class SpatialFrequency:
+# class SpatialFrequency(VisualStimulus):
 
-# class TemporalFrequency:
+# class TemporalFrequency(VisualStimulus):
 
-# class ContrastReversal:
+# class ContrastReversal(VisualStimulus):
 
-# class LightSquarePulse:
+# class LightSquarePulse(OptogeneticStimulus):
 
-# class LightSineWave:
+# class LightSineWave(OptogeneticStimulus):
         
