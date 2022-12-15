@@ -10,7 +10,7 @@ import numpy as np
 from skimage.morphology import label as sk_label
 from matplotlib import use as mpl_use
 import matplotlib.pyplot as plt
-from warnings import warn
+import warnings
 
 class NIDAQ:
     """
@@ -19,6 +19,7 @@ class NIDAQ:
     SpikeGLX-derived files are processed herein by functions from the SpikeGLX Datafile Tools created by Bill Karsh.
     SpikeGLX is actively maintained and developed by Bill Karsh (https://github.com/billkarsh).
     """
+
 
     def __init__(
             self, 
@@ -57,11 +58,36 @@ class NIDAQ:
             update_digital_signals=True, 
             )
 
+
     # def view():
+
 
     # get_channels():
 
-    # plot_channels():
+
+    def plot_digital_channels(
+            self,
+            signal_names=["sync", "camera", "pc_clock", "photodiode"],
+            time_window=[0, 100], 
+        ):
+        """
+
+        """
+        
+        mpl_use("Qt5Agg")
+        fig, axs = plt.subplots(len(signal_names), 1)
+        for n, signal_name in enumerate(signal_names):
+            signal, timepoints, _ = self._get_digital_signals(signal_name, time_window)
+            axs[n].plot(timepoints, signal.squeeze())
+            axs[n].set_title(signal_name)
+            axs[n].set_xlabel("Time (s)")
+            axs[n].set_ylim((-0.1, 1.1))
+            axs[n].set_yticks((0, 1))
+            axs[n].set_ylabel("Signal Value")
+        fig.set_size_inches(12, 6)
+        plt.show()
+
+
 
     def check_time_stability(
             self, 
@@ -128,6 +154,29 @@ class NIDAQ:
             plt.show()
         return counts_full #### Make this into a df with numbered index and 0/1 indicator column
 
+    def _get_digital_signals(
+            self, 
+            signal_names=["sync", "camera", "pc_clock", "photodiode"],
+            time_window=[0, None]
+        ):
+
+        # Get sample index from time window.
+        sample_window = self._get_time_sample(time_window, return_range=False)
+        # Get specified digital lines across all timepoints.
+        line_num = self._parse_signal_IDs(signal_names)
+        signals = SGLXReader.ExtractDigital(SGLXReader(), 
+                                            self.bin_memmap, 
+                                            sample_window[0], sample_window[1], 
+                                            0, 
+                                            line_num, 
+                                            self.meta_dict)
+        # Get sample indices.
+        sample_idx = np.arange(sample_window[0], sample_window[1]+1, 1)
+        # Get timepoints.
+        timepoints = self._get_sample_time(sample_idx)
+        return signals, timepoints, sample_idx
+
+
     def _get_digital_times(
             self,
             signal_names=["sync", "camera", "pc_clock", "photodiode"],
@@ -163,14 +212,20 @@ class NIDAQ:
             if (signal_name != "sync") & (signal_name != "camera") & (value_end != 0):
                 raise Exception(value_error.format(signal_name, "ending", value_end))
             
-            # Take temporal difference of digital signal for locating onsets and offsets.
-            signal_diff = np.insert(np.diff(signal), 0, 0)
             # Immediately check for blank.
             #     sync should never have a blank, while camera should always have a blank.
-            if (blank == True) | (signal == "camera"):
+            if (blank == True) | (signal_name == "camera"):
+                # Take temporal difference of digital signal for locating onsets and offsets.
+                signal_diff = np.insert(np.diff(-1 * signal), 0, 0)
+                value_start, value_end = value_end, value_start
                 (sample_onsets,) = np.where(signal_diff == 1)
-                (sample_offsets,) = np.where(signal_diff == -1) - 1
-            elif (blank == False) | (signal == "sync"):
+                (sample_offsets,) = np.where(signal_diff == -1)
+                sample_offsets += -1
+                #### What about camera starting or ending on 1???
+                #### Needs work
+            elif (blank == False) | (signal_name == "sync"):
+                # Take temporal difference of digital signal for locating onsets and offsets.
+                signal_diff = np.insert(np.diff(signal), 0, 0)
                 # A stimulus without a blank should start 0->1, then flip up-and-down, 
                 #     making any non-zero value of the diff an onset, except the last.
                 (sample_onsets_all,) = np.where(signal_diff != 0)
@@ -183,7 +238,7 @@ class NIDAQ:
                 # The sync signal is different. It runs continuously and the recording might start
                 #     while it is 0 or 1, so we also include the onsets and offsets that we excluded 
                 #     for the triggered stimuli that always begin with 0->1.
-                if signal == "sync":
+                if signal_name == "sync":
                     sample_onsets = sample_onsets_all
                     sample_offsets = sample_onsets_all - 1
             else:
@@ -191,7 +246,7 @@ class NIDAQ:
                                     "check this signal and parameters for errors.".format(signal_name))
             
             # Get the number of samples in each pulse.
-            sample_duration = sample_offsets - sample_onsets + 1
+            sample_duration = (sample_offsets - sample_onsets) + 1
             # Get the onset and offset times (in seconds) relative to the start of the recording.
             time_onsets = self._get_sample_time(sample_onsets)
             time_offsets = self._get_sample_time(sample_offsets)
@@ -204,13 +259,13 @@ class NIDAQ:
 
             # Add signal parameters to a dictionary:
             params_dict = {
-                "sample_onsets" :   sample_onsets,   # (# of samples to onset from sample 0, the start of recording)
-                "sample_offsets" :  sample_offsets,  # (# of samples to onset from sample 0, the start of recording)
-                "sample_duration" : sample_duration, # (# of samples from onset to offset, inclusive)
-                "time_onsets" :     time_onsets,     # (seconds to sample onset, from time 0, the start of recording)
-                "time_offsets" :    time_offsets,    # (seconds to sample onset, from time 0, the start of recording)
-                "time_duration" :   time_duration,   # (seconds from onset to offset, ???)
-                "signal_value" :    value_array,    # (0 or 1, should alternate when there is no blank)
+                "sample_onsets" :   sample_onsets,    # (# of samples to onset from sample 0, the start of recording)
+                "sample_offsets" :  sample_offsets,   # (# of samples to onset from sample 0, the start of recording)
+                "sample_durations" : sample_duration, # (# of samples from onset to offset, inclusive)
+                "time_onsets" :     time_onsets,      # (seconds to sample onset, from time 0, the start of recording)
+                "time_offsets" :    time_offsets,     # (seconds to sample onset, from time 0, the start of recording)
+                "time_durations" :   time_duration,   # (seconds from onset to offset, ???)
+                "digital_value" :    value_array,     # (0 or 1, should alternate when there is no blank)
                             }
             # Append signals dictionary to be returned by this function.
             signals_dict[signal_name] = params_dict
@@ -231,10 +286,49 @@ class NIDAQ:
         sample_length = 1/self.sampling_rate
         sample_times_all = np.arange(0, self.total_time, sample_length, dtype=float)
         if self.total_samples != sample_times_all.size:
-            warn("Sample times array does not match the total number of samples.")
+            warnings.warn("Sample times array does not match the total number of samples.")
         sample_times = sample_times_all[sample_num]
         return sample_times
+
+    def _get_time_sample(
+            self, 
+            time_window=(0, None), 
+            return_range=True, 
+        ):
+        """
+
+        """
+
+        sample_length = 1/self.sampling_rate
+        sample_times_all = np.arange(0, self.total_time, sample_length, dtype=float)
+        if self.total_samples != sample_times_all.size:
+            warnings.warn("Sample times array does not match the total number of samples.")
         
+        def find_min_dist_1D(number, array):
+            dists = np.abs(array - number)
+            (min_idx,) = np.where(dists == np.min(dists))
+            return int(min_idx)
+        
+        # Sample onset.
+        if time_window[0] is None:
+            sample_onset = 0
+        else:
+            sample_onset = find_min_dist_1D(time_window[0], sample_times_all)
+        # Sample offset.
+        if time_window[1] is None:
+            sample_offset = sample_times_all.size
+        else:
+            sample_offset = find_min_dist_1D(time_window[1], sample_times_all)
+        # Return range if specified, otherwise return tuple matching time_window input.
+        if range == True:
+            time_samples = np.arange(sample_onset, sample_offset, 1)
+        else:
+            time_samples = (sample_onset, sample_offset)
+
+
+        
+        return time_samples
+
 
     def _parse_signal_IDs(
             self, 
@@ -245,9 +339,8 @@ class NIDAQ:
         If signal name(s) is specified swap it for the line_number(s). Otherwise pass.
         """
 
-        if (len(signal_IDs) == 1) & (not isinstance(signal_IDs, list)):
+        if not isinstance(signal_IDs, list):
             signal_IDs = [signal_IDs]
-
         line_numbers = [self.digital_signals[ID]["line_num"] 
                        if isinstance(ID, str) else ID
                        for ID in signal_IDs]
