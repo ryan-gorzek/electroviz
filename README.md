@@ -7,11 +7,16 @@ electroviz is a Python package for processing, analyzing, and visualizing extrac
 ## Installation
 
 First, clone this repository:
+
     git clone https://github.com/ryan-gorzek/electroviz.git
+    
 Then, create and activate an anaconda environment in which to install it:
+
     conda create -n electroviz python=3.9
     conda activate electroviz
+    
 Finally, install electroviz with pip:
+
     pip install -e electroviz
 
 ## Concept
