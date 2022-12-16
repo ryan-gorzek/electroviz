@@ -130,6 +130,7 @@ class VisualStimulus(Stimulus):
                                 btss_obj.riglog[0]["vstim"]
                             )
 
+    # def plot_btss_vstim_times
 
     def _map_btss_vstim(
             self, 
@@ -143,21 +144,26 @@ class VisualStimulus(Stimulus):
         params_list = []
         vstim_times = np.array(vstim_df["timereceived"])
         # Get the pc_clock dataframe for aligning bTsS trigger data.
-        df_align = self.digital_df.loc[("pc_clock"), :]
+        df_align = self.digital_df.loc[("photodiode"), :]
         # Iterate through pc_clock pulses and find vstim entries that occur during the pulse.
-        # Thoroughly check for 
         for (onset_time, offset_time) in df_align.loc[["time_onsets", "time_offsets"]].T.to_numpy():
-            (vstim_logical,) = np.where((onset_time <= vstim_times) &
-                                        (vstim_times <= offset_time))
+            vstim_logical = ((onset_time <= vstim_times) &
+                                (vstim_times <= offset_time))
             if np.any(vstim_logical):
-                print("Found some!")
+                self._verify_vstim_capture(vstim_df, vstim_logical)
 
     def _verify_vstim_capture(
             self,
             vstim_df, 
             vstim_logical, 
         ):
-        
+        # Thoroughly check for correct alignment of riglog-encoded visual stimulus and NI-DAQ.
+        num_vstim_samples = np.sum(vstim_logical)
+        vstim_params = vstim_df[["istim", "posx", "posy"]].values
+        vstim_params_capture = vstim_params[vstim_logical, :]
+        vstim_samples_match = all((vstim_params_capture == vstim_params_capture[[0], :]).all(axis=1))
+        print(vstim_params_capture)
+        print("{0} samples, {1} match".format(num_vstim_samples, vstim_samples_match))
 
 
 
