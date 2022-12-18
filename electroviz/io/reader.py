@@ -35,7 +35,7 @@ class Reader:
             # "camera" :     {"line_num":5}, 
             "pc_clock" :   {"line_num" : 4}, 
             "photodiode" : {"line_num" : 1}, 
-                                      })
+                                   })
 
         # Check if specified path is a directory [or .electroviz parameters file].
         assert os.path.exists(path), "The specified path is not valid."
@@ -58,8 +58,8 @@ class Reader:
             nidaq_metadata, nidaq_binary = read_NIDAQ(nidaq_dir)
             self.imec_spikes = []
             for dir in imec_dir:
-                imec_metadata, _, kilosort_array = read_Imec(dir)
-                self.imec_spikes.append(ImecSpikes(imec_metadata, None, kilosort_array))
+                imec_metadata, imec_binary, kilosort_array = read_Imec(dir)
+                self.imec_spikes.append(ImecSpikes(imec_metadata, imec_binary, kilosort_array))
             # Parse bTsS directory.
             btss_dir = path + protocol_subdir
             btss_visprot, btss_riglog = read_bTsS(btss_dir)
@@ -79,8 +79,6 @@ class Reader:
             
             
 
-    # 
-
 
     def _parse_SGLX_dir(
             self, 
@@ -98,7 +96,7 @@ class Reader:
             # Check whether this directory has Imec binary and metadata files.
             imec_count = sum(1 for f in SGLX_files if ((".ap" in f) & (".bin" in f)) | 
                                                       ((".ap" in f) & (".meta" in f)))
-            if imec_count == 1: #### ignore binary for now
+            if imec_count == 2:
                 imec_path.append(topdir)
         return nidaq_path, imec_path
 
@@ -111,16 +109,15 @@ def read_Imec(
     # Read the metadata using SpikeGLX datafile tools.
     metadata_path = glob.glob(imec_path + "/*.ap.meta")[0]
     imec_metadata = readMeta(metadata_path)
-    # # Read the binary file using SpikeGLX datafile tools.
-    # binary_path = glob.glob(imec_path + "/*.ap.bin")[0]
-    # imec_binary = makeMemMapRaw(binary_path, imec_metadata)
-    imec_binary = None
+    # Read the binary file using SpikeGLX datafile tools.
+    binary_path = glob.glob(imec_path + "/*.ap.bin")[0]
+    imec_binary = makeMemMapRaw(binary_path, imec_metadata)
     # Read Kilosort output files into numpy array.
     kilosort_names = ["spike_clusters.npy", "spike_times.npy"]
     kilosort_array = []
     for name in kilosort_names:
         kilosort_array.append(np.load(imec_path + "/" + name))
-    kilosort_array = np.array(kilosort_array)
+    kilosort_array = np.array(kilosort_array).squeeze().T
     return imec_metadata, imec_binary, kilosort_array
 
 def read_NIDAQ(
