@@ -30,7 +30,7 @@ class NIDAQ:
             **.nidq.bin is a numpy memory-map.
         """
 
-        # Get some basic parameters from metadata for easy access.
+        # Get some basic data and parameters for easy access.
         self.nidaq_metadata = nidaq_metadata
         self.nidaq_binary = nidaq_binary
         self.sampling_rate = float(self.nidaq_metadata["niSampRate"])
