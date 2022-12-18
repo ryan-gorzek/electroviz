@@ -3,9 +3,7 @@
 # https://github.com/gorzek-ryan/electroviz/blob/main/LICENSE
 # https://opensource.org/licenses/MIT
 
-import os
-import glob
-from btss.utils import read_visual_protocol, parse_riglog
+import pandas as pd
 
 class bTsS:
     """
@@ -15,31 +13,63 @@ class bTsS:
 
 
     def __init__(
-            self,
-            exp_path=os.getcwd(), 
-            protocol_names=["contra_random_squares", "ipsi_random_squares"]
+            self, 
+            btss_riglog, 
+            btss_visprot, 
         ):
         """
         Parse bTsS directory.
         """
 
-        # Load bTsS vislog (stimulus identity) and riglog (timestamp) files.
-        assert os.path.exists(exp_path), "Could not find the specified path to bTsS data."
-        # Check for folder containing one of the protocol names.
-        protocol_subdir = None
-        for subdir in os.listdir(exp_path):
-            if subdir in protocol_names:
-                protocol_subdir = subdir
-        # assert protocol_name is not None, 
-        #     "bTsS folder exists, but could not find protocol folder. Check that protocol_names is correct."
+        # Store the rig log.
+        self.riglog = btss_riglog
 
-        # Get the protocol name as a string and append it to the bTsS path.
-        protocol_path = exp_path + "/" + protocol_subdir
-        # Read the visprot file from the protocol folder.
-        visprot_file = glob.glob(protocol_path + "/" + "*.visprot")
-        assert len(visprot_file) == 1, "The **.visprot file could not be read properly, check that it exists in the path without conflicts."
-        self.visprot = read_visual_protocol(visprot_file[0])
-        # Read the riglog file from the protocol folder.
-        riglog_file = glob.glob(protocol_path + "/" + "*.riglog")
-        assert len(riglog_file) == 1, "The **.riglog file could not be read properly, check that it exists in the path without conflicts."
-        self.riglog = parse_riglog(riglog_file[0])
+
+
+
+class bTsSVStim(bTsS):
+    """
+
+    """
+
+
+    def __init__(
+            self, 
+            btss_riglog, 
+            btss_visprot, 
+        ):
+        """"""
+
+        super().__init__(
+                    btss_riglog, 
+                    btss_visprot)
+
+        self.visprot = btss_visprot
+        self.vstim_params = self._get_vstim_params()
+        self.vstim_df = self._get_vstim_df()
+
+    def _get_vstim_df(
+            self, 
+        ):
+        """"""
+        
+        # Get the vstim dataframe from the rig log.
+        vstim_df = self.riglog[0]["vstim"]
+        # Drop unnecessary columns.
+        vstim_df.drop(["code"], axis=1, inplace=True)
+        # Transpose to match other time-series data.
+        vstim_df_T = vstim_df.T
+        return vstim_df_T
+
+
+    def _get_vstim_params(
+            self, 
+        ):
+        """"""
+
+        # Remove unnecessary parameters from the visprot.
+        visprot_dict = self.visprot[0]
+        del visprot_dict["stim_type"], visprot_dict["indicator_mode"], visprot_dict["name"]
+        return visprot_dict
+
+        
