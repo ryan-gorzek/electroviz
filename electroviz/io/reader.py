@@ -8,7 +8,8 @@ from warnings import warn
 import glob
 from pathlib import Path
 import numpy as np
-from electroviz.streams.nidaq import SyncChannel, DigitalChannel
+from electroviz.streams.nidaq import NIDAQSync, NIDAQDigital
+from electroviz.streams.imec import ImecSpikes
 from electroviz.streams.btss import bTsSVStim
 from electroviz.core.stimulus import SparseNoise
 from btss.utils import read_visual_protocol, parse_riglog
@@ -30,7 +31,7 @@ class Reader:
         # Put this stuff in a config file later.
         ephys_name = "ephys"
         protocol_names = ["ipsi_random_squares"]
-        self.digital_channels = dict({
+        self.nidaq_digital = dict({
             # "camera" :     {"line_num":5}, 
             "pc_clock" :   {"line_num" : 4}, 
             "photodiode" : {"line_num" : 1}, 
@@ -53,28 +54,32 @@ class Reader:
             if (ephys_subdir is None) & (protocol_subdir is None):
                 raise Exception("Could not find ephys or protocol data.")
             # Parse SpikeGLX directory.
-            nidaq_dir, _ = self._parse_SGLX_dir(path + ephys_subdir)
+            nidaq_dir, imec_dir = self._parse_SGLX_dir(path + ephys_subdir)
             nidaq_metadata, nidaq_binary = read_NIDAQ(nidaq_dir)
+            self.imec_spikes = []
+            for dir in imec_dir:
+                imec_metadata, _, kilosort_array = read_Imec(dir)
+                self.imec_spikes.append(ImecSpikes(imec_metadata, None, kilosort_array))
             # Parse bTsS directory.
             btss_dir = path + protocol_subdir
             btss_visprot, btss_riglog = read_bTsS(btss_dir)
             self.btss_vstim = bTsSVStim(btss_riglog, btss_visprot)
             # Read sync channel from NI-DAQ.
-            self.sync_channel = SyncChannel(nidaq_metadata, nidaq_binary)
+            self.nidaq_sync = NIDAQSync(nidaq_metadata, nidaq_binary)
             # Read digital channels for stimuli, checking for blank with the bTsS protocol.
-            for (key, val) in self.digital_channels.items():
-                self.digital_channels[key] = DigitalChannel(nidaq_metadata, 
-                                                            nidaq_binary, 
-                                                            digital_line_number=val["line_num"], 
-                                                            blank=self.btss_vstim.vstim_params["blank_duration"])
-            self.visual_stim = SparseNoise(sync=self.sync_channel, 
-                                              pc_clock=self.digital_channels["pc_clock"], 
-                                              photodiode=self.digital_channels["photodiode"], 
-                                              btss_obj=self.btss_vstim)
+            for (key, val) in self.nidaq_digital.items():
+                self.nidaq_digital[key] = NIDAQDigital(nidaq_metadata, 
+                                                       nidaq_binary, 
+                                                       digital_line_number=val["line_num"], 
+                                                       blank=self.btss_vstim.vstim_params["blank_duration"])
+            self.visual_stim = SparseNoise(sync=self.nidaq_sync, 
+                                           pc_clock=self.nidaq_digital["pc_clock"], 
+                                           photodiode=self.nidaq_digital["photodiode"], 
+                                           btss_obj=self.btss_vstim)
             
             
 
-    # def read_Imec()
+    # 
 
 
     def _parse_SGLX_dir(
@@ -82,21 +87,41 @@ class Reader:
             SGLX_path,
         ):
         """Find NIDAQ and Imec binary and metadata files within SpikeGLX subdirectory and return their paths."""
-        imec_paths = []
+        imec_path = []
         # Move through SpikeGLX directory, expecting NI-DAQ data at the top and subfolders with Imec data.
         for topdir, _, files in os.walk(SGLX_path):
-            visible_files = [f for f in files if f.startswith(".") == False]
-            if topdir == SGLX_path:
-                if (len(visible_files) == 2) & visible_files[1].endswith(".nidq.bin") & visible_files[0].endswith(".nidq.meta"):
-                    nidaq_path = topdir
-                else:
-                    nidaq_path = None
-                    warn("Could not find NI-DAQ data.")
-            # Check for Imec data and Kilosort output
-        return nidaq_path, imec_paths
+            SGLX_files = [f if (f.endswith(".bin") | f.endswith(".meta")) else "" for f in files]
+            # Check whether this directory has NIDAQ binary and metadata files.
+            nidaq_count = sum(1 for f in SGLX_files if (f.endswith(".nidq.bin") | f.endswith(".nidq.meta")))
+            if nidaq_count == 2:
+                nidaq_path = topdir
+            # Check whether this directory has Imec binary and metadata files.
+            imec_count = sum(1 for f in SGLX_files if ((".ap" in f) & (".bin" in f)) | 
+                                                      ((".ap" in f) & (".meta" in f)))
+            if imec_count == 1: #### ignore binary for now
+                imec_path.append(topdir)
+        return nidaq_path, imec_path
 
 
+def read_Imec(
+        imec_path, 
+    ):
+    """Read Imec metadata and binary files, as well as Kilosort output, from path."""
 
+    # Read the metadata using SpikeGLX datafile tools.
+    metadata_path = glob.glob(imec_path + "/*.ap.meta")[0]
+    imec_metadata = readMeta(metadata_path)
+    # # Read the binary file using SpikeGLX datafile tools.
+    # binary_path = glob.glob(imec_path + "/*.ap.bin")[0]
+    # imec_binary = makeMemMapRaw(binary_path, imec_metadata)
+    imec_binary = None
+    # Read Kilosort output files into numpy array.
+    kilosort_names = ["spike_clusters.npy", "spike_times.npy"]
+    kilosort_array = []
+    for name in kilosort_names:
+        kilosort_array.append(np.load(imec_path + "/" + name))
+    kilosort_array = np.array(kilosort_array)
+    return imec_metadata, imec_binary, kilosort_array
 
 def read_NIDAQ(
         nidaq_path, 
