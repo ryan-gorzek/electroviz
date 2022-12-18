@@ -107,7 +107,7 @@ class NIDAQ:
 
 
 
-class DigitalChannel(NIDAQ):
+class NIDAQDigital(NIDAQ):
     """
     """
 
@@ -288,7 +288,7 @@ class DigitalChannel(NIDAQ):
 
 
 
-class SyncChannel(DigitalChannel):
+class NIDAQSync(NIDAQDigital):
 
     def __init__(
             self, 
