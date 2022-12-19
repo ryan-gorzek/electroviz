@@ -101,6 +101,8 @@ class VisualStimulus(Stimulus):
         self.photodiode_df = self.photodiode.digital_df
         # Map the stimulus information from bTsS to the pc_clock signal from the NI-DAQ.
         self.vstim_df = self._map_btss_vstim(self.btss_vstim_df)
+        # Stack photodiode and vstim dataframes.
+        self.stimulus_df = pd.concat((self.photodiode_df, self.vstim_df))
 
     # def plot_btss_vstim_times
 
@@ -175,7 +177,31 @@ class SparseNoise(VisualStimulus):
                     )
 
         # Grab only the stimulus parameters relevant for sparse noise.
-        self.vstim_df.drop(index=["ori", "phase", "tf", "sf"], inplace=True)
+        self.stimulus_df.drop(index=["ori", "phase", "tf", "sf"], inplace=True)
+        # Build iterable.
+        self._iterable = []
+        posx_unique = np.unique(self.stimulus_df.loc["posx"].to_numpy())
+        posy_unique = np.unique(self.stimulus_df.loc["posy"].to_numpy())
+        contrast_unique = np.unique(self.stimulus_df.loc["contrast"].to_numpy())
+        for _, stim in self.stimulus_df.iteritems():
+            sd = stim.to_dict()
+            sets = (int(sd["sample_onset"]), int(sd["sample_offset"]))
+            posx_idx = int(np.where(posx_unique == sd["posx"])[0])
+            posy_idx = int(np.where(posy_unique == sd["posy"])[0])
+            contrast_idx = int(np.where(contrast_unique == sd["contrast"])[0])
+            params = (posx_idx, posy_idx, contrast_idx)
+            self._iterable.append((sets, params))
+        self._current_stim_idx = 0
+
+    def __iter__(self):
+        return iter(self._iterable)
+
+    def __next__(self):
+        """"""
+        if self._current_stim_idx < len(self._iterable):
+            stim = self._iterable[self._current_stim_idx]
+            self._current_stim_idx += 1
+            return stim
 
 # class OptogeneticStimulus
 
