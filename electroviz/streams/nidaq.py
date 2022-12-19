@@ -24,6 +24,7 @@ class NIDAQ:
             nidaq_binary, 
             digital_line_number=None, 
             blank=False, 
+            drop_samples=[], 
         ):
         """
         Constructor takes NI-DAQ binary and metadata data from SpikeGLX.
@@ -48,8 +49,8 @@ class NIDAQ:
 
         sample_length = 1/self.sampling_rate
         sample_times_all = np.arange(0, self.total_time, sample_length, dtype=float)
-        if self.total_samples != sample_times_all.size:
-            warnings.warn("Sample times array does not match the total number of samples.")
+        # if self.total_samples != sample_times_all.size:
+        #     warnings.warn("Sample times array does not match the total number of samples.")
         sample_times = sample_times_all[sample_num]
         return sample_times
 
@@ -64,8 +65,8 @@ class NIDAQ:
 
         sample_length = 1/self.sampling_rate
         sample_times_all = np.arange(0, self.total_time, sample_length, dtype=float)
-        if self.total_samples != sample_times_all.size:
-            warnings.warn("Sample times array does not match the total number of samples.")
+        # if self.total_samples != sample_times_all.size:
+        #     warnings.warn("Sample times array does not match the total number of samples.")
         
         def find_min_dist_1D(number, array):
             dists = np.abs(array - number)
@@ -118,6 +119,7 @@ class NIDAQDigital(NIDAQ):
             nidaq_binary, 
             digital_line_number=None, 
             blank=False, 
+            drop_samples=[], 
         ):
         """
 
@@ -126,15 +128,18 @@ class NIDAQDigital(NIDAQ):
         super().__init__(nidaq_metadata, 
                          nidaq_binary, 
                          digital_line_number=digital_line_number, 
-                         blank=blank)
+                         blank=blank, 
+                         drop_samples=drop_samples)
         # Add parameters specific to digital signals.
         self.line_number = digital_line_number
-        self.blank = False
+        self.blank = blank
         self.digital_signal = extractDigital(self.nidaq_binary, 
                                              0, self.total_samples-1, 
                                              0, 
                                              [digital_line_number], 
                                              self.nidaq_metadata).squeeze()
+        self.digital_signal = np.delete(self.digital_signal, drop_samples)
+        self.total_samples = self.digital_signal.size
         self.digital_df = self._get_digital_times(blank=blank)
 
     def rebuild(
@@ -147,6 +152,8 @@ class NIDAQDigital(NIDAQ):
 
         # # Reference copy of self for records.
         # self._add_legacy()
+        # Store the indices for dropping samples from other objects as well.
+        self.dropped_samples = drop_idx
         # Remove specified elements from the digital signal.
         self.digital_signal = np.delete(self.digital_signal, drop_idx)
         # Update the event times dataframe.
@@ -318,7 +325,8 @@ class NIDAQSync(NIDAQDigital):
             nidaq_metadata, 
             nidaq_binary, 
             digital_line_number=7, 
-            blank=False,  
+            blank=False, 
+            drop_samples=[], 
         ):
         """
 
@@ -327,4 +335,5 @@ class NIDAQSync(NIDAQDigital):
         super().__init__(nidaq_metadata, 
                          nidaq_binary, 
                          digital_line_number=digital_line_number, 
-                         blank=blank)
+                         blank=blank, 
+                         drop_samples=[])
