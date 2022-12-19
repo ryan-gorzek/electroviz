@@ -9,7 +9,8 @@ import glob
 from pathlib import Path
 import numpy as np
 from electroviz.streams.nidaq import NIDAQSync, NIDAQDigital
-from electroviz.streams.imec import ImecSpikes
+from electroviz.streams.imec import ImecSpikes, ImecSync
+from electroviz.core.population import Population
 from electroviz.streams.btss import bTsSVStim
 from electroviz.core.stimulus import SparseNoise
 from btss.utils import read_visual_protocol, parse_riglog
@@ -57,9 +58,15 @@ class Reader:
             nidaq_dir, imec_dir = self._parse_SGLX_dir(path + ephys_subdir)
             nidaq_metadata, nidaq_binary = read_NIDAQ(nidaq_dir)
             self.imec_spikes = []
+            self.imec_sync = []
             for dir in imec_dir:
                 imec_metadata, imec_binary, kilosort_array = read_Imec(dir)
                 self.imec_spikes.append(ImecSpikes(imec_metadata, imec_binary, kilosort_array))
+                self.imec_sync.append(ImecSync(imec_metadata, imec_binary, kilosort_array))
+            # Create Population objects from spikes.
+            self.populations = []
+            for imec, sync in zip(self.imec_spikes, self.imec_sync):
+                self.populations.append(Population(imec, sync))
             # Parse bTsS directory.
             btss_dir = path + protocol_subdir
             btss_visprot, btss_riglog = read_bTsS(btss_dir)
@@ -170,7 +177,6 @@ def makeMemMapRaw(binFile, meta):
     rawData = np.memmap(binFile, dtype='int16', mode='r',
                         shape=(nChan, nFileSamp), offset=0, order='F')
     return(rawData)
-
 
 #     # Return a multiplicative factor for converting 16-bit file data
 #     # to voltage. This does not take gain into account. The full
