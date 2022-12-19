@@ -15,10 +15,11 @@ def align_sync(
     Align two objects based on their sync signals.
     """
 
+    #### Check for Sync instance.
     # Get sample onsets, offsets, and durations from each object's sync signal.
     event_names = ["sample_onset", "sample_offset"]
-    sample_events_1 = object_1.sync.digital_df.loc[event_names].to_numpy().T.astype(int)
-    sample_events_2 = object_2.sync.digital_df.loc[event_names].to_numpy().T.astype(int)
+    sample_events_1 = object_1.digital_df.loc[event_names].to_numpy().T.astype(int)
+    sample_events_2 = object_2.digital_df.loc[event_names].to_numpy().T.astype(int)
     # Preallocate index arrays for dropping samples.
     sample_drop_1 = []
     sample_drop_2 = []
@@ -47,7 +48,7 @@ def align_sync(
             [sample_drop_2.append(idx + 1) for idx in range(off_1, off_2)]
 
     # If one of the signals is longer, drop samples from the end to match.
-    tot_1, tot_2 = object_1.sync.total_samples, object_2.sync.total_samples
+    tot_1, tot_2 = object_1.total_samples, object_2.total_samples
     rem_1, rem_2 = tot_1 - len(sample_drop_1), tot_2 - len(sample_drop_2)
     if rem_1 > rem_2:
         num_drop = rem_1 - rem_2
@@ -57,6 +58,7 @@ def align_sync(
         [sample_drop_2.append(idx) for idx in range(int(tot_2 - num_drop), tot_2)]
 
     # Rebuild the sync signals, dropping the indices identified here.
-    object_1.sync.rebuild(sample_drop_1)
-    object_2.sync.rebuild(sample_drop_2)
-    return object_1, object_2
+    object_1.rebuild(sample_drop_1)
+    object_2.rebuild(sample_drop_2)
+
+    return sample_drop_1, sample_drop_2
