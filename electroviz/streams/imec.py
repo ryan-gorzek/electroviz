@@ -18,6 +18,7 @@ class Imec:
             imec_metadata, 
             imec_binary, 
             kilosort_array, 
+            drop_samples=[], 
         ):
 
         # Get some basic data and parameters for easy access.
@@ -70,18 +71,23 @@ class ImecSpikes(Imec):
             imec_metadata, 
             imec_binary, 
             kilosort_array, 
+            drop_samples=[], 
         ):
 
         super().__init__(imec_metadata, 
                          imec_binary, 
-                         kilosort_array)
+                         kilosort_array, 
+                         drop_samples=drop_samples)
 
         # Get Kilosort data from columns of kilosort_array.
         (spike_clusters, spike_times) = np.hsplit(kilosort_array.flatten(), 2)
         # Get the total number of units identified by Kilosort (index starts at 0).
         self.total_units = int(np.max(spike_clusters) + 1)
-        # Build (sparse) spike times matrix.
+        # Build (sparse) spike times matrix in compressed sparse row format.
         self.spike_times = self._build_spike_times_matrix(spike_clusters, spike_times)
+        # Remove any samples (columns) dropped by sync and return in coordinate format.
+        self.spike_times = self._drop_spike_times(drop_samples)
+        self.total_samples = self.total_samples - len(drop_samples)
 
     def _build_spike_times_matrix(
             self, 
@@ -95,8 +101,20 @@ class ImecSpikes(Imec):
         row_idx = spike_clusters
         col_idx = spike_times
         data = np.ones((spike_times.size,))
-        spike_times_matrix = sparse.coo_matrix((data, (row_idx, col_idx)), shape=full_shape)
+        self.times_idx = (row_idx, col_idx)
+        spike_times_matrix = sparse.csr_matrix((data, (row_idx, col_idx)), shape=full_shape)
         return spike_times_matrix
+
+    def _drop_spike_times(
+            self, 
+            drop_samples,
+        ):
+        """"""
+
+        # Create column (sample) logical index from sample indices.
+        col_mask = np.ones(self.total_samples, dtype=bool)
+        col_mask[drop_samples] = False
+        return self.spike_times[:, col_mask].tocoo()
 
 
 class ImecSync(Imec):
@@ -109,6 +127,7 @@ class ImecSync(Imec):
             imec_metadata, 
             imec_binary, 
             kilosort_array, 
+            drop_samples=[], 
         ):
         """
 
@@ -116,7 +135,8 @@ class ImecSync(Imec):
 
         super().__init__(imec_metadata, 
                          imec_binary, 
-                         kilosort_array)
+                         kilosort_array, 
+                         drop_samples=[])
         # Add parameters specific to digital signals.
         self.line_number = 6
         self.blank = False
@@ -137,6 +157,8 @@ class ImecSync(Imec):
 
         # # Reference copy of self for records.
         # self._add_legacy()
+        # Store the indices for dropping samples from other objects as well.
+        self.dropped_samples = drop_idx
         # Remove specified elements from the digital signal.
         self.digital_signal = np.delete(self.digital_signal, drop_idx)
         # Update the event times dataframe.
