@@ -119,12 +119,30 @@ class ImecSync(Imec):
                          kilosort_array)
         # Add parameters specific to digital signals.
         self.line_number = 6
+        self.blank = False
         self.digital_signal = extractDigital(self.imec_binary, 
                                              0, self.total_samples-1, 
                                              0, 
                                              [self.line_number], 
                                              self.imec_metadata).squeeze()
         self.digital_df = self._get_digital_times(blank=False)
+
+    def rebuild(
+            self, 
+            drop_idx, 
+        ):
+        """
+        
+        """
+
+        # # Reference copy of self for records.
+        # self._add_legacy()
+        # Remove specified elements from the digital signal.
+        self.digital_signal = np.delete(self.digital_signal, drop_idx)
+        # Update the event times dataframe.
+        self.digital_df = self._get_digital_times(blank=self.blank)
+        # Update signal parameters.
+        self.total_samples = self.digital_signal.size
 
     def _get_digital_times(
         self, 
