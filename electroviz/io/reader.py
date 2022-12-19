@@ -13,6 +13,7 @@ from electroviz.streams.imec import ImecSpikes, ImecSync
 from electroviz.core.population import Population
 from electroviz.streams.btss import bTsSVStim
 from electroviz.core.stimulus import SparseNoise
+from electroviz.utils.align_sync import align_sync
 from btss.utils import read_visual_protocol, parse_riglog
 
 class Reader:
@@ -57,28 +58,31 @@ class Reader:
             # Parse SpikeGLX directory.
             nidaq_dir, imec_dir = self._parse_SGLX_dir(path + ephys_subdir)
             nidaq_metadata, nidaq_binary = read_NIDAQ(nidaq_dir)
-            self.imec_spikes = []
-            self.imec_sync = []
-            for dir in imec_dir:
-                imec_metadata, imec_binary, kilosort_array = read_Imec(dir)
-                self.imec_spikes.append(ImecSpikes(imec_metadata, imec_binary, kilosort_array))
-                self.imec_sync.append(ImecSync(imec_metadata, imec_binary, kilosort_array))
-            # Create Population objects from spikes.
-            self.populations = []
-            for imec, sync in zip(self.imec_spikes, self.imec_sync):
-                self.populations.append(Population(imec, sync))
+            imec_metadata, imec_binary, kilosort_array = read_Imec(imec_dir)
+            # Get the sync channels for NIDAQ and Imec first.
+            self.nidaq_sync = NIDAQSync(nidaq_metadata, nidaq_binary)
+            self.imec_sync = ImecSync(imec_metadata, imec_binary, kilosort_array)
+            # Align the NIDAQ and Imec syncs.
+            nidaq_drop, imec_drop = align_sync(self.nidaq_sync, self.imec_sync)
             # Parse bTsS directory.
             btss_dir = path + protocol_subdir
             btss_visprot, btss_riglog = read_bTsS(btss_dir)
             self.btss_vstim = bTsSVStim(btss_riglog, btss_visprot)
-            # Read sync channel from NI-DAQ.
-            self.nidaq_sync = NIDAQSync(nidaq_metadata, nidaq_binary)
             # Read digital channels for stimuli, checking for blank with the bTsS protocol.
             for (key, val) in self.nidaq_digital.items():
                 self.nidaq_digital[key] = NIDAQDigital(nidaq_metadata, 
                                                        nidaq_binary, 
                                                        digital_line_number=val["line_num"], 
-                                                       blank=self.btss_vstim.vstim_params["blank_duration"])
+                                                       blank=self.btss_vstim.vstim_params["blank_duration"], 
+                                                       drop_samples=nidaq_drop)
+            # Read probe channels and/or Kilosort data.
+            self.imec_spikes = ImecSpikes(imec_metadata, 
+                                          imec_binary, 
+                                          kilosort_array, 
+                                          drop_samples=imec_drop)
+            # Create Population object from spike data.
+            self.population = Population(self.imec_spikes, self.imec_sync)
+            # Create VisualStimulus subclass.
             self.visual_stim = SparseNoise(sync=self.nidaq_sync, 
                                            pc_clock=self.nidaq_digital["pc_clock"], 
                                            photodiode=self.nidaq_digital["photodiode"], 
@@ -105,6 +109,8 @@ class Reader:
                                                       ((".ap" in f) & (".meta" in f)))
             if imec_count == 2:
                 imec_path.append(topdir)
+        # Just return a string for the Imec data if there's only one folder.
+        if len(imec_path) == 1: imec_path = imec_path[0]
         return nidaq_path, imec_path
 
 
