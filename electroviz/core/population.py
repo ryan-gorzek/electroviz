@@ -3,14 +3,14 @@
 # https://github.com/gorzek-ryan/electroviz/blob/main/LICENSE
 # https://opensource.org/licenses/MIT
 
+import numpy as np
+from scipy import sparse
 from electroviz.core.unit import Unit
 
 class Population:
-    '''
-    docstring
-    '''
-    
-    #### Special Methods ####
+    """
+
+    """
 
     def __init__(
             self, 
@@ -20,18 +20,21 @@ class Population:
         """"""
 
         self.sync = imec_sync
+        self.imec_spikes = imec_spikes
+        self.total_samples = imec_spikes.total_samples
         self.total_units = imec_spikes.total_units
         self.spike_times = imec_spikes.spike_times
+        max_spikes = np.max(self.spike_times.sum(axis=1))
+        print(max_spikes, np.where(self.spike_times.sum(axis=1)==max_spikes))
         # Create Unit objects.
         self._Units = []
         for uid in range(self.total_units):
-            unit = Unit(imec_spikes, imec_sync, uid)
+            unit = Unit(uid, imec_spikes, imec_sync)
             self._Units.append(unit)
         
         # Define current index for iteration.
         self._current_unit_idx = 0
-        
-
+    
     def __getitem__(
             self, 
             unit_idx, 
@@ -42,7 +45,7 @@ class Population:
         return unit
 
     def __iter__(self):
-        return self
+        return iter(self._Units)
 
     def __next__(self):
         """"""
@@ -50,21 +53,4 @@ class Population:
             unit = self._Units[self._current_unit_idx]
             self._current_unit_idx += 1
             return unit
-
-    
-    #### Plotting Methods ####
-
-    
-    
-    #### Quantification Methods ####
-    
-    
-    
-    #### Data Management Methods ####
-    
-    
-    
-    #### Private Methods ####
-    
-    
         
