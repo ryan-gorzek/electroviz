@@ -35,6 +35,14 @@ class DigitalChannel:
         self._get_events()
 
     
+    def __getitem__(
+            self, 
+            index, 
+        ):
+        """"""
+        return self._Events[index]
+
+    
     def __iter__(
             self, 
         ):
@@ -133,8 +141,8 @@ class DigitalChannel:
         """"""
 
         self._Events = []
-        for idx, data in self.events.iterrows():
-            self._Events.append(Event(idx, data))
+        for row in self.events.itertuples():
+            self._Events.append(Event(*row))
         return None
 
 
