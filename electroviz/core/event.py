@@ -3,21 +3,18 @@
 # https://github.com/gorzek-ryan/electroviz/blob/main/LICENSE
 # https://opensource.org/licenses/MIT
 
-from collections import namedtuple
+from typing import NamedTuple
 
-class Event:
+class Event(NamedTuple):
     """
 
     """
-
     
-    def __new__(
-            self, 
-            event_idx, 
-            event_data, 
-        ):
-        """"""
-
-        event = namedtuple("Event", ["index"] + list(event_data.index))
-        
-        return event()
+    index: int = None
+    sample_onset: int = None
+    sample_offset: int = None
+    sample_duration: int = None
+    time_onset: float  = None
+    time_offset: float = None
+    time_duration: float = None
+    digital_value: int = None
