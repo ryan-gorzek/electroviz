@@ -27,9 +27,9 @@ class DigitalChannel:
         """
 
         # Get some basic data and parameters for easy access.
-        self.signal = signal
+        self.signal = signal.squeeze()
         self.sampling_rate = sampling_rate
-        self.total_samples = len(signal)
+        self.total_samples = len(self.signal)
         self.total_time = self.total_samples / self.sampling_rate
         self._build_events_df()
         self._get_events()
