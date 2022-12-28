@@ -3,32 +3,33 @@
 # https://github.com/gorzek-ryan/electroviz/blob/main/LICENSE
 # https://opensource.org/licenses/MIT
 
-from electroviz.population import Population
-from electroviz.optogeneticstimulus import OptogeneticStimulus
+from electroviz.io.reader import *
+from electroviz.streams.nidaq import NIDAQ
+from electroviz.streams.imec import Imec
 
 class Experiment:
-    '''
-    docstring
-    '''
+    """
+
+    """
     
     def __init__(
             self, 
-            Dataset, 
-            data_in, 
-            data_type, 
+            experiment_path, 
+            SGLX_name="ephys", 
+            bTsS_names=["ipsi_random_squares"], 
         ):
         """"""
-        print('Experiment')
-        if data_type == "Allen_NWB":
-            # Create Population instance
-            electrodes_df = data_in.electrodes.to_dataframe()
-            # get units dataframe
-            units_df = data_in.units.to_dataframe()
-            # create population
-            self.Population = Population(self, units_df, electrodes_df)
-            
-            # Create Stimulus instance(s)
-            if 'optotagging' in list(data_in.processing.keys()):
-                optotagging = data_in.processing['optotagging'].data_interfaces['optogenetic_stimulation']
-                self.Stimulus = OptogeneticStimulus(optotagging)
+
+        # Parse the specified path to experiment directory.
+        SGLX_dir, bTsS_dir = parse_experiment_dir(experiment_path, SGLX_name, bTsS_names)
+        # Parse SpikeGLX directory.
+        nidaq_dir, imec_dir = parse_SGLX_dir(experiment_path + SGLX_dir)
+        self.nidaq = NIDAQ(nidaq_dir)
+        self.imec = Imec(imec_dir)
+        # self.kilosort = Kilosort(imec_dir)
+        # # Align the NIDAQ and Imec syncs.
+        # # nidaq_drop, imec_drop = align_sync(self.nidaq, self.imec)
+        # # Parse bTsS directory.
+        # btss_dir = path + bTsS_dir
+        # self.btss = bTsS(btss_dir)
         
