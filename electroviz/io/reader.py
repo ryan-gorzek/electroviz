@@ -57,6 +57,21 @@ def parse_SGLX_dir(
     return nidaq_path, imec_path
 
 
+def read_Kilosort(
+        kilosort_path, 
+    ):
+    """"""
+
+    # Read Kilosort output files into numpy array.
+    kilosort_names = ["spike_clusters.npy", "spike_times.npy"]
+    kilosort_array = []
+    for name in kilosort_names:
+        kilosort_array.append(np.load(kilosort_path + "/" + name))
+    kilosort_array = np.array(kilosort_array).squeeze().T
+    (spike_clusters, spike_times) = np.hsplit(kilosort_array.flatten(), 2)
+    return spike_clusters, spike_times
+
+
 def read_Imec(
         imec_path, 
     ):
@@ -68,13 +83,7 @@ def read_Imec(
     # Read the binary file using SpikeGLX datafile tools.
     binary_path = glob.glob(imec_path + "/*.ap.bin")[0]
     imec_binary = makeMemMapRaw(binary_path, imec_metadata)
-    # Read Kilosort output files into numpy array.
-    kilosort_names = ["spike_clusters.npy", "spike_times.npy"]
-    kilosort_array = []
-    for name in kilosort_names:
-        kilosort_array.append(np.load(imec_path + "/" + name))
-    kilosort_array = np.array(kilosort_array).squeeze().T
-    return imec_metadata, imec_binary # , kilosort_array
+    return imec_metadata, imec_binary
 
 
 def read_NIDAQ(
