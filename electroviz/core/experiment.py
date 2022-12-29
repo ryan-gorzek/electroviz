@@ -6,6 +6,7 @@
 from electroviz.io.reader import *
 from electroviz.streams.nidaq import NIDAQ
 from electroviz.streams.imec import Imec
+from electroviz.streams.kilosort import Kilosort
 
 class Experiment:
     """
@@ -22,11 +23,12 @@ class Experiment:
 
         # Parse the specified path to experiment directory.
         SGLX_dir, bTsS_dir = parse_experiment_dir(experiment_path, SGLX_name, bTsS_names)
-        # Parse SpikeGLX directory.
+        # 
         nidaq_dir, imec_dir = parse_SGLX_dir(experiment_path + SGLX_dir)
         self.nidaq = NIDAQ(nidaq_dir)
         self.imec = Imec(imec_dir)
-        # self.kilosort = Kilosort(imec_dir)
+        total_imec_samples = self.imec[0].total_samples
+        self.kilosort = Kilosort(imec_dir, total_imec_samples)
         # # Align the NIDAQ and Imec syncs.
         # # nidaq_drop, imec_drop = align_sync(self.nidaq, self.imec)
         # # Parse bTsS directory.
