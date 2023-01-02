@@ -24,7 +24,8 @@ class NIDAQ:
             self, 
             nidaq_path, 
         ):
-
+        """"""
+        
         # Read the NIDAQ metadata and binary files.
         metadata, binary = read_NIDAQ(nidaq_path)
         num_samples = binary.shape[1]
