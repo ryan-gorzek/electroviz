@@ -8,6 +8,7 @@ from warnings import warn
 import glob
 from pathlib import Path
 import numpy as np
+from btss.utils import read_visual_protocol, parse_riglog
 
 
 def parse_experiment_dir(
