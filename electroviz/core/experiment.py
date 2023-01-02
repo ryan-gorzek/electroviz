@@ -7,11 +7,14 @@ from electroviz.io.reader import *
 from electroviz.streams.nidaq import NIDAQ
 from electroviz.streams.imec import Imec
 from electroviz.streams.kilosort import Kilosort
+from electroviz.streams.btss import bTsS
 
 class Experiment:
     """
 
     """
+
+    #### Change lists into dicts
     
     def __init__(
             self, 
@@ -31,7 +34,13 @@ class Experiment:
         self.kilosort = Kilosort(imec_dir, total_imec_samples)
         # # Align the NIDAQ and Imec syncs.
         # # nidaq_drop, imec_drop = align_sync(self.nidaq, self.imec)
-        # # Parse bTsS directory.
-        # btss_dir = path + bTsS_dir
-        # self.btss = bTsS(btss_dir)
+        # Parse bTsS directory.
+        btss_dir = experiment_path + bTsS_dir
+        self.btss = bTsS(btss_dir)
+
+
+    # def __repr__(
+    #         self, 
+    #     ):
+    #     """"""
         
