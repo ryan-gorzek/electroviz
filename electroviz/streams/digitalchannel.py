@@ -78,8 +78,9 @@ class DigitalChannel:
         # Update signal parameters.
         self.total_samples = len(self.signal)
         self.total_time = self.total_samples / self.sampling_rate
-        # Update the event times dataframe.
-        self.events = self._get_digital_events()
+        # Update the event times dataframe and list of Event objects.
+        self._build_events_df()
+        self._get_events()
 
 
     def _build_events_df(
