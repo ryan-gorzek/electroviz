@@ -8,18 +8,19 @@ import pandas as pd
 from scipy import sparse
 
 def align_sync(
-        object_1, 
-        object_2, 
+        nidaq, 
+        imec,
+        kilosort,  
     ):
     """
-    Align two objects based on their sync signals.
+    
     """
 
-    #### Check for Sync instance.
+    object_1, object_2 = nidaq[0], imec[0]
     # Get sample onsets, offsets, and durations from each object's sync signal.
     event_names = ["sample_onset", "sample_offset"]
-    sample_events_1 = object_1.digital_df.loc[event_names].to_numpy().T.astype(int)
-    sample_events_2 = object_2.digital_df.loc[event_names].to_numpy().T.astype(int)
+    sample_events_1 = object_1.events[event_names].to_numpy().astype(int)
+    sample_events_2 = object_2.events[event_names].to_numpy().astype(int)
     # Preallocate index arrays for dropping samples.
     sample_drop_1 = []
     sample_drop_2 = []
@@ -57,8 +58,14 @@ def align_sync(
         num_drop = rem_2 - rem_1
         [sample_drop_2.append(idx) for idx in range(int(tot_2 - num_drop), tot_2)]
 
-    # Rebuild the sync signals, dropping the indices identified here.
-    object_1.rebuild(sample_drop_1)
-    object_2.rebuild(sample_drop_2)
+    # Rebuild the NIDAQ signals, dropping the indices identified here.
+    for obj in nidaq:
+        obj.drop_and_rebuild(sample_drop_1)
+    # Imec.
+    for obj in imec:
+        obj.drop_and_rebuild(sample_drop_2)
+    # Kilosort.
+    for obj in kilosort:
+        obj.drop_and_rebuild(sample_drop_2)
 
-    return sample_drop_1, sample_drop_2
+    return nidaq, imec, kilosort
