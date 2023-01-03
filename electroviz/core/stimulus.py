@@ -120,6 +120,7 @@ class SparseNoise(VisualStimulus):
         # Grab only the stimulus parameters relevant for sparse noise.
         self.events = self.stimulus_df.drop(columns=["ori", "phase", "tf", "sf"])
         self._get_events()
+        self._get_unique()
 
 
     def __getitem__(
@@ -149,6 +150,18 @@ class SparseNoise(VisualStimulus):
             event = self.Events[self._Events_num]
             self._Events_num += 1
         return event
+    
+    def get_params_index(
+            self, 
+            params, 
+        ):
+        """"""
+
+        posx, posy, contrast = params
+        posx_idx = sorted(np.unique(self.events["posx"])).index(posx)
+        posy_idx = sorted(np.unique(self.events["posy"])).index(posy)
+        contrast_idx = sorted(np.unique(self.events["contrast"])).index(contrast)
+        return posx_idx, posy_idx, contrast_idx
 
 
     def _get_events(
@@ -160,6 +173,19 @@ class SparseNoise(VisualStimulus):
         for row in self.events.itertuples():
             self._Events.append(Event(*row))
         return None
+
+    def _get_unique(
+            self, 
+        ):
+        """"""
+        
+        self.unique = []
+        for posx in sorted(np.unique(self.events["posx"])):
+            for posy in sorted(np.unique(self.events["posy"])):
+                for contrast in sorted(np.unique(self.events["contrast"])):
+                    self.unique.append((posx, posy, contrast))
+        return None
+
 
 # class OptogeneticStimulus
 
