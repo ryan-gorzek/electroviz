@@ -18,3 +18,10 @@ class Event(NamedTuple):
     time_offset: float = None
     time_duration: float = None
     digital_value: int = None
+    istim: int = None
+    itrial: int = None
+    contrast: int = None
+    posx: int = None
+    posy: int = None
+    W: int = None
+    H: int = None
