@@ -19,4 +19,4 @@ class VStim:
         """"""
 
         self.visprot = btss_visprot
-        self.vstim = btss_vstim.drop(["code"], axis=1, inplace=True)
+        self.events = btss_vstim.drop(["code"], axis=1)
