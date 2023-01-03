@@ -42,13 +42,13 @@ class Spikes:
         spike_times_matrix = sparse.csr_matrix((data, (row_idx, col_idx)), shape=full_shape)
         return spike_times_matrix
 
-    # def _drop_spike_times(
-    #         self, 
-    #         drop_samples,
-    #     ):
-    #     """"""
+    def drop_and_rebuild(
+            self, 
+            drop_samples,
+        ):
+        """"""
 
-    #     # Create column (sample) logical index from sample indices.
-    #     col_mask = np.ones(self.total_samples, dtype=bool)
-    #     col_mask[drop_samples] = False
-    #     return self.spike_times[:, col_mask].tocoo()
+        # Create column (sample) logical index from sample indices.
+        col_mask = np.ones(self.total_samples, dtype=bool)
+        col_mask[drop_samples] = False
+        return self.times[:, col_mask].tocoo()
