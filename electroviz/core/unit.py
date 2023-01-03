@@ -13,14 +13,14 @@ class Unit:
     def __init__(
             self, 
             unit_id, 
-            imec_spikes, 
-            imec_sync
+            imec_sync, 
+            kilosort_spikes, 
         ):
         """"""
         
         self.unit_id = unit_id
-        self.imec_spikes = imec_spikes
-        self.imec_sync = imec_sync
+        self.sync = imec_sync
+        self.spikes = kilosort_spikes
         self.spike_times = np.empty((0, 0))
 
     def get_spike_times(
@@ -30,8 +30,8 @@ class Unit:
         """"""
         
         if self.spike_times.shape[0] == 0:
-            spike_times_matrix = self.imec_spikes.spike_times.tocsr()
+            spike_times_matrix = self.spikes.times.tocsr()
             self.spike_times = spike_times_matrix[self.unit_id].tocsc()
-        return self.spike_times[0, sample_window[0]:sample_window[1]+1].toarray().squeeze()
+        return self.spike_times[0, sample_window[0]:sample_window[1]].toarray().squeeze()
 
         
