@@ -15,20 +15,23 @@ def plot_sparse_noise_response(
     """"""
 
     sample_window = np.array(time_window)*30000
-    num_samples = int(sample_window[1] - sample_window[0] + 1)
-    responses = np.zeros((num_samples, 14, 10, 2))
-    for (onset, offset), (x_idx, y_idx, contrast_idx) in stimulus:
-        window = (sample_window + onset).astype(int)
+    num_samples = int(sample_window[1] - sample_window[0])
+    responses = np.zeros((int(num_samples/30), 14, 10, 2, 5))
+    for event in stimulus:
+        window = (sample_window + event.sample_onset).astype(int)
         resp = unit.get_spike_times(window)
-        responses[:, x_idx, y_idx, contrast_idx] += resp
+        x_idx, y_idx, c_idx = stimulus.get_params_index((event.posx, event.posy, event.contrast))
+        responses[:, x_idx, y_idx, c_idx, int(event.itrial)] = np.sum(resp.reshape(120, -1), axis=1)
     
     mpl_use("Qt5Agg")
     fig, axs = plt.subplots(10, 14)
-    for _, (x_idx, y_idx, contrast_idx) in stimulus:
-        if contrast_idx == 0:
-            axs[y_idx, x_idx].plot(responses[:, x_idx, y_idx, contrast_idx], color="b")
+    for posx, posy, contrast in stimulus.unique:
+        x_idx, y_idx, c_idx = stimulus.get_params_index((posx, posy, contrast))
+        mean_response = np.nanmean(responses[:, x_idx, y_idx, c_idx, :].squeeze(), axis=1)
+        if c_idx == 0:
+            axs[y_idx, x_idx].plot(mean_response, color="b")
         else:
-            axs[y_idx, x_idx].plot(responses[:, x_idx, y_idx, contrast_idx], color="r")
+            axs[y_idx, x_idx].plot(mean_response, color="r")
         axs[y_idx, x_idx].axis("off")
     plt.show()
 
