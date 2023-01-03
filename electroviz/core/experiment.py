@@ -7,8 +7,10 @@ from electroviz.io.reader import *
 from electroviz.streams.nidaq import NIDAQ
 from electroviz.streams.imec import Imec
 from electroviz.streams.kilosort import Kilosort
+from electroviz.utils.align_sync import align_sync
 from electroviz.streams.btss import bTsS
 from electroviz.core.stimulus import SparseNoise
+from electroviz.core.population import Population
 
 class Experiment:
     """
@@ -29,12 +31,12 @@ class Experiment:
         SGLX_dir, bTsS_dir = parse_experiment_dir(experiment_path, SGLX_name, bTsS_names)
         # 
         nidaq_dir, imec_dir = parse_SGLX_dir(experiment_path + SGLX_dir)
-        self.nidaq = NIDAQ(nidaq_dir)
-        self.imec = Imec(imec_dir)
-        total_imec_samples = self.imec[0].total_samples
-        self.kilosort = Kilosort(imec_dir, total_imec_samples)
-        # # Align the NIDAQ and Imec syncs.
-        # # nidaq_drop, imec_drop = align_sync(self.nidaq, self.imec)
+        nidaq = NIDAQ(nidaq_dir)
+        imec = Imec(imec_dir)
+        total_imec_samples = imec[0].total_samples
+        kilosort = Kilosort(imec_dir, total_imec_samples)
+        # Align the NIDAQ and Imec syncs.
+        self.nidaq, self.imec, self.kilosort = align_sync(nidaq, imec, kilosort)
         # Parse bTsS directory.
         btss_dir = experiment_path + bTsS_dir
         self.btss = bTsS(btss_dir)
@@ -42,7 +44,7 @@ class Experiment:
         self.stimuli = []
         self.stimuli.append(SparseNoise(self.nidaq, self.btss))
         # Create Population object.
-        
+        self.population = Population(self.imec, self.kilosort)
 
 
     # def __repr__(
