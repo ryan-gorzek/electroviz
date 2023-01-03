@@ -14,22 +14,21 @@ class Population:
 
     def __init__(
             self, 
-            imec_spikes, 
-            imec_sync, 
+            imec, 
+            kilosort, 
         ):
         """"""
 
-        self.sync = imec_sync
-        self.imec_spikes = imec_spikes
-        self.total_samples = imec_spikes.total_samples
-        self.total_units = imec_spikes.total_units
-        self.spike_times = imec_spikes.spike_times
+        self.sync = imec[0]
+        self.spikes = kilosort[0]
+        self.total_samples = self.spikes.total_samples
+        self.total_units = self.spikes.total_units
+        self.spike_times = self.spikes.times
         max_spikes = np.max(self.spike_times.sum(axis=1))
-        print(max_spikes, np.where(self.spike_times.sum(axis=1)==max_spikes))
         # Create Unit objects.
         self._Units = []
         for uid in range(self.total_units):
-            unit = Unit(uid, imec_spikes, imec_sync)
+            unit = Unit(uid, self.sync, self.spikes)
             self._Units.append(unit)
         
         # Define current index for iteration.
