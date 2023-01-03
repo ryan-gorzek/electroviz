@@ -8,6 +8,7 @@ from electroviz.streams.nidaq import NIDAQ
 from electroviz.streams.imec import Imec
 from electroviz.streams.kilosort import Kilosort
 from electroviz.streams.btss import bTsS
+from electroviz.core.stimulus import SparseNoise
 
 class Experiment:
     """
@@ -37,6 +38,11 @@ class Experiment:
         # Parse bTsS directory.
         btss_dir = experiment_path + bTsS_dir
         self.btss = bTsS(btss_dir)
+        # Create Stimulus objects.
+        self.stimuli = []
+        self.stimuli.append(SparseNoise(self.nidaq, self.btss))
+        # Create Population object.
+        
 
 
     # def __repr__(
