@@ -32,6 +32,7 @@ class Experiment:
         # 
         nidaq_dir, imec_dir = parse_SGLX_dir(experiment_path + SGLX_dir)
         nidaq = NIDAQ(nidaq_dir)
+        print("Here")
         imec = Imec(imec_dir)
         total_imec_samples = imec[0].total_samples
         kilosort = Kilosort(imec_dir, total_imec_samples)

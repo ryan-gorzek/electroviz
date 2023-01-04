@@ -32,6 +32,7 @@ def plot_sparse_noise_response(
             axs[y_idx, x_idx].plot(mean_response, color="b")
         else:
             axs[y_idx, x_idx].plot(mean_response, color="r")
-        axs[y_idx, x_idx].axis("off")
+        # axs[y_idx, x_idx].axis("off")
+        axs[y_idx, x_idx].axvline(20, color="k")
     plt.show()
 

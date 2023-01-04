@@ -99,10 +99,11 @@ class DigitalChannel:
         #     except the last.
         (sample_onsets_all,) = np.nonzero(signal_diff != 0)
         # The last "onset" (non-zero value) is really the first sample after the final stimulus, so we drop it.
-        sample_onsets = sample_onsets_all[:-1]
+        sample_onsets = sample_onsets_all
         # Without a blank, the offsets always immediately precede the onsets by one sample, 
         #     except the first onset, which is the first stimulus.
-        sample_offsets = sample_onsets_all[1:] - 1
+        sample_offsets = np.append(sample_onsets_all[1:] - 1, [self.signal.size - 1], axis=0)
+        print(sample_onsets.size, sample_offsets.size)
         # Get the number of samples in each pulse.
         sample_duration = (sample_offsets - sample_onsets) + 1
         # Get the onset and offset times (in seconds) relative to the start of the recording.
