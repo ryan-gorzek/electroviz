@@ -4,6 +4,8 @@
 # https://opensource.org/licenses/MIT
 
 import numpy as np
+from matplotlib import use as mpl_use
+import matplotlib.pyplot as plt
 
 class Unit:
     """
@@ -22,6 +24,30 @@ class Unit:
         self.sync = imec_sync
         self.spikes = kilosort_spikes
         self.spike_times = np.empty((0, 0))
+
+    def plot_averaged_response(
+            self, 
+            stimulus, 
+            time_window=[-0.050, 0.200], 
+        ):
+
+        sample_window = np.array(time_window)*30000
+        num_samples = int(sample_window[1] - sample_window[0])
+        responses = np.zeros((int(num_samples/30), len(stimulus)))
+        for event in stimulus:
+            window = (sample_window + event.sample_onset).astype(int)
+            resp = self.get_spike_times(sample_window=window)
+            responses[:, event.index] = np.sum(resp.reshape(250, -1), axis=1).squeeze()
+
+        mpl_use("Qt5Agg")
+        fig, axs = plt.subplots()
+        mean_response = np.nanmean(responses.squeeze(), axis=1)
+        axs.axvline(50, color="k", linestyle="dashed")
+        axs.plot(mean_response, color="b")
+        axs.set_xlabel("Time from onset (ms)")
+        axs.set_xticks([0, 50, 100, 150, 200, 250])
+        axs.set_xticklabels([-50, 0, 50, 100, 150, 200])
+        plt.show()
 
     def get_spike_times(
             self, 
