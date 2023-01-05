@@ -23,7 +23,7 @@ class Population:
         self.spikes = kilosort[0]
         self.total_samples = self.spikes.total_samples
         self.total_units = self.spikes.total_units
-        self.spike_times = self.spikes.times
+        self.spike_times = sparse.csc_matrix(self.spikes.times)
         max_spikes = np.max(self.spike_times.sum(axis=1))
         # Create Unit objects.
         self._Units = []
@@ -52,4 +52,7 @@ class Population:
             unit = self._Units[self._current_unit_idx]
             self._current_unit_idx += 1
             return unit
+
+    def __len__(self):
+        return len(self._Units)
         
