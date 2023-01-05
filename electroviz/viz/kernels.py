@@ -6,6 +6,7 @@
 import numpy as np
 from matplotlib import use as mpl_use
 import matplotlib.pyplot as plt
+from scipy.stats import zscore
 
 def plot_population_response(
         population, 
@@ -32,6 +33,28 @@ def plot_population_response(
     axs.set_xticklabels([-50, 0, 50, 100, 150, 200])
     plt.show()
 
+def plot_population_raster(
+        population, 
+        stimulus, 
+        time_window=[-0.050, 0.200], 
+    ):
+    """"""
+
+    sample_window = np.array(time_window)*30000
+    num_samples = int(sample_window[1] - sample_window[0])
+    responses = np.zeros((int(num_samples/30), len(population), len(stimulus)))
+    for event in stimulus:
+        window = (sample_window + event.sample_onset).astype(int)
+        resp = population.spike_times[:, window[0]:window[1]]
+        for unit_idx, unit_resp in enumerate(resp):
+            responses[:, unit_idx, event.index] = np.sum(unit_resp.reshape(250, -1), axis=1).squeeze()
+
+    mpl_use("Qt5Agg")
+    fig, axs = plt.subplots()
+    mean_response = np.nanmean(responses, axis=2)
+    z_response = zscore(mean_response.T, axis=1)
+    axs.imshow(z_response, cmap="hot")
+    plt.show()
 
 def plot_sparse_noise_response(
         unit, 
@@ -54,12 +77,12 @@ def plot_sparse_noise_response(
     kernels = np.zeros((14, 10, 2))
     for posx, posy, contrast in stimulus.unique:
         x_idx, y_idx, c_idx = stimulus.get_params_index((posx, posy, contrast))
-        response_sum = np.nansum(responses[20:100, x_idx, y_idx, c_idx, :].squeeze(), axis=(0, 1))
-        kernels[x_idx, y_idx, c_idx] += response_sum
+        response_sum = np.nansum(responses[100:150, x_idx, y_idx, c_idx, :].squeeze(), axis=(0, 1))
+        baseline_sum = np.nansum(responses[0:50, x_idx, y_idx, c_idx, :].squeeze(), axis=(0, 1))
+        kernels[x_idx, y_idx, c_idx] += (response_sum - baseline_sum)
     axs[0].imshow(kernels[:, :, 0].T, cmap="hot")
     axs[0].axis("off")
     axs[1].imshow(kernels[:, :, 1].T, cmap="hot")
     axs[1].axis("off")
     plt.show()
-    return fig
 
