@@ -150,6 +150,9 @@ class SparseNoise(VisualStimulus):
             event = self.Events[self._Events_num]
             self._Events_num += 1
         return event
+
+    def __len__(self):
+        return len(self._Events)
     
     def get_params_index(
             self, 
