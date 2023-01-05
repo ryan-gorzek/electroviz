@@ -13,7 +13,7 @@ class Imec:
     """
 
     digital_lines = dict({
-                        "sync" : 7, 
+                        "sync" : 6, 
                         })
 
     
