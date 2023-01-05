@@ -69,8 +69,8 @@ def read_Kilosort(
     for name in kilosort_names:
         kilosort_array.append(np.load(kilosort_path + "/" + name))
     kilosort_array = np.array(kilosort_array).squeeze().T
-    (spike_clusters, spike_times) = np.hsplit(kilosort_array.flatten(), 2)
-    return spike_clusters, spike_times
+    (spike_clusters, spike_times) = np.hsplit(kilosort_array, 2)
+    return spike_clusters.squeeze(), spike_times.squeeze()
 
 
 def read_Imec(
