@@ -12,21 +12,23 @@ def plot_population_response(
         population, 
         stimulus, 
         time_window=[-0.050, 0.200], 
+        bin_size=0.1, 
     ):
     """"""
 
     sample_window = np.array(time_window)*30000
     num_samples = int(sample_window[1] - sample_window[0])
-    responses = np.zeros((int(num_samples/30), len(stimulus)))
+    num_bins = int(num_samples/(bin_size*30000))
+    responses = np.zeros((num_bins, len(stimulus)))
     for event in stimulus:
         window = (sample_window + event.sample_onset).astype(int)
         resp = population.spike_times[:, window[0]:window[1]].sum(axis=0).squeeze()
-        responses[:, event.index] = np.sum(resp.reshape(250, -1), axis=1).squeeze()
+        responses[:, event.index] = np.sum(resp.reshape(num_bins, -1), axis=1).squeeze()
 
     mpl_use("Qt5Agg")
     fig, axs = plt.subplots()
     mean_response = np.nanmean(responses.squeeze(), axis=1)
-    axs.axvline(50, color="k", linestyle="dashed")
+    # axs.axvline(50, color="k", linestyle="dashed")
     axs.plot(mean_response, color="b")
     axs.set_xlabel("Time from onset (ms)")
     axs.set_xticks([0, 50, 100, 150, 200, 250])
@@ -37,17 +39,19 @@ def plot_population_raster(
         population, 
         stimulus, 
         time_window=[-0.050, 0.200], 
+        bin_size=0.1, 
     ):
     """"""
 
     sample_window = np.array(time_window)*30000
     num_samples = int(sample_window[1] - sample_window[0])
-    responses = np.zeros((int(num_samples/30), len(population), len(stimulus)))
+    num_bins = int(num_samples/(bin_size*30000))
+    responses = np.zeros((num_bins, len(population), len(stimulus)))
     for event in stimulus:
         window = (sample_window + event.sample_onset).astype(int)
         resp = population.spike_times[:, window[0]:window[1]]
         for unit_idx, unit_resp in enumerate(resp):
-            responses[:, unit_idx, event.index] = np.sum(unit_resp.reshape(250, -1), axis=1).squeeze()
+            responses[:, unit_idx, event.index] = np.sum(unit_resp.reshape(num_bins, -1), axis=1).squeeze()
 
     mpl_use("Qt5Agg")
     fig, axs = plt.subplots()
