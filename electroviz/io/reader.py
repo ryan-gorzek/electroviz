@@ -63,14 +63,16 @@ def read_Kilosort(
     ):
     """"""
 
-    # Read Kilosort output files into numpy array.
+    # Read Kilosort spike data into numpy arrays.
     kilosort_names = ["spike_clusters.npy", "spike_times.npy"]
     kilosort_array = []
     for name in kilosort_names:
         kilosort_array.append(np.load(kilosort_path + "/" + name))
     kilosort_array = np.array(kilosort_array).squeeze().T
     (spike_clusters, spike_times) = np.hsplit(kilosort_array, 2)
-    return spike_clusters.squeeze(), spike_times.squeeze()
+    # Read Kilosort cluster quality labels.
+    cluster_quality = np.loadtxt(kilosort_path + "/" + "cluster_group.tsv", dtype=str, skiprows=1, usecols=1)
+    return spike_clusters.squeeze(), spike_times.squeeze(), cluster_quality
 
 
 def read_Imec(
