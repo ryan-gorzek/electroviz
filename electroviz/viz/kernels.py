@@ -14,7 +14,7 @@ def plot_sparse_noise_response(
         stimulus, 
         time_window=[-0.050, 0.200], 
         bin_size=0.001, 
-        colormap="inferno", 
+        cmap="inferno", 
     ):
     """"""
 
@@ -35,10 +35,10 @@ def plot_sparse_noise_response(
         response_sum = np.nansum(responses[100:120, x_idx, y_idx, c_idx, :].squeeze(), axis=(0, 1))
         baseline_sum = np.nansum(responses[30:50, x_idx, y_idx, c_idx, :].squeeze(), axis=(0, 1))
         kernels[x_idx, y_idx, c_idx] += (response_sum - baseline_sum)
-    axs[0].imshow(kernels[:, :, 0].T, cmap=colormap, clim=[kernels[:, :, 0].min(axis=(0, 1)), kernels[:, :, 0].max(axis=(0, 1))])
+    axs[0].imshow(kernels[:, :, 0].T, cmap=cmap, clim=[kernels[:, :, 0].min(axis=(0, 1)), kernels[:, :, 0].max(axis=(0, 1))])
     axs[0].axis("off")
     axs[0].set_title("Off")
-    axs[1].imshow(kernels[:, :, 1].T, cmap=colormap, clim=[kernels[:, :, 1].min(axis=(0, 1)), kernels[:, :, 1].max(axis=(0, 1))])
+    axs[1].imshow(kernels[:, :, 1].T, cmap=cmap, clim=[kernels[:, :, 1].min(axis=(0, 1)), kernels[:, :, 1].max(axis=(0, 1))])
     axs[1].axis("off")
     axs[1].set_title("On")
     plt.show()
