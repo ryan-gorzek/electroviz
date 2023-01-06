@@ -10,7 +10,7 @@ from scipy.stats import zscore
 
 class Unit:
     """
-    docstring
+    
     """
     
     def __init__(
@@ -22,8 +22,8 @@ class Unit:
         """"""
         
         self.unit_id = unit_id
-        self.sync = imec_sync
-        self.spikes = kilosort_spikes
+        self._Sync = imec_sync
+        self._Spikes = kilosort_spikes
         self.spike_times = np.empty((0, 0))
 
     def plot_aligned_response(
@@ -79,8 +79,7 @@ class Unit:
         """"""
         
         if self.spike_times.shape[0] == 0:
-            spike_times_matrix = self.spikes.times.tocsr()
+            spike_times_matrix = self._Spikes.times.tocsr()
             self.spike_times = spike_times_matrix[self.unit_id].tocsc()
         return self.spike_times[0, sample_window[0]:sample_window[1]].toarray().squeeze()
-
         
