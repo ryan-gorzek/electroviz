@@ -28,7 +28,7 @@ class Population:
         self._Spikes = kilosort[0]
         self.total_samples = self._Spikes.total_samples
         self.total_units = self._Spikes.total_units
-        self.spike_times = self._Spikes.times
+        self.spike_times = self._Spikes.spike_times
         # Create Unit objects.
         self._Units = []
         for uid in range(self.total_units):
@@ -38,8 +38,9 @@ class Population:
         self.units = pd.DataFrame()
         self.units["unit_id"] = np.arange(0, self.total_units)
         self.units["cluster_quality"] = self._Spikes.cluster_quality
+        # self.units["depth"] = self._Spikes.spike_depths
         # firing rate, peak channel number
-        
+        self.depths = self._Spikes.cluster_depths
         # Define current index for iteration.
         self._current_Unit_idx = 0
 
