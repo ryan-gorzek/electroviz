@@ -18,10 +18,8 @@ class Kilosort:
         ):
 
         # Read spike clusters and times from Kilosort output.
-        spike_clusters, spike_times, cluster_quality = read_Kilosort(kilosort_path)
+        kilosort_dict = read_Kilosort(kilosort_path)
         kilosort = []
         kilosort.append(Spikes(total_imec_samples, 
-                               spike_clusters, 
-                               spike_times, 
-                               cluster_quality))
+                               kilosort_dict))
         return kilosort
