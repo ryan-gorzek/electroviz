@@ -79,7 +79,7 @@ class Unit:
         """"""
         
         if self.spike_times.shape[0] == 0:
-            spike_times_matrix = self._Spikes.times.tocsr()
+            spike_times_matrix = self._Spikes.spike_times.tocsr()
             self.spike_times = spike_times_matrix[self.unit_id].tocsc()
         return self.spike_times[0, sample_window[0]:sample_window[1]].toarray().squeeze()
         
