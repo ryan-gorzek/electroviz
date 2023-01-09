@@ -33,7 +33,7 @@ class Experiment:
         nidaq_dir, imec_dir = parse_SGLX_dir(experiment_path + SGLX_dir)
         nidaq = NIDAQ(nidaq_dir)
         imec = Imec(imec_dir)
-        total_imec_samples = imec[0].total_samples
+        total_imec_samples = [im.total_samples for im in imec]
         kilosort = Kilosort(imec_dir, total_imec_samples)
         # Align the NIDAQ and Imec syncs.
         self.nidaq, self.imec, self.kilosort = align_sync(nidaq, imec, kilosort)
@@ -44,7 +44,9 @@ class Experiment:
         self.stimuli = []
         self.stimuli.append(SparseNoise(self.nidaq, self.btss))
         # Create Population object.
-        self.population = Population(self.imec, self.kilosort)
+        self.populations = []
+        for im, ks in zip(self.imec, self.kilosort):
+            self.populations.append(Population(im, ks))
 
 
     # def __repr__(
