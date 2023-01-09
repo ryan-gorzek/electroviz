@@ -57,7 +57,7 @@ class Spikes:
         row_idx = spike_clusters
         col_idx = spike_times
         data = np.ones((spike_times.size,))
-        spike_times_matrix = sparse.csc_matrix((data, (row_idx, col_idx)), shape=full_shape, dtype=bool)
+        spike_times_matrix = sparse.csr_matrix((data, (row_idx, col_idx)), shape=full_shape, dtype=bool)
         return spike_times_matrix
 
     def _get_cluster_depths(
@@ -88,7 +88,10 @@ class Spikes:
         spike_depths = temp_depths[spike_templates]
         # Map spike depths to cluster depths.
         cluster_depths = []
-        for cluster in np.unique(spike_clusters):
-            cluster_idx = spike_clusters == cluster
-            cluster_depths.append([spike_depths[cluster_idx]])
+        for cluster in range(self.total_units):
+            if cluster in spike_clusters:
+                cluster_idx = spike_clusters == cluster
+                cluster_depths.append(np.mean(spike_depths[cluster_idx]))
+            else:
+                cluster_depths.append(np.nan)
         return cluster_depths
