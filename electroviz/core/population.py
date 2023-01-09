@@ -28,7 +28,7 @@ class Population:
         self._Spikes = kilosort[0]
         self.total_samples = self._Spikes.total_samples
         self.total_units = self._Spikes.total_units
-        self.spike_times = self._Spikes.spike_times
+        self.spike_times = self._Spikes.spike_times.tocsc()
         # Create Unit objects.
         self._Units = []
         for uid in range(self.total_units):
@@ -37,10 +37,9 @@ class Population:
         # Populate unit metrics dataframe.
         self.units = pd.DataFrame()
         self.units["unit_id"] = np.arange(0, self.total_units)
-        self.units["cluster_quality"] = self._Spikes.cluster_quality
-        # self.units["depth"] = self._Spikes.spike_depths
-        # firing rate, peak channel number
-        self.depths = self._Spikes.cluster_depths
+        self.units["quality"] = self._Spikes.cluster_quality
+        self.units["depth"] = self._Spikes.cluster_depths
+        self.units["total_spikes"] = self.spike_times.getnnz(1)
         # Define current index for iteration.
         self._current_Unit_idx = 0
 
@@ -111,18 +110,33 @@ class Population:
     #     axs.set_xticklabels([-50, 0, 50, 100, 150, 200])
     #     plt.show()
 
-    # def sort(
-    #         self, 
-    #         metric_name, 
-    #     ):
-    #     """"""
+    def sort(
+            self, 
+            metric, 
+            order="ascend", 
+        ):
+        """"""
 
-    #     if metric_name in self.metrics.columns:
-    #         sort_idx = np.argsort(self.metrics[metric_name])
-    #         return sort_idx
-    #         #### Need to reorder spike times matrix, _Units, metrics df
-    #         # self._Units
+        if metric in self.units.columns:
+            sort_idx = np.argsort(self.units[metric].to_numpy())
+            if order == "ascend":
+                subset = self._get_subset(sort_idx)
+            elif order == "descend":
+                subset = self._get_subset(sort_idx[::-1])
+            return subset
 
+    def remove(
+            self, 
+            idx, 
+        ):
+        """"""
+
+        if len(idx) == self.total_units:
+            (keep_idx,) = np.where(idx == False)
+        else:
+            keep_idx = idx
+        subset = self._get_subset(np.array(keep_idx))
+        return subset
 
     # def add_metric(
     #         self, 
@@ -141,7 +155,7 @@ class Population:
         """"""
 
         if isinstance(input, int):
-            subset = self._Units[unit_idx]
+            subset = self._Units[input]
         else:
             try:
                 subset = self._get_subset(input)
@@ -168,7 +182,7 @@ class Population:
         """"""
 
         subset = copy.copy(self)
-        subset._Units = self._Units[slice_or_array]
+        subset._Units = list(np.array(self._Units)[slice_or_array])
         subset.spike_times = self.spike_times.tocsr()[slice_or_array, :].tocsc()
         subset.total_units = len(subset._Units)
         subset.units = self.units.iloc[slice_or_array]
