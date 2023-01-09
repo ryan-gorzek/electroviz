@@ -40,7 +40,7 @@ def parse_SGLX_dir(
         SGLX_path,
     ):
     """Find NIDAQ and Imec binary and metadata files within SpikeGLX subdirectory and return their paths."""
-    imec_path = []
+    imec_paths = []
     # Move through SpikeGLX directory, expecting NI-DAQ data at the top and subfolders with Imec data.
     for topdir, _, files in os.walk(SGLX_path):
         SGLX_files = [f if (f.endswith(".bin") | f.endswith(".meta")) else "" for f in files]
@@ -52,42 +52,46 @@ def parse_SGLX_dir(
         imec_count = sum(1 for f in SGLX_files if ((".ap" in f) & (".bin" in f)) | 
                                                     ((".ap" in f) & (".meta" in f)))
         if imec_count == 2:
-            imec_path.append(topdir)
-    # Just return a string for the Imec data if there's only one folder.
-    if len(imec_path) == 1: imec_path = imec_path[0]
-    return nidaq_path, imec_path
+            imec_paths.append(topdir)
+    return nidaq_path, imec_paths
 
 
 def read_Kilosort(
-        kilosort_path, 
+        kilosort_paths, 
     ):
     """"""
 
-    # Read Kilosort spike data into numpy arrays.
-    kilosort_names = ["spike_clusters.npy", "spike_times.npy", "cluster_group.tsv", 
-                      "templates.npy", "whitening_mat_inv.npy", "channel_positions.npy", 
-                      "spike_templates.npy", "amplitudes.npy"]
-    kilosort_dict = {}
-    for fname in kilosort_names:
-        key, ext = Path(fname).stem, Path(fname).suffix
-        if "tsv" in ext:
-            kilosort_dict[key] = np.loadtxt(kilosort_path + "/" + fname, dtype=str, skiprows=1, usecols=1)
-        else:
-            kilosort_dict[key] = np.load(kilosort_path + "/" + fname)
-    return kilosort_dict
+    kilosort_dicts = []
+    for path in kilosort_paths:
+        # Read Kilosort spike data into numpy arrays.
+        kilosort_names = ["spike_clusters.npy", "spike_times.npy", "cluster_group.tsv", 
+                        "templates.npy", "whitening_mat_inv.npy", "channel_positions.npy", 
+                        "spike_templates.npy", "amplitudes.npy"]
+        kilosort_dict = {}
+        for fname in kilosort_names:
+            key, ext = Path(fname).stem, Path(fname).suffix
+            if "tsv" in ext:
+                kilosort_dict[key] = np.loadtxt(path + "/" + fname, dtype=str, skiprows=1, usecols=1)
+            else:
+                kilosort_dict[key] = np.load(path + "/" + fname)
+        kilosort_dicts.append(kilosort_dict)
+    return kilosort_dicts
 
 
 def read_Imec(
-        imec_path, 
+        imec_paths, 
     ):
     """Read Imec metadata and binary files, as well as Kilosort output, from path."""
 
-    # Read the metadata using SpikeGLX datafile tools.
-    metadata_path = glob.glob(imec_path + "/*.ap.meta")[0]
-    imec_metadata = readMeta(metadata_path)
-    # Read the binary file using SpikeGLX datafile tools.
-    binary_path = glob.glob(imec_path + "/*.ap.bin")[0]
-    imec_binary = makeMemMapRaw(binary_path, imec_metadata)
+    imec_metadata, imec_binary = [], []
+    for path in imec_paths:
+        # Read the metadata using SpikeGLX datafile tools.
+        metadata_path = glob.glob(path + "/*.ap.meta")[0]
+        meta = readMeta(metadata_path)
+        imec_metadata.append(meta)
+        # Read the binary file using SpikeGLX datafile tools.
+        binary_path = glob.glob(path + "/*.ap.bin")[0]
+        imec_binary.append(makeMemMapRaw(binary_path, meta))
     return imec_metadata, imec_binary
 
 
