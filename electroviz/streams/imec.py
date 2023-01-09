@@ -21,19 +21,21 @@ class Imec:
             self, 
             imec_path, 
         ):
+        """"""
 
-        # Read the Imec metadata and binary files.
-        metadata, binary = read_Imec(imec_path)
-        num_samples = binary.shape[1]
-        sampling_rate = float(metadata["imSampRate"])
         # Create a list for storing objects derived from the probe.
         imec = []
-        # Extract the sync channel first.
-        sync_line = Imec.digital_lines["sync"]
-        sync_signal = extractDigital(binary, 
-                                     0, num_samples-1, 
-                                     0, 
-                                     [sync_line], 
-                                     metadata)
-        imec.append(SyncChannel(sync_signal, sampling_rate))
+        # Read the Imec metadata and binary files.
+        metadata, binary = read_Imec(imec_path)
+        for meta, bnry in zip(metadata, binary):
+            num_samples = bnry.shape[1]
+            sampling_rate = float(meta["imSampRate"])
+            # Extract the sync channel first.
+            sync_line = Imec.digital_lines["sync"]
+            sync_signal = extractDigital(bnry, 
+                                         0, num_samples-1, 
+                                         0, 
+                                         [sync_line], 
+                                         meta)
+            imec.append(SyncChannel(sync_signal, sampling_rate))
         return imec
