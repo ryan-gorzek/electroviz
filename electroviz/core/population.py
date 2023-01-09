@@ -24,8 +24,8 @@ class Population:
         ):
         """"""
 
-        self._Sync = imec[0]
-        self._Spikes = kilosort[0]
+        self._Sync = imec
+        self._Spikes = kilosort
         self.total_samples = self._Spikes.total_samples
         self.total_units = self._Spikes.total_units
         self.spike_times = self._Spikes.spike_times.tocsc()
@@ -63,7 +63,7 @@ class Population:
         axs.set_xticklabels([-50, 0, 50, 100, 150, 200])
         axs.set_ylabel("Unit")
         fig.set_size_inches(5, 11)
-        plt.show()
+        plt.show(block=False)
 
     def get_aligned_response(
             self, 
