@@ -16,56 +16,48 @@ def align_sync(
     
     """
 
-    object_1, object_2 = nidaq[0], imec[0]
+    syncs = [nidaq[0], *imec[0:2]]
     # Get sample onsets, offsets, and durations from each object's sync signal.
     event_names = ["sample_onset", "sample_offset"]
-    sample_events_1 = object_1.events[event_names].to_numpy().astype(int)
-    sample_events_2 = object_2.events[event_names].to_numpy().astype(int)
-    # Preallocate index arrays for dropping samples.
-    sample_drop_1 = []
-    sample_drop_2 = []
-    for event_idx, ((on_1, off_1), (on_2, off_2)) in enumerate(zip(sample_events_1, sample_events_2)):
-
+    events = []
+    for sync in syncs:
+        events.append(sync.events[event_names].to_numpy().astype(int))
+    # Preallocate index array for dropping samples.
+    drops = [[] for s in syncs]
+    for event_idx, ons_offs in enumerate(zip(*events)):
+        ons = np.concatenate(ons_offs)[0::2]
+        offs = np.concatenate(ons_offs)[1::2]
+        ons_diff = ons - np.min(ons)
         # Drop an initial sample to align the onset of the first pulse.
         if event_idx == 0:
-            if on_1 > on_2:
-                [sample_drop_1.append(idx) for idx in range(int(on_1 - on_2))]
-            elif on_1 < on_2:
-                [sample_drop_2.append(idx) for idx in range(int(on_2 - on_1))]
+            for sync_idx, on in enumerate(ons_diff):
+                [drops[sync_idx].append(idx) for idx in range(int(on)) if on != 0]
             # Account for the leftward shift in offset times on the first pulse.
-            off_1 += -len(sample_drop_1)
-            off_2 += -len(sample_drop_2)
+            offs += np.array([-len(d) for d in drops])
         else:
             # Account for the leftward shift in onset and offset times from all previous pulses.
-            on_1 += -len(sample_drop_1)
-            off_1 += -len(sample_drop_1)
-            on_2 += -len(sample_drop_2)
-            off_2 += -len(sample_drop_2)
+            ons += np.array([-len(d) for d in drops])
+            offs += np.array([-len(d) for d in drops])
 
         # Downsample the pulse (from end) with the larger number of samples if unequal.
-        if off_1 > off_2:
-            [sample_drop_1.append(idx + 1) for idx in range(off_2, off_1)]
-        elif off_1 < off_2:
-            [sample_drop_2.append(idx + 1) for idx in range(off_1, off_2)]
+        for sync_idx, off in enumerate(offs):
+            (drops[sync_idx].append(idx + 1) for idx in range(int(np.min(offs)), off) if off != np.min(offs))
 
     # If one of the signals is longer, drop samples from the end to match.
-    tot_1, tot_2 = object_1.total_samples, object_2.total_samples
-    rem_1, rem_2 = tot_1 - len(sample_drop_1), tot_2 - len(sample_drop_2)
-    if rem_1 > rem_2:
-        num_drop = rem_1 - rem_2
-        [sample_drop_1.append(idx) for idx in range(int(tot_1 - num_drop), tot_1)]
-    elif rem_1 < rem_2:
-        num_drop = rem_2 - rem_1
-        [sample_drop_2.append(idx) for idx in range(int(tot_2 - num_drop), tot_2)]
+    totals = np.array([sync.total_samples for sync in syncs])
+    rems = totals - np.array([len(d) for d in drops])
+    rems_diff = rems - np.min(rems)
+    for sync_idx, (tot, rem) in enumerate(zip(totals, rems_diff)):
+        (drops[sync_idx].append(idx) for idx in range(int(tot - rem), tot) if rem != 0)
 
     # Rebuild the NIDAQ signals, dropping the indices identified here.
     for obj in nidaq:
-        obj.drop_and_rebuild(sample_drop_1)
+        obj.drop_and_rebuild(drops[0])
     # Imec.
-    for obj in imec:
-        obj.drop_and_rebuild(sample_drop_2)
+    for obj, drop in zip(imec, drops[1:]):
+        obj.drop_and_rebuild(drop)
     # Kilosort.
-    for obj in kilosort:
-        obj.drop_and_rebuild(sample_drop_2)
+    for obj, drop in zip(kilosort, drops[1:]):
+        obj.drop_and_rebuild(drop)
 
     return nidaq, imec, kilosort
