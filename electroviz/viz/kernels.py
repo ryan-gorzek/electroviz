@@ -13,6 +13,7 @@ def plot_sparse_noise_response(
         unit, 
         stimulus, 
         time_window=[-0.050, 0.200], 
+        resp_window=[100, 120], 
         bin_size=0.001, 
         cmap="inferno", 
     ):
@@ -30,9 +31,10 @@ def plot_sparse_noise_response(
     mpl_use("Qt5Agg")
     fig, axs = plt.subplots(2, 1)
     kernels = np.zeros((14, 10, 2))
+    start, stop = resp_window
     for posx, posy, contrast in stimulus.unique:
         x_idx, y_idx, c_idx = stimulus.get_params_index((posx, posy, contrast))
-        response_sum = np.nansum(responses[100:120, x_idx, y_idx, c_idx, :].squeeze(), axis=(0, 1))
+        response_sum = np.nansum(responses[start:stop, x_idx, y_idx, c_idx, :].squeeze(), axis=(0, 1))
         baseline_sum = np.nansum(responses[30:50, x_idx, y_idx, c_idx, :].squeeze(), axis=(0, 1))
         kernels[x_idx, y_idx, c_idx] += (response_sum - baseline_sum)
     axs[0].imshow(kernels[:, :, 0].T, cmap=cmap, clim=[kernels[:, :, 0].min(axis=(0, 1)), kernels[:, :, 0].max(axis=(0, 1))])
@@ -41,5 +43,4 @@ def plot_sparse_noise_response(
     axs[1].imshow(kernels[:, :, 1].T, cmap=cmap, clim=[kernels[:, :, 1].min(axis=(0, 1)), kernels[:, :, 1].max(axis=(0, 1))])
     axs[1].axis("off")
     axs[1].set_title("On")
-    plt.show()
-
+    plt.show(block=False)
