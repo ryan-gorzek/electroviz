@@ -84,8 +84,15 @@ class Spikes:
         #
         temp_channel_amps[temp_channel_amps < thresh_vals.T] = 0
         #
-        temp_depths = np.sum(temp_channel_amps*channel_positions[:, 1].T, axis=1)/np.sum(temp_channel_amps, axis=1)
-        spike_depths = temp_depths[spike_templates]
+        # temp_x_depths = np.sum(temp_channel_amps*channel_positions[:, 0].T, axis=1)/np.sum(temp_channel_amps, axis=1)
+        y_pos = channel_positions[:, 1]
+        temp_depths = np.sum(temp_channel_amps*y_pos.T, axis=1)/np.sum(temp_channel_amps, axis=1)
+        temp_chans = []
+        for depth in temp_depths:
+            dist = np.abs(y_pos - depth)
+            (idx,) = np.where(dist == np.min(dist))
+            temp_chans.append(idx[0])
+        spike_depths = np.array(temp_chans)[spike_templates]
         # Map spike depths to cluster depths.
         cluster_depths = []
         for cluster in range(self.total_units):
