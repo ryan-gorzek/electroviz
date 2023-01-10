@@ -31,8 +31,23 @@ class Kernel:
         for event in stimulus:
             window = (sample_window + event.sample_onset).astype(int)
             resp = unit.get_spike_times(window)
-            print(event.stim_indices)
             self.responses[:, *event.stim_indices] = np.sum(resp.reshape(num_bins, -1), axis=1)
+
+    def _time_to_bins(
+            self, 
+            window, 
+            time_window, 
+            num_bins, 
+        ):
+        """"""
+
+        time_window_bins = np.linspace(*time_window, num_bins)
+        on_dists = np.abs(time_window_bins - window[0])
+        (on_idx,) = np.where(on_dists == np.min(on_dists))
+        off_dists = np.abs(time_window_bins - window[1])
+        (off_idx,) = np.where(off_dists == np.min(off_dists))
+        return int(on_idx), int(off_idx + 1)
+
 
 
 class SparseNoiseKernel(Kernel):
@@ -52,7 +67,7 @@ class SparseNoiseKernel(Kernel):
         ):
         """"""
         
-        super.__init__(
+        super().__init__(
             unit, 
             stimulus, 
             time_window=time_window, 
@@ -60,11 +75,15 @@ class SparseNoiseKernel(Kernel):
                        )
 
         kernels = np.zeros(stimulus.shape[0:3])
-        (resp_on, resp_off), (base_on, base_off) = resp_window, base_window
+        sample_window = np.array(time_window)*30000
+        num_samples = int(sample_window[1] - sample_window[0])
+        num_bins = int(num_samples/(bin_size*30000))
+        resp_on, resp_off = self._time_to_bins(resp_window, time_window, num_bins)
+        base_on, base_off = self._time_to_bins(base_window, time_window, num_bins)
         for stim_indices in np.ndindex(stimulus.shape[:3]):
-            resp_count = self.responses[resp_on:resp_off, *stim_indices, :].sum(axis=0).mean(axis=3)
-            base_count = self.responses[base_on:base_off, *stim_indices, :].sum(axis=0).mean(axis=3)
-            kernels[stim_indices] += (resp_count - base_count)
+            resp_count = self.responses[resp_on:resp_off, *stim_indices, :].sum(axis=0).mean()
+            base_count = self.responses[base_on:base_off, *stim_indices, :].sum(axis=0).mean()
+            kernels[*stim_indices] += (resp_count - base_count)
         self.OFF = kernels[0]
         self.ON = kernels[1]
 
