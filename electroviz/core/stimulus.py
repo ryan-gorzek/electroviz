@@ -22,8 +22,8 @@ class Stimulus:
         
         """
 
-        self.sync, self.pc_clock, self.photodiode = nidaq[:3]
-        self.vstim = btss[0]
+        self._Sync, self._PC_Clock, self._Photodiode = nidaq[:3]
+        self._VStim = btss[0]
 
 
 class VisualStimulus(Stimulus):
@@ -42,86 +42,9 @@ class VisualStimulus(Stimulus):
                          btss=btss, 
                         )
 
-        self.btss_vstim_df = self.vstim.events
-        # Get the pc_clock and photodiode dataframes.
-        self.pc_clock_df = self.pc_clock.events
-        self.photodiode_df = self.photodiode.events
-        # Map the stimulus information from bTsS to the pc_clock signal from the NI-DAQ.
-        self.vstim_df = self._map_btss_vstim(self.btss_vstim_df)
         # Stack photodiode and vstim dataframes.
-        self.stimulus_df = pd.concat((self.photodiode_df, self.vstim_df), axis=1)
-
-    # def plot_btss_vstim_times
-
-    def _map_btss_vstim(
-            self, 
-            btss_vstim_df, 
-        ):
-        """
-
-        """
-
-        # Define stimulus parameters from rig log to keep.
-        param_names = ["istim", "itrial", "contrast", "ori", "posx", "posy", "W", "H", "phase", "tf", "sf"]
-        # Initialize list for stacking visual stimulus parameters.
-        params_list = []
-        vstim_times = np.array(btss_vstim_df["timereceived"])
-        # Get the pc_clock dataframe for aligning bTsS trigger data.
-        df_align = self.pc_clock_df
-        # Iterate through pc_clock pulses and find vstim entries that occur during the pulse.
-        for (onset_time, offset_time) in df_align[["time_onset", "time_offset"]].to_numpy():
-            vstim_logical = ((onset_time <= vstim_times) &
-                                (vstim_times <= offset_time))
-            if np.any(vstim_logical):
-                params = self._capture_vstim(btss_vstim_df, vstim_logical, param_names)
-                params_list.append(params)
-        # Create a dataframe from the visual stimuli parameters.
-        vstim_df = pd.DataFrame(params_list, columns=param_names)
-        return vstim_df
-
-    def _capture_vstim(
-            self,
-            vstim_df, 
-            vstim_logical, 
-            param_names, 
-        ):
-        """"""
-
-        # Thoroughly check for correct alignment of riglog-encoded visual stimulus and NI-DAQ pc_clock signal.
-        vstim_params = vstim_df[param_names].values
-        vstim_params_capture = vstim_params[vstim_logical, :]
-        vstim_samples_match = all((vstim_params_capture == vstim_params_capture[[0], :]).all(axis=0))
-        # if vstim_samples_match == False:
-        #     warn("A stimulus from the bTsS rig log failed to match the NI-DAQ pc_clock signal.")
-        # Return the "unique" stimulus parameters for a given pc_clock pulse, but all should match.
-        # vstim_params_unique = np.unique(np.array(vstim_params_capture), axis=1).squeeze()
-        vstim_params = np.array(vstim_params_capture)[8, :]
-        return vstim_params
-
-
-
-
-class SparseNoise(VisualStimulus):
-    """
-
-    """
-
-    def __init__(
-            self, 
-            nidaq=None, 
-            btss=None, 
-        ):
-
-        super().__init__(
-                         nidaq=nidaq, 
-                         btss=btss, 
-                        )
-
-        # Grab only the stimulus parameters relevant for sparse noise.
-        self.events = self.stimulus_df.drop(columns=["ori", "phase", "tf", "sf"])
-        self._get_events()
-        self._get_unique()
-
+        vstim_df = self._map_btss_vstim(self._VStim.events)
+        self.events = pd.concat((self._Photodiode.events, vstim_df), axis=1)
 
     def __getitem__(
             self, 
@@ -153,29 +76,111 @@ class SparseNoise(VisualStimulus):
 
     def __len__(self):
         return len(self._Events)
-    
-    def get_params_index(
+
+    # def plot_btss_vstim_times
+
+    def _map_btss_vstim(
+            self, 
+            vstim_df, 
+        ):
+        """
+
+        """
+
+        # Define stimulus parameters from rig log to keep.
+        param_names = ["contrast", "posx", "posy", "ori", "sf", "phase", "tf", "itrial", "istim"]
+        # Initialize list for stacking visual stimulus parameters.
+        params_list = []
+        vstim_times = np.array(vstim_df["timereceived"])
+        # Get the pc_clock dataframe for aligning bTsS trigger data.
+        df_align = self._PC_Clock.events
+        # Iterate through pc_clock pulses and find vstim entries that occur during the pulse.
+        for (onset_time, offset_time) in df_align[["time_onset", "time_offset"]].to_numpy():
+            vstim_logical = ((onset_time <= vstim_times) &
+                                (vstim_times <= offset_time))
+            if np.any(vstim_logical):
+                params = self._capture_vstim(vstim_df, vstim_logical, param_names)
+                params_list.append(params)
+        # Create a dataframe from the visual stimuli parameters.
+        vstim_df_mapped = pd.DataFrame(params_list, columns=param_names)
+        return vstim_df_mapped
+
+    def _capture_vstim(
+            self, 
+            vstim_df, 
+            vstim_logical, 
+            param_names, 
+        ):
+        """"""
+
+        # Thoroughly check for correct alignment of riglog-encoded visual stimulus and NI-DAQ pc_clock signal.
+        vstim_params = vstim_df[param_names].values
+        vstim_params_capture = vstim_params[vstim_logical, :]
+        vstim_samples_match = all((vstim_params_capture == vstim_params_capture[[0], :]).all(axis=0))
+        # if vstim_samples_match == False:
+        #     warn("A stimulus from the bTsS rig log failed to match the NI-DAQ pc_clock signal.")
+        # Return the "unique" stimulus parameters for a given pc_clock pulse, but all should match.
+        # vstim_params_unique = np.unique(np.array(vstim_params_capture), axis=1).squeeze()
+        vstim_params = np.array(vstim_params_capture)[8, :]
+        return vstim_params
+
+    def _get_events(
             self, 
             params, 
         ):
         """"""
 
-        posx, posy, contrast = params
-        posx_idx = sorted(np.unique(self.events["posx"])).index(posx)
-        posy_idx = sorted(np.unique(self.events["posy"])).index(posy)
-        contrast_idx = sorted(np.unique(self.events["contrast"])).index(contrast)
-        return posx_idx, posy_idx, contrast_idx
+        self._Events = []
+        for row in self.events.itertuples():
+            stim_indices = self._get_stim_indices(row[0], params=params)
+            self._Events.append(Event(stim_indices, *row))
+        return None
 
-
-    def _get_events(
+    def _get_stim_indices(
             self, 
+            row_index, 
+            params, 
         ):
         """"""
 
-        self._Events = []
-        for row in self.events.itertuples():
-            self._Events.append(Event(*row))
+        values = tuple(self.events[params].iloc[row_index])
+        indices = []
+        for val, param in zip(values, params):
+            (idx,) = np.where(np.unique(self.events[param]) == val)
+            indices.append(idx[0])
+        return tuple(indices)
+
+    def _get_shape(
+            self, 
+            params, 
+        ):
+        """"""
+        
+        self.shape = tuple(np.unique(self.events[param]).size for param in params)
         return None
+
+
+
+
+class SparseNoise(VisualStimulus):
+    """
+
+    """
+
+    def __init__(
+            self, 
+            nidaq=None, 
+            btss=None, 
+        ):
+
+        super().__init__(
+                         nidaq=nidaq, 
+                         btss=btss, 
+                        )
+
+        self._get_events(params=["contrast", "posx", "posy", "itrial"])
+        self._get_shape(params=["contrast", "posx", "posy", "itrial"])
+        self._get_unique()
 
     def _get_unique(
             self, 
@@ -183,10 +188,10 @@ class SparseNoise(VisualStimulus):
         """"""
         
         self.unique = []
-        for posx in sorted(np.unique(self.events["posx"])):
-            for posy in sorted(np.unique(self.events["posy"])):
-                for contrast in sorted(np.unique(self.events["contrast"])):
-                    self.unique.append((posx, posy, contrast))
+        for contrast in sorted(np.unique(self.events["contrast"])):
+            for posx in sorted(np.unique(self.events["posx"])):
+                for posy in sorted(np.unique(self.events["posy"])):
+                    self.unique.append((contrast, posx, posy))
         return None
 
 
