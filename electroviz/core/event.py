@@ -10,6 +10,7 @@ class Event(NamedTuple):
 
     """
     
+    stim_indices: tuple = None
     index: int = None
     sample_onset: int = None
     sample_offset: int = None
@@ -18,10 +19,12 @@ class Event(NamedTuple):
     time_offset: float = None
     time_duration: float = None
     digital_value: int = None
-    istim: int = None
-    itrial: int = None
     contrast: int = None
     posx: int = None
     posy: int = None
-    W: int = None
-    H: int = None
+    ori: int = None
+    sf: int = None
+    phase: int = None
+    tf: int = None
+    itrial: int = None
+    istim: int = None
