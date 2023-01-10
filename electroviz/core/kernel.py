@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import zscore
 
 
-class SparseNoiseKernel:
+class Kernel:
     """
 
     """
@@ -24,47 +24,73 @@ class SparseNoiseKernel:
         ):
         """"""
 
-        num_unique = [np.unique(stim_dim).size for stim_dim in np.array(stimulus.unique).T]
-        num_trials = int(np.max(stimulus.events["itrial"]) + 1)
-
         sample_window = np.array(time_window)*30000
         num_samples = int(sample_window[1] - sample_window[0])
         num_bins = int(num_samples/(bin_size*30000))
-        self.responses = np.zeros((num_bins, *num_unique, num_trials))
+        self.responses = np.zeros((num_bins, *stimulus.shape))
         for event in stimulus:
             window = (sample_window + event.sample_onset).astype(int)
             resp = unit.get_spike_times(window)
-            x_idx, y_idx, c_idx = stimulus.get_params_index((event.posx, event.posy, event.contrast))
-            self.responses[:, x_idx, y_idx, c_idx, int(event.itrial)] = np.sum(resp.reshape(num_bins, -1), axis=1)
+            print(event.stim_indices)
+            self.responses[:, *event.stim_indices] = np.sum(resp.reshape(num_bins, -1), axis=1)
 
+
+class SparseNoiseKernel(Kernel):
+    """
+
+    """
+
+
+    def __init__(
+            self, 
+            unit, 
+            stimulus, 
+            time_window=[-0.050, 0.200], 
+            bin_size=0.001, 
+            resp_window=[0.050, 0.070], 
+            base_window=[-0.030, 0], 
+        ):
+        """"""
+        
+        super.__init__(
+            unit, 
+            stimulus, 
+            time_window=time_window, 
+            bin_size=bin_size, 
+                       )
+
+        kernels = np.zeros(stimulus.shape[0:3])
+        (resp_on, resp_off), (base_on, base_off) = resp_window, base_window
+        for stim_indices in np.ndindex(stimulus.shape[:3]):
+            resp_count = self.responses[resp_on:resp_off, *stim_indices, :].sum(axis=0).mean(axis=3)
+            base_count = self.responses[base_on:base_off, *stim_indices, :].sum(axis=0).mean(axis=3)
+            kernels[stim_indices] += (resp_count - base_count)
+        self.OFF = kernels[0]
+        self.ON = kernels[1]
+
+    # def _fit_2D_gaussian(
+    #         self, 
+    #     ):
+    #     """"""
 
     def plot_raw(
             self, 
-            resp_window=[0.050, 0.070], 
-            base_window=[-0.030, 0], 
             cmap="inferno", 
             save_path="", 
         ):
-
+        """"""
 
         mpl_use("Qt5Agg")
         fig, axs = plt.subplots(2, 1)
-        kernels = np.zeros((14, 10, 2))
-        start, stop = resp_window
-        for posx, posy, contrast in stimulus.unique:
-            x_idx, y_idx, c_idx = stimulus.get_params_index((posx, posy, contrast))
-            response_sum = np.nansum(responses[start:stop, x_idx, y_idx, c_idx, :].squeeze(), axis=(0, 1))
-            baseline_sum = np.nansum(responses[30:50, x_idx, y_idx, c_idx, :].squeeze(), axis=(0, 1))
-            kernels[x_idx, y_idx, c_idx] += (response_sum - baseline_sum)
-        axs[0].imshow(kernels[:, :, 0].T, cmap=cmap, clim=[kernels[:, :, 0].min(axis=(0, 1)), kernels[:, :, 0].max(axis=(0, 1))])
+        axs[0].imshow(self.OFF.T, cmap=cmap, clim=[self.OFF.min(axis=(0, 1)), self.OFF.max(axis=(0, 1))])
         axs[0].axis("off")
         axs[0].set_title("Off")
-        axs[1].imshow(kernels[:, :, 1].T, cmap=cmap, clim=[kernels[:, :, 1].min(axis=(0, 1)), kernels[:, :, 1].max(axis=(0, 1))])
+        axs[1].imshow(self.ON.T, cmap=cmap, clim=[self.ON.min(axis=(0, 1)), self.ON.max(axis=(0, 1))])
         axs[1].axis("off")
         axs[1].set_title("On")
         plt.show(block=False)
         # fig.set_size_inches()
-        if 
+        # if 
 
 
 
