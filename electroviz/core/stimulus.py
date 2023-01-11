@@ -44,11 +44,7 @@ class VisualStimulus(Stimulus):
 
         # Stack photodiode and vstim dataframes.
         vstim_df = self._map_btss_vstim(self._VStim.events)
-        if self._Photodiode.events.shape[0] > vstim_df.shape[0]:
-            drop_rows = self._Photodiode.events.shape[0] - vstim_df.shape[0]
-            self.events = pd.concat((self._Photodiode.events[:-drop_rows], vstim_df), axis=1)
-        else:
-            self.events = pd.concat((self._Photodiode.events, vstim_df), axis=1)
+        self.events = pd.concat((self._Photodiode.events, vstim_df), axis=1)
 
     def __getitem__(
             self, 
