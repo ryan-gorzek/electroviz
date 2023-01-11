@@ -109,31 +109,33 @@ class Population:
         fig.set_size_inches(8, 8)
         plt.show(block=False)
 
-    # def plot_averaged_response(
-    #         self, 
-    #         stimulus, 
-    #         time_window=[-0.050, 0.200], 
-    #         bin_size=0.001, 
-    #     ):
-    #     """"""
+    def plot_PETH(
+            self, 
+            stimulus, 
+            time_window=[-0.050, 0.200], 
+            bin_size=0.005, 
+        ):
+        """"""
 
-    #     sample_window = np.array(time_window)*30000
-    #     num_samples = int(sample_window[1] - sample_window[0])
-    #     num_bins = int(num_samples/(bin_size*30000))
-    #     responses = np.zeros((num_bins, len(stimulus)))
-    #     for event in stimulus:
-    #         window = (sample_window + event.sample_onset).astype(int)
-    #         resp = self.spike_times[:, window[0]:window[1]].sum(axis=0).squeeze()
-    #         responses[:, event.index] = np.sum(resp.reshape(num_bins, -1), axis=1).squeeze()
-    #     mpl_use("Qt5Agg")
-    #     fig, axs = plt.subplots()
-    #     mean_response = np.nanmean(responses.squeeze(), axis=1)
-    #     axs.axvline(50, color="k", linestyle="dashed")
-    #     axs.plot(mean_response, color="b")
-    #     axs.set_xlabel("Time from onset (ms)")
-    #     axs.set_xticks([0, 50, 100, 150, 200, 250])
-    #     axs.set_xticklabels([-50, 0, 50, 100, 150, 200])
-    #     plt.show()
+        sample_window = np.array(time_window)*30000
+        num_samples = int(sample_window[1] - sample_window[0])
+        num_bins = int(num_samples/(bin_size*30000))
+        responses = np.zeros((len(self), num_bins, *stimulus.shape))
+        for event in stimulus:
+            window = (sample_window + event.sample_onset).astype(int)
+            resp = self.spike_times[:, window[0]:window[1]].toarray()
+            spikes_per_sec = resp.reshape((len(self), num_bins, -1)).sum(axis=2) / bin_size
+            responses[:, :, *event.stim_indices] = spikes_per_sec
+        mpl_use("Qt5Agg")
+        fig, axs = plt.subplots()
+        response = responses.mean(axis=(2,3,4,5)).mean(axis=0).squeeze()
+        axs.bar(range(num_bins), response, color="k")
+        axs.set_xlabel("Time from onset (ms)", fontsize=16)
+        axs.set_xticks(np.linspace(0, num_bins, 6))
+        axs.set_xticklabels(np.linspace(time_window[0]*1000, time_window[1]*1000, 6))
+        axs.set_ylabel("Spikes/s", fontsize=16)
+        plt.show(block=False)
+        fig.set_size_inches(6, 6)
 
     def sort(
             self, 
