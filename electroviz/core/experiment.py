@@ -9,7 +9,7 @@ from electroviz.streams.imec import Imec
 from electroviz.streams.kilosort import Kilosort
 from electroviz.utils.align_sync import align_sync
 from electroviz.streams.btss import bTsS
-from electroviz.core.stimulus import SparseNoise
+from electroviz.core.stimulus import SparseNoise, StaticGratings
 from electroviz.core.population import Population
 
 class Experiment:
@@ -23,7 +23,7 @@ class Experiment:
             self, 
             experiment_path, 
             SGLX_name="ephys", 
-            bTsS_names=["contra_random_squares"], 
+            bTsS_names=["contra_random_gratings_opto"], # 
         ):
         """"""
 
@@ -42,7 +42,8 @@ class Experiment:
         self.btss = bTsS(btss_dir)
         # Create Stimulus objects.
         self.stimuli = []
-        self.stimuli.append(SparseNoise(self.nidaq, self.btss))
+        # self.stimuli.append(SparseNoise(self.nidaq, self.btss))
+        self.stimuli.append(StaticGratings(self.nidaq, self.btss))
         # Create Population object.
         self.populations = []
         for im, ks in zip(self.imec, self.kilosort):
