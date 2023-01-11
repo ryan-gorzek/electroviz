@@ -23,7 +23,7 @@ class Experiment:
             self, 
             experiment_path, 
             SGLX_name="ephys", 
-            bTsS_names=["contra_random_gratings_opto"], # 
+            bTsS_names=["contra_random_squares"], # ALSO CHANGE STIM TYPE BELOW
         ):
         """"""
 
@@ -42,8 +42,11 @@ class Experiment:
         self.btss = bTsS(btss_dir)
         # Create Stimulus objects.
         self.stimuli = []
-        # self.stimuli.append(SparseNoise(self.nidaq, self.btss))
-        self.stimuli.append(StaticGratings(self.nidaq, self.btss))
+        for name in bTsS_names:
+            if "random_squares" in name:
+                self.stimuli.append(SparseNoise(self.nidaq, self.btss))
+            elif "random_gratings" in name:
+                self.stimuli.append(StaticGratings(self.nidaq, self.btss))
         # Create Population object.
         self.populations = []
         for im, ks in zip(self.imec, self.kilosort):
