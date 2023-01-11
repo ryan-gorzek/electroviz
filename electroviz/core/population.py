@@ -10,6 +10,11 @@ from scipy import sparse
 from electroviz.core.unit import Unit
 from matplotlib import use as mpl_use
 import matplotlib.pyplot as plt
+plt.rcParams["font.size"] = 18
+plt.rcParams["xtick.major.size"] = 8
+plt.rcParams["xtick.major.width"] = 1
+plt.rcParams["ytick.major.size"] = 8
+plt.rcParams["ytick.major.width"] = 1
 from scipy.stats import zscore
 
 class Population:
@@ -40,6 +45,7 @@ class Population:
         self.units["quality"] = self._Spikes.cluster_quality
         self.units["depth"] = self._Spikes.cluster_depths
         self.units["total_spikes"] = self.spike_times.getnnz(1)
+        self.units["spike_rate"] = self.units["total_spikes"] / self._Sync.total_time
         # Define current index for iteration.
         self._current_Unit_idx = 0
 
@@ -49,6 +55,7 @@ class Population:
             time_window=[-0.050, 0.200], 
             bin_size=0.001, 
             cmap="binary", 
+            save_path="", 
         ):
         """"""
         
@@ -58,12 +65,15 @@ class Population:
         mean_response = np.nanmean(responses, axis=2)
         z_response = zscore(mean_response, axis=1)
         axs.imshow(z_response, cmap=cmap)
-        axs.set_xlabel("Time from onset (ms)")
+        axs.set_xlabel("Time from onset (ms)", fontsize=20)
         axs.set_xticks([0, 50, 100, 150, 200, 250])
         axs.set_xticklabels([-50, 0, 50, 100, 150, 200])
-        axs.set_ylabel("Unit")
-        fig.set_size_inches(5, 11)
+        axs.set_ylabel("Unit", fontsize=20)
+        axs.set_frame_on(False)
+        fig.set_size_inches(8, 16)
         plt.show(block=False)
+        if save_path != "":
+            plt.savefig(save_path, bbox_inches="tight")
 
     def get_aligned_response(
             self, 
@@ -83,6 +93,21 @@ class Population:
             bin_resp = resp.reshape((len(self), num_bins, -1)).sum(axis=2)
             responses[:, :, event.index] = bin_resp
         return responses
+
+    def plot_rate_histogram(
+            self, 
+        ):
+        """"""
+
+        mpl_use("Qt5Agg")
+        fig, axs = plt.subplots()
+        spike_rates = np.array(self.units["spike_rate"])
+        plt.hist(spike_rates, bins=np.arange(0, spike_rates.max(), 5), density=True)
+        plt.axvline(spike_rates.mean(), color="k", linestyle="--")
+        axs.set_xlabel("Spikes/s", fontsize=20)
+        axs.set_ylabel("Probability", fontsize=20)
+        fig.set_size_inches(8, 8)
+        plt.show(block=False)
 
     # def plot_averaged_response(
     #         self, 
@@ -138,15 +163,17 @@ class Population:
         subset = self._get_subset(np.array(keep_idx))
         return subset
 
-    # def add_metric(
-    #         self, 
-    #         metric_name, 
-    #         metric_array, 
-    #     ):
-    #     """"""
+    def add_metric(
+            self, 
+            unit_idx, 
+            metric_name, 
+            metric, 
+        ):
+        """"""
         
-    #     if len(metric_array) == len(self):
-    #         self.metrics[metric_name] = metric_array
+        if not metric_name in self.units.columns:
+            self.units[metric_name] = [np.nan]*self.units.shape[0]
+        self.units.at[unit_idx, metric_name] = metric
     
     def __getitem__(
             self, 
