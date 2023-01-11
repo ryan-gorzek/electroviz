@@ -20,7 +20,7 @@ def parse_experiment_dir(
 
     # Check if specified path is a directory [or .electroviz parameters file].
     assert os.path.exists(experiment_path), "The specified path is not valid."
-    ephys_subdir, protocol_subdir = None, None
+    SGLX_subdir, bTsS_subdir = None, None
     if os.path.isdir(experiment_path):
         for subdir in os.listdir(experiment_path):
             # Check for ephys data directory.
