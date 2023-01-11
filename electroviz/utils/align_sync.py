@@ -9,8 +9,8 @@ from scipy import sparse
 
 def align_sync(
         nidaq, 
-        imec,
-        kilosort,  
+        imec, 
+        kilosort, 
     ):
     """
     
@@ -41,14 +41,14 @@ def align_sync(
 
         # Downsample the pulse (from end) with the larger number of samples if unequal.
         for sync_idx, off in enumerate(offs):
-            (drops[sync_idx].append(idx + 1) for idx in range(int(np.min(offs)), off) if off != np.min(offs))
+            [drops[sync_idx].append(idx + 1) for idx in range(int(np.min(offs)), off) if off != np.min(offs)]
 
     # If one of the signals is longer, drop samples from the end to match.
     totals = np.array([sync.total_samples for sync in syncs])
     rems = totals - np.array([len(d) for d in drops])
     rems_diff = rems - np.min(rems)
     for sync_idx, (tot, rem) in enumerate(zip(totals, rems_diff)):
-        (drops[sync_idx].append(idx) for idx in range(int(tot - rem), tot) if rem != 0)
+        [drops[sync_idx].append(idx) for idx in range(int(tot - rem), tot) if rem != 0]
 
     # Rebuild the NIDAQ signals, dropping the indices identified here.
     for obj in nidaq:
