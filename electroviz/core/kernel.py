@@ -223,7 +223,7 @@ class StaticGratingsKernel(Kernel):
         axs.axis("off")
         axs.set_title("Ori/SF", fontsize=18)
         plt.show(block=False)
-        fig.set_size_inches(6, 6)
+        fig.set_size_inches(4, 4)
 
     def plot_PETH(
             self, 
