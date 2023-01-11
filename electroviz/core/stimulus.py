@@ -44,7 +44,11 @@ class VisualStimulus(Stimulus):
 
         # Stack photodiode and vstim dataframes.
         vstim_df = self._map_btss_vstim(self._VStim.events)
-        self.events = pd.concat((self._Photodiode.events, vstim_df), axis=1)
+        if self._Photodiode.events.shape[0] > vstim_df.shape[0]:
+            drop_rows = self._Photodiode.events.shape[0] - vstim_df.shape[0]
+            self.events = pd.concat((self._Photodiode.events[:-drop_rows], vstim_df), axis=1)
+        else:
+            self.events = pd.concat((self._Photodiode.events, vstim_df), axis=1)
 
     def __getitem__(
             self, 
@@ -195,11 +199,44 @@ class SparseNoise(VisualStimulus):
         return None
 
 
+
+    
+class StaticGratings(VisualStimulus):
+    """
+
+    """
+
+    def __init__(
+            self, 
+            nidaq=None, 
+            btss=None, 
+        ):
+
+        super().__init__(
+                         nidaq=nidaq, 
+                         btss=btss, 
+                        )
+
+        self._get_events(params=["ori", "sf", "phase", "itrial"])
+        self._get_shape(params=["ori", "sf", "phase", "itrial"])
+        self._get_unique()
+
+    def _get_unique(
+            self, 
+        ):
+        """"""
+        
+        self.unique = []
+        for ori in sorted(np.unique(self.events["ori"])):
+            for sf in sorted(np.unique(self.events["sf"])):
+                for phase in sorted(np.unique(self.events["phase"])):
+                    self.unique.append((ori, sf, phase))
+        return None
+
+
 # class OptogeneticStimulus
 
 # class ParallelStimulus
-
-# class StaticGratings(VisualStimulus):
 
 # class DriftingGratings(VisualStimulus):
 
