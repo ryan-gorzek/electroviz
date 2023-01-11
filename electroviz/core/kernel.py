@@ -89,7 +89,7 @@ class SparseNoiseKernel(Kernel):
         for stim_indices in np.ndindex(stimulus.shape[:3]):
             resp_count = self.responses[resp_on:resp_off, *stim_indices, :].mean(axis=(0, 1))
             base_count = self.responses[base_on:base_off, *stim_indices, :].mean(axis=(0, 1))
-            kernels[*stim_indices] += resp_count
+            kernels[*stim_indices] += (resp_count - base_count)
         self.OFF = kernels[0]
         self.ON = kernels[1]
 
@@ -164,8 +164,8 @@ class StaticGratingsKernel(Kernel):
             stimulus, 
             time_window=[-0.050, 0.200], 
             bin_size=0.005, 
-            resp_window=[0.050, 0.070], 
-            base_window=[-0.020, 0], 
+            resp_window=[0.030, 0.060], 
+            base_window=[-0.040, -0.010], 
         ):
         """"""
         
@@ -187,7 +187,7 @@ class StaticGratingsKernel(Kernel):
         for stim_indices in np.ndindex(stimulus.shape[:2]):
             resp_count = self.responses[resp_on:resp_off, *stim_indices, :, :].mean(axis=(0, 1, 2))
             base_count = self.responses[base_on:base_off, *stim_indices, :, :].mean(axis=(0, 1, 2))
-            kernels[*stim_indices] += resp_count
+            kernels[*stim_indices] += (resp_count - base_count)
         self.kernel = kernels
 
     # def _fit_2D_gaussian(
