@@ -6,6 +6,7 @@
 import numpy as np
 from matplotlib import use as mpl_use
 import matplotlib.pyplot as plt
+plt.rcParams["font.size"] = 14
 from scipy.stats import zscore
 
 
@@ -20,18 +21,21 @@ class Kernel:
             unit, 
             stimulus, 
             time_window=[-0.050, 0.200], 
-            bin_size=0.001, 
+            bin_size=0.005, 
         ):
         """"""
 
+        self.total_time = (time_window[1] + np.abs(time_window[0]))*1000
+        self.time_window = time_window
         sample_window = np.array(time_window)*30000
         num_samples = int(sample_window[1] - sample_window[0])
-        num_bins = int(num_samples/(bin_size*30000))
-        self.responses = np.zeros((num_bins, *stimulus.shape))
+        self.num_bins = int(num_samples/(bin_size*30000))
+        self.responses = np.zeros((self.num_bins, *stimulus.shape))
         for event in stimulus:
             window = (sample_window + event.sample_onset).astype(int)
             resp = unit.get_spike_times(window)
-            self.responses[:, *event.stim_indices] = np.sum(resp.reshape(num_bins, -1), axis=1)
+            spikes_per_sec = np.sum(resp.reshape(self.num_bins, -1), axis=1) / bin_size
+            self.responses[:, *event.stim_indices] = spikes_per_sec
 
     def _time_to_bins(
             self, 
@@ -61,9 +65,9 @@ class SparseNoiseKernel(Kernel):
             unit, 
             stimulus, 
             time_window=[-0.050, 0.200], 
-            bin_size=0.001, 
-            resp_window=[0.050, 0.070], 
-            base_window=[-0.030, 0], 
+            bin_size=0.005, 
+            resp_window=[0.030, 0.050], 
+            base_window=[-0.030, -0.010], 
         ):
         """"""
         
@@ -74,16 +78,18 @@ class SparseNoiseKernel(Kernel):
             bin_size=bin_size, 
                        )
 
+        self._Stimulus = stimulus
         kernels = np.zeros(stimulus.shape[0:3])
         sample_window = np.array(time_window)*30000
         num_samples = int(sample_window[1] - sample_window[0])
-        num_bins = int(num_samples/(bin_size*30000))
-        resp_on, resp_off = self._time_to_bins(resp_window, time_window, num_bins)
-        base_on, base_off = self._time_to_bins(base_window, time_window, num_bins)
+        self.num_bins = int(num_samples/(bin_size*30000))
+        self.resp_window, self.base_window = resp_window, base_window
+        resp_on, resp_off = self._time_to_bins(resp_window, time_window, self.num_bins)
+        base_on, base_off = self._time_to_bins(base_window, time_window, self.num_bins)
         for stim_indices in np.ndindex(stimulus.shape[:3]):
-            resp_count = self.responses[resp_on:resp_off, *stim_indices, :].sum(axis=0).mean()
-            base_count = self.responses[base_on:base_off, *stim_indices, :].sum(axis=0).mean()
-            kernels[*stim_indices] += (resp_count - base_count)
+            resp_count = self.responses[resp_on:resp_off, *stim_indices, :].mean(axis=(0, 1))
+            base_count = self.responses[base_on:base_off, *stim_indices, :].mean(axis=(0, 1))
+            kernels[*stim_indices] += resp_count
         self.OFF = kernels[0]
         self.ON = kernels[1]
 
@@ -92,24 +98,145 @@ class SparseNoiseKernel(Kernel):
     #     ):
     #     """"""
 
+    def get_response(
+            self, 
+            base_norm=True, 
+        ):
+        """"""
+
+        resp_on, resp_off = self._time_to_bins(self.resp_window, self.time_window, self.num_bins)
+        base_on, base_off = self._time_to_bins(self.base_window, self.time_window, self.num_bins)
+        response_mean = self.responses.mean(axis=(1,2,3,4))
+        if base_norm == True:
+            response = response_mean[resp_on:resp_off].mean() - response_mean[base_on:base_off].mean()
+        else:
+            response = response_mean[resp_on:resp_off].mean()
+        return response
+
     def plot_raw(
             self, 
-            cmap="inferno", 
+            cmap="viridis", 
             save_path="", 
         ):
         """"""
 
         mpl_use("Qt5Agg")
-        fig, axs = plt.subplots(2, 1)
-        axs[0].imshow(self.OFF.T, cmap=cmap, clim=[self.OFF.min(axis=(0, 1)), self.OFF.max(axis=(0, 1))])
+        fig, axs = plt.subplots(3, 1)
+        axs[0].imshow(self.ON.T, cmap=cmap, clim=[self.ON.min(axis=(0, 1)), self.ON.max(axis=(0, 1))])
         axs[0].axis("off")
-        axs[0].set_title("Off")
-        axs[1].imshow(self.ON.T, cmap=cmap, clim=[self.ON.min(axis=(0, 1)), self.ON.max(axis=(0, 1))])
+        axs[0].set_title("ON", fontsize=18)
+        axs[1].imshow(self.OFF.T, cmap=cmap, clim=[self.OFF.min(axis=(0, 1)), self.OFF.max(axis=(0, 1))])
         axs[1].axis("off")
-        axs[1].set_title("On")
+        axs[1].set_title("OFF", fontsize=18)
+        on_off_clim = [np.min(self.ON - self.OFF, axis=(0, 1)), np.max(self.ON - self.OFF, axis=(0, 1))]
+        axs[2].imshow(self.ON.T - self.OFF.T, cmap=cmap, clim=on_off_clim)
+        axs[2].axis("off")
+        axs[2].set_title("ON - OFF", fontsize=18)
         plt.show(block=False)
-        # fig.set_size_inches()
-        # if 
+        fig.set_size_inches(4, 8)
+
+    def plot_PETH(
+            self, 
+        ):
+        """"""
+
+        mpl_use("Qt5Agg")
+        fig, axs = plt.subplots()
+        response = self.responses.mean(axis=(1,2,3,4))
+        axs.bar(range(self.num_bins), response, color="k")
+        axs.set_xlabel("Time from onset (ms)", fontsize=16)
+        axs.set_xticks(np.linspace(0, self.num_bins, 6))
+        axs.set_xticklabels(np.linspace(self.time_window[0]*1000, self.time_window[1]*1000, 6))
+        axs.set_ylabel("Spikes/s", fontsize=16)
+        plt.show(block=False)
+        fig.set_size_inches(4, 4)
 
 
+class StaticGratingsKernel(Kernel):
+    """
 
+    """
+
+
+    def __init__(
+            self, 
+            unit, 
+            stimulus, 
+            time_window=[-0.050, 0.200], 
+            bin_size=0.005, 
+            resp_window=[0.050, 0.070], 
+            base_window=[-0.020, 0], 
+        ):
+        """"""
+        
+        super().__init__(
+            unit, 
+            stimulus, 
+            time_window=time_window, 
+            bin_size=bin_size, 
+                       )
+
+        self._Stimulus = stimulus
+        kernels = np.zeros(stimulus.shape[0:2])
+        sample_window = np.array(time_window)*30000
+        num_samples = int(sample_window[1] - sample_window[0])
+        self.num_bins = int(num_samples/(bin_size*30000))
+        self.resp_window, self.base_window = resp_window, base_window
+        resp_on, resp_off = self._time_to_bins(resp_window, time_window, self.num_bins)
+        base_on, base_off = self._time_to_bins(base_window, time_window, self.num_bins)
+        for stim_indices in np.ndindex(stimulus.shape[:2]):
+            resp_count = self.responses[resp_on:resp_off, *stim_indices, :, :].mean(axis=(0, 1, 2))
+            base_count = self.responses[base_on:base_off, *stim_indices, :, :].mean(axis=(0, 1, 2))
+            kernels[*stim_indices] += resp_count
+        self.kernel = kernels
+
+    # def _fit_2D_gaussian(
+    #         self, 
+    #     ):
+    #     """"""
+
+    def get_response(
+            self, 
+            base_norm=True, 
+        ):
+        """"""
+
+        resp_on, resp_off = self._time_to_bins(self.resp_window, self.time_window, self.num_bins)
+        base_on, base_off = self._time_to_bins(self.base_window, self.time_window, self.num_bins)
+        response_mean = self.responses.mean(axis=(1,2,3,4))
+        if base_norm == True:
+            response = response_mean[resp_on:resp_off].mean() - response_mean[base_on:base_off].mean()
+        else:
+            response = response_mean[resp_on:resp_off].mean()
+        return response
+
+    def plot_raw(
+            self, 
+            cmap="viridis", 
+            save_path="", 
+        ):
+        """"""
+
+        mpl_use("Qt5Agg")
+        fig, axs = plt.subplots()
+        axs.imshow(self.kernel, cmap=cmap, clim=[self.kernel.min(axis=(0, 1)), self.kernel.max(axis=(0, 1))])
+        axs.axis("off")
+        axs.set_title("Ori/SF", fontsize=18)
+        plt.show(block=False)
+        fig.set_size_inches(6, 6)
+
+    def plot_PETH(
+            self, 
+        ):
+        """"""
+
+        mpl_use("Qt5Agg")
+        fig, axs = plt.subplots()
+        response = self.responses.mean(axis=(1,2,3,4))
+        axs.bar(range(self.num_bins), response, color="k")
+        axs.set_xlabel("Time from onset (ms)", fontsize=16)
+        axs.set_xticks(np.linspace(0, self.num_bins, 6))
+        axs.set_xticklabels(np.linspace(self.time_window[0]*1000, self.time_window[1]*1000, 6))
+        axs.set_ylabel("Spikes/s", fontsize=16)
+        plt.show(block=False)
+        fig.set_size_inches(4, 4)
