@@ -70,7 +70,7 @@ class DigitalChannel:
         ):
         """
         Aligning NIDAQ and Imec synchronization channels requires dropping some samples. This method accepts 
-        sample indices to drop and rebuilds attributes accordingly.
+        sample indices to drop and rebuild attributes accordingly.
         """
 
         # Remove specified samples from the digital signal.
@@ -81,6 +81,17 @@ class DigitalChannel:
         # Update the event times dataframe and list of Event objects.
         self._build_events_df()
         self._get_events()
+        # Check for single-sample events and flip them.
+        if any(self.events["sample_duration"] == 1):
+            (idx,) = np.where(self.events["sample_duration"] == 1)
+            sample_index = self.events.at[idx[0], "sample_onset"]
+            digital_value = self.events.at[idx[0], "digital_value"]
+            if digital_value == 0:
+                self.signal[sample_index] = 1
+            elif digital_value == 1:
+                self.signal[sample_index] = 0
+            self._build_events_df()
+            self._get_events()
 
 
     def _build_events_df(
