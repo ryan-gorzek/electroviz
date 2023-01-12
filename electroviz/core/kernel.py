@@ -8,6 +8,7 @@ from matplotlib import use as mpl_use
 import matplotlib.pyplot as plt
 plt.rcParams["font.size"] = 14
 from scipy.stats import zscore
+from scipy.optimize import curve_fit
 
 
 class Kernel:
@@ -90,13 +91,22 @@ class SparseNoiseKernel(Kernel):
             resp_count = self.responses[resp_on:resp_off, *stim_indices, :].mean(axis=(0, 1))
             base_count = self.responses[base_on:base_off, *stim_indices, :].mean(axis=(0, 1))
             kernels[*stim_indices] += (resp_count - base_count)
+        self._kernels = kernels
         self.OFF = kernels[0]
         self.ON = kernels[1]
+        self.DIFF = self.ON - self.OFF
+        # Initialize fits as None.
+        self.ON_fit, self.OFF_fit, self.DIFF_fit = None, None, None
 
-    # def _fit_2D_gaussian(
+    # def fit(
     #         self, 
     #     ):
     #     """"""
+        
+        
+
+    #     def gaussian_2D():
+
 
     def get_response(
             self, 
@@ -128,8 +138,28 @@ class SparseNoiseKernel(Kernel):
         axs[1].imshow(self.OFF.T, cmap=cmap, clim=[self.OFF.min(axis=(0, 1)), self.OFF.max(axis=(0, 1))])
         axs[1].axis("off")
         axs[1].set_title("OFF", fontsize=18)
-        on_off_clim = [np.min(self.ON - self.OFF, axis=(0, 1)), np.max(self.ON - self.OFF, axis=(0, 1))]
-        axs[2].imshow(self.ON.T - self.OFF.T, cmap=cmap, clim=on_off_clim)
+        axs[2].imshow(self.DIFF.T, cmap=cmap, clim=[self.DIFF.min(axis=(0, 1)), self.DIFF.max(axis=(0, 1))])
+        axs[2].axis("off")
+        axs[2].set_title("ON - OFF", fontsize=18)
+        plt.show(block=False)
+        fig.set_size_inches(4, 8)
+
+    def plot_fit(
+            self, 
+            cmap="viridis", 
+            save_path="", 
+        ):
+        """"""
+
+        mpl_use("Qt5Agg")
+        fig, axs = plt.subplots(3, 1)
+        axs[0].imshow(self.ON_fit.T, cmap=cmap, clim=[self.ON_fit.min(axis=(0, 1)), self.ON_fit.max(axis=(0, 1))])
+        axs[0].axis("off")
+        axs[0].set_title("ON", fontsize=18)
+        axs[1].imshow(self.OFF_fit.T, cmap=cmap, clim=[self.OFF_fit.min(axis=(0, 1)), self.OFF_fit.max(axis=(0, 1))])
+        axs[1].axis("off")
+        axs[1].set_title("OFF", fontsize=18)
+        axs[2].imshow(self.DIFF_fit.T, cmap=cmap, clim=[self.DIFF_fit.min(axis=(0, 1)), self.DIFF_fit.max(axis=(0, 1))])
         axs[2].axis("off")
         axs[2].set_title("ON - OFF", fontsize=18)
         plt.show(block=False)
