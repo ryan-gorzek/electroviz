@@ -10,12 +10,13 @@ from scipy import sparse
 from electroviz.core.unit import Unit
 from matplotlib import use as mpl_use
 import matplotlib.pyplot as plt
-plt.rcParams["font.size"] = 18
+plt.rcParams["font.size"] = 14
 plt.rcParams["xtick.major.size"] = 8
 plt.rcParams["xtick.major.width"] = 1
 plt.rcParams["ytick.major.size"] = 8
 plt.rcParams["ytick.major.width"] = 1
 from electroviz.viz.psth import PSTH
+from electroviz.viz.raster import Raster
 from scipy.stats import zscore
 
 class Population:
@@ -61,18 +62,16 @@ class Population:
         responses = self.get_response(stimulus, time_window, bin_size=bin_size)
         PSTH(time_window, responses.mean(axis=0).squeeze())
 
-    # def plot_raster(
-    #         self, 
-    #         stimulus, 
-    #         time_window=(-50, 200), 
-    #         bin_size=1, 
-    #         cmap="binary", 
-    #         save_path="", 
-    #     ):
-    #     """"""
+    def plot_raster(
+            self, 
+            stimulus, 
+            time_window=(-50, 200), 
+            bin_size=1, 
+        ):
+        """"""
         
-    #     responses = self.get_response(stimulus, time_window, bin_size)
-    #     Raster(responses, time_window)
+        responses = self.get_response(stimulus, time_window, bin_size=bin_size)
+        Raster(time_window, responses, ylabel="Unit")
 
     def get_response(
             self, 
@@ -89,7 +88,7 @@ class Population:
         for event in stimulus:
             window = (sample_window + event.sample_onset).astype(int)
             resp = self.spike_times[:, window[0]:window[1]].toarray()
-            bin_resp = resp.reshape((len(self), num_bins, -1)).sum(axis=2)
+            bin_resp = resp.reshape((len(self), num_bins, -1)).sum(axis=2) / (bin_size / 1000)
             responses[:, :, event.index] = bin_resp
         return responses.mean(axis=2)
 
