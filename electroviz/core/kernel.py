@@ -44,7 +44,7 @@ class Kernel:
 
     def get_response(
             self, 
-            respone_window=(0.030, 0.060), 
+            response_window=(0.030, 0.060), 
             baseline_window=(-0.040, -0.010), 
             baseline_norm=True,  
         ):
@@ -247,8 +247,8 @@ class StaticGratingsKernel(Kernel):
             stimulus, 
             time_window=(-0.050, 0.200), 
             bin_size=0.005, 
-            resp_window=(0.030, 0.060), 
-            base_window=(-0.040, -0.010), 
+            response_window=(0.000, 0.100), 
+            baseline_window=(-0.040, -0.010), 
         ):
         """"""
         
@@ -276,24 +276,24 @@ class StaticGratingsKernel(Kernel):
 
         self.response_windows = response_windows
         self.baseline_window = baseline_window
-        kernel = np.empty((len(response_windows), *self._Stimulus.shape[0:2]))
+        kernel = np.empty((len(response_windows), *self._Stimulus.shape[:2]))
         self.kernel_S = np.empty((len(response_windows),))
         for idx, response_window in enumerate(response_windows):
             resp_on, resp_off = self._time_to_bins(response_window)
             base_on, base_off = self._time_to_bins(baseline_window)
-            kernels = np.zeros(self._Stimulus.shape[0:3])
-            for stim_indices in np.ndindex(self._Stimulus.shape[:3]):
-                resp_rate = self._responses[resp_on:resp_off, *stim_indices, :].mean(axis=(0, 1))
-                base_rate = self._responses[base_on:base_off, *stim_indices, :].mean(axis=(0, 1))
+            kernels = np.zeros(self._Stimulus.shape[:2])
+            for stim_indices in np.ndindex(self._Stimulus.shape[:2]):
+                resp_rate = self._responses[resp_on:resp_off, *stim_indices, :].mean(axis=(0, 1, 2))
+                base_rate = self._responses[base_on:base_off, *stim_indices, :].mean(axis=(0, 1, 2))
                 kernels[*stim_indices] += (resp_rate - base_rate)
-            kernel[idx] = kernels[0]
+            kernel[idx] = kernels
             self.kernel_S[idx] = np.linalg.norm(kernel[idx].flatten()) / np.linalg.norm(kernel[0].flatten())
         # Get the kernel with the maximum norm (across time).
         if not all((np.isinf(self.kernel_S) | np.isnan(self.kernel_S))):
             (kernel_tmax,) = np.where(self.kernel_S == np.max(self.kernel_S))
             self.kernel = kernel[kernel_tmax[0], :, :].squeeze()
         else:
-            self.kernel = np.empty(kernel.shape[1:3]).fill(np.nan)
+            self.kernel = np.empty(kernel.shape[:2]).fill(np.nan)
 
     def plot_raw(
             self, 
