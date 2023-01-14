@@ -6,7 +6,8 @@
 import numpy as np
 from matplotlib import use as mpl_use
 import matplotlib.pyplot as plt
-from scipy.stats import zscore
+from electroviz.viz.psth import PSTH
+from electroviz.viz.raster import Raster
 
 class Unit:
     """
@@ -29,6 +30,47 @@ class Unit:
         self.spike_times = np.empty((0, 0))
         self.kernels = []
 
+    def plot_PSTH(
+            self, 
+            stimulus, 
+            time_window=(-50, 200), 
+            bin_size=5, 
+        ):
+        """"""
+
+        responses = self.get_response(stimulus, time_window, bin_size=bin_size)
+        PSTH(time_window, responses.mean(axis=0).squeeze())
+
+    def plot_raster(
+            self, 
+            stimulus, 
+            time_window=(-50, 200), 
+            bin_size=1, 
+        ):
+        """"""
+
+        responses = self.get_response(stimulus, time_window, bin_size=bin_size)
+        Raster(time_window, responses, ylabel="Stimulus Event")
+
+    def get_response(
+            self, 
+            stimulus, 
+            time_window=(-50, 200), 
+            bin_size=1, 
+        ):
+        """"""
+
+        sample_window = np.array(time_window) * 30
+        num_samples = int(sample_window[1] - sample_window[0])
+        num_bins = int(num_samples/(bin_size * 30))
+        responses = np.zeros((len(stimulus), num_bins))
+        for event in stimulus:
+            window = (sample_window + event.sample_onset).astype(int)
+            resp = self.get_spike_times(sample_window=window)
+            bin_resp = resp.reshape((num_bins, -1)).sum(axis=1) / (bin_size / 1000)
+            responses[event.index, :] = bin_resp
+        return responses
+
     def add_metric(
             self, 
             unit_id, 
@@ -49,38 +91,6 @@ class Unit:
         """"""
 
         self.kernels.append(kernel)
-
-    def plot_raster(
-            self, 
-            stimulus, 
-            time_window=[-0.050, 0.200], 
-            bin_size=0.001, 
-        ):
-
-        sample_window = np.array(time_window)*30000
-        num_samples = int(sample_window[1] - sample_window[0])
-        num_bins = int(num_samples/(bin_size*30000))
-        responses = np.zeros((num_bins, len(stimulus)))
-        for event in stimulus:
-            window = (sample_window + event.sample_onset).astype(int)
-            resp = self.get_spike_times(sample_window=window)
-            responses[:, event.index] = np.sum(resp.reshape(num_bins, -1), axis=1).squeeze()
-
-    def plot_PSTH(
-            self, 
-            stimulus, 
-            time_window=[-0.050, 0.200], 
-            bin_size=0.001, 
-        ):
-
-        sample_window = np.array(time_window)*30000
-        num_samples = int(sample_window[1] - sample_window[0])
-        num_bins = int(num_samples/(bin_size*30000))
-        responses = np.zeros((num_bins, len(stimulus)))
-        for event in stimulus:
-            window = (sample_window + event.sample_onset).astype(int)
-            resp = self.get_spike_times(sample_window=window)
-            responses[:, event.index] = np.sum(resp.reshape(num_bins, -1), axis=1).squeeze()
 
     def get_spike_times(
             self, 
