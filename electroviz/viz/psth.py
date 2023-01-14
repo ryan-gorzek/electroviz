@@ -6,7 +6,7 @@
 from matplotlib import use as mpl_use
 import numpy as np
 import matplotlib.pyplot as plt
-plt.rcParams["font.size"] = 18
+plt.rcParams["font.size"] = 14
 plt.rcParams["xtick.major.size"] = 8
 plt.rcParams["xtick.major.width"] = 1
 plt.rcParams["ytick.major.size"] = 8
@@ -28,7 +28,6 @@ class PSTH:
         colors = ((0.0, 0.0, 0.0), (0.9, 0.2, 0.2))
         mpl_use("Qt5Agg")
         fig, ax = plt.subplots()
-        
         if responses.ndim == 2:
             for resp, col in zip(responses, colors[:responses.ndim]):
                 t = np.linspace(0, resp.size, resp.size)
@@ -45,4 +44,5 @@ class PSTH:
         ax.set_ylim(lims[0])
         ax.set_ylabel("Spikes / second", fontsize=16)
         plt.show(block=False)
+        plt.tight_layout()
         fig.set_size_inches(6, 6)
