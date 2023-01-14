@@ -18,14 +18,29 @@ class Unit:
             unit_id, 
             imec_sync, 
             kilosort_spikes, 
+            population, 
         ):
         """"""
         
         self.ID = unit_id
         self._Sync = imec_sync
         self._Spikes = kilosort_spikes
+        self._Population = population
         self.spike_times = np.empty((0, 0))
         self.kernels = []
+
+    def add_metric(
+            self, 
+            unit_id, 
+            metric_name, 
+            metric, 
+        ):
+        """"""
+        
+        if not metric_name in self.units.columns:
+            self._Population.units[metric_name] = [np.nan]*self._Population.units.shape[0]
+        (unit_idx,) = np.where(self._Population.units["unit_id"] == self.ID)
+        self.units.at[unit_idx[0], metric_name] = metric
 
     def add_kernel(
             self, 
@@ -35,7 +50,7 @@ class Unit:
 
         self.kernels.append(kernel)
 
-    def plot_aligned_response(
+    def plot_raster(
             self, 
             stimulus, 
             time_window=[-0.050, 0.200], 
@@ -50,13 +65,8 @@ class Unit:
             window = (sample_window + event.sample_onset).astype(int)
             resp = self.get_spike_times(sample_window=window)
             responses[:, event.index] = np.sum(resp.reshape(num_bins, -1), axis=1).squeeze()
-        mpl_use("Qt5Agg")
-        fig, axs = plt.subplots()
-        z_response = zscore(responses.T, axis=1)
-        axs.imshow(responses.T, cmap="binary")
-        plt.show()
 
-    def plot_averaged_response(
+    def plot_PSTH(
             self, 
             stimulus, 
             time_window=[-0.050, 0.200], 
@@ -71,19 +81,10 @@ class Unit:
             window = (sample_window + event.sample_onset).astype(int)
             resp = self.get_spike_times(sample_window=window)
             responses[:, event.index] = np.sum(resp.reshape(num_bins, -1), axis=1).squeeze()
-        mpl_use("Qt5Agg")
-        fig, axs = plt.subplots()
-        mean_response = np.nanmean(responses.squeeze(), axis=1)
-        axs.axvline(50, color="k", linestyle="dashed")
-        axs.plot(mean_response, color="b")
-        axs.set_xlabel("Time from onset (ms)")
-        axs.set_xticks([0, 50, 100, 150, 200, 250])
-        axs.set_xticklabels([-50, 0, 50, 100, 150, 200])
-        plt.show()
 
     def get_spike_times(
             self, 
-            sample_window=[None, None], 
+            sample_window=(None, None), 
         ):
         """"""
         
