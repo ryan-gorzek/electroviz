@@ -15,6 +15,7 @@ plt.rcParams["xtick.major.size"] = 8
 plt.rcParams["xtick.major.width"] = 1
 plt.rcParams["ytick.major.size"] = 8
 plt.rcParams["ytick.major.width"] = 1
+from electroviz.viz.psth import PSTH
 from scipy.stats import zscore
 
 class Population:
@@ -37,7 +38,7 @@ class Population:
         # Create Unit objects.
         self._Units = []
         for uid in range(self.total_units):
-            unit = Unit(uid, self._Sync, self._Spikes)
+            unit = Unit(uid, self._Sync, self._Spikes, self)
             self._Units.append(unit)
         # Populate unit metrics dataframe.
         self.units = pd.DataFrame()
@@ -49,50 +50,48 @@ class Population:
         # Define current index for iteration.
         self._current_Unit_idx = 0
 
-    def plot_aligned_response(
+    def plot_PSTH(
             self, 
             stimulus, 
-            time_window=[-0.050, 0.200], 
-            bin_size=0.001, 
-            cmap="binary", 
-            save_path="", 
+            time_window=(-50, 200), 
+            bin_size=5, 
         ):
         """"""
-        
-        responses = self.get_aligned_response(stimulus, time_window, bin_size)
-        mpl_use("Qt5Agg")
-        fig, axs = plt.subplots()
-        mean_response = np.nanmean(responses, axis=2)
-        z_response = zscore(mean_response, axis=1)
-        axs.imshow(z_response, cmap=cmap)
-        axs.set_xlabel("Time from onset (ms)", fontsize=20)
-        axs.set_xticks([0, 50, 100, 150, 200, 250])
-        axs.set_xticklabels([-50, 0, 50, 100, 150, 200])
-        axs.set_ylabel("Unit", fontsize=20)
-        axs.set_frame_on(False)
-        fig.set_size_inches(8, 16)
-        plt.show(block=False)
-        if save_path != "":
-            plt.savefig(save_path, bbox_inches="tight")
 
-    def get_aligned_response(
+        responses = self.get_response(stimulus, time_window, bin_size=bin_size)
+        PSTH(time_window, responses.mean(axis=0).squeeze())
+
+    # def plot_raster(
+    #         self, 
+    #         stimulus, 
+    #         time_window=(-50, 200), 
+    #         bin_size=1, 
+    #         cmap="binary", 
+    #         save_path="", 
+    #     ):
+    #     """"""
+        
+    #     responses = self.get_response(stimulus, time_window, bin_size)
+    #     Raster(responses, time_window)
+
+    def get_response(
             self, 
             stimulus, 
-            time_window=[-0.050, 0.200], 
-            bin_size=0.001, 
+            time_window=(-50, 200), 
+            bin_size=1, 
         ):
         """"""
         
-        sample_window = np.array(time_window)*30000
+        sample_window = np.array(time_window) * 30
         num_samples = int(sample_window[1] - sample_window[0])
-        num_bins = int(num_samples/(bin_size*30000))
+        num_bins = int(num_samples/(bin_size * 30))
         responses = np.zeros((len(self), num_bins, len(stimulus)))
         for event in stimulus:
             window = (sample_window + event.sample_onset).astype(int)
             resp = self.spike_times[:, window[0]:window[1]].toarray()
             bin_resp = resp.reshape((len(self), num_bins, -1)).sum(axis=2)
             responses[:, :, event.index] = bin_resp
-        return responses
+        return responses.mean(axis=2)
 
     def plot_rate_histogram(
             self, 
@@ -108,34 +107,6 @@ class Population:
         axs.set_ylabel("Probability", fontsize=20)
         fig.set_size_inches(8, 8)
         plt.show(block=False)
-
-    def plot_PETH(
-            self, 
-            stimulus, 
-            time_window=[-0.050, 0.200], 
-            bin_size=0.005, 
-        ):
-        """"""
-
-        sample_window = np.array(time_window)*30000
-        num_samples = int(sample_window[1] - sample_window[0])
-        num_bins = int(num_samples/(bin_size*30000))
-        responses = np.zeros((len(self), num_bins, *stimulus.shape))
-        for event in stimulus:
-            window = (sample_window + event.sample_onset).astype(int)
-            resp = self.spike_times[:, window[0]:window[1]].toarray()
-            spikes_per_sec = resp.reshape((len(self), num_bins, -1)).sum(axis=2) / bin_size
-            responses[:, :, *event.stim_indices] = spikes_per_sec
-        mpl_use("Qt5Agg")
-        fig, axs = plt.subplots()
-        response = responses.mean(axis=(2,3,4,5)).mean(axis=0).squeeze()
-        axs.bar(range(num_bins), response, color="k")
-        axs.set_xlabel("Time from onset (ms)", fontsize=16)
-        axs.set_xticks(np.linspace(0, num_bins, 6))
-        axs.set_xticklabels(np.linspace(time_window[0]*1000, time_window[1]*1000, 6))
-        axs.set_ylabel("Spikes/s", fontsize=16)
-        plt.show(block=False)
-        fig.set_size_inches(6, 6)
 
     def sort(
             self, 
@@ -165,19 +136,6 @@ class Population:
         subset = self._get_subset(np.array(keep_idx))
         return subset
 
-    def add_metric(
-            self, 
-            unit_id, 
-            metric_name, 
-            metric, 
-        ):
-        """"""
-        
-        if not metric_name in self.units.columns:
-            self.units[metric_name] = [np.nan]*self.units.shape[0]
-        (unit_idx,) = np.where(self.units["unit_id"] == unit_id)
-        self.units.at[unit_idx[0], metric_name] = metric
-    
     def __getitem__(
             self, 
             input, 
