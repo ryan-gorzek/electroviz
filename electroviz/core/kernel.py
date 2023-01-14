@@ -185,13 +185,13 @@ class SparseNoiseKernel(Kernel):
             ON = kernels[1].T
             OFF = kernels[0].T
             DIFF = ON - OFF
-            axs[idx][0].imshow(ON, cmap=cmap, clim=[ON.min(axis=(0, 1)), ON.max(axis=(0, 1))])
+            axs[idx][0].imshow(ON, cmap=cmap, clim=[ON.min(), ON.max()])
             axs[idx][0].axis("off")
             axs[idx][0].set_title("ON", fontsize=18)
-            axs[idx][1].imshow(OFF, cmap=cmap, clim=[OFF.min(axis=(0, 1)), OFF.max(axis=(0, 1))])
+            axs[idx][1].imshow(OFF, cmap=cmap, clim=[OFF.min(), OFF.max()])
             axs[idx][1].axis("off")
             axs[idx][1].set_title("OFF", fontsize=18)
-            axs[idx][2].imshow(DIFF, cmap=cmap, clim=[DIFF.min(axis=(0, 1)), DIFF.max(axis=(0, 1))])
+            axs[idx][2].imshow(DIFF, cmap=cmap, clim=[DIFF.min(), DIFF.max()])
             axs[idx][2].axis("off")
             axs[idx][2].set_title("ON - OFF", fontsize=18)
         plt.show(block=False)
@@ -206,13 +206,13 @@ class SparseNoiseKernel(Kernel):
 
         mpl_use("Qt5Agg")
         fig, axs = plt.subplots(3, 1)
-        axs[0].imshow(self.ON_fit.T, cmap=cmap, clim=[self.ON_fit.min(axis=(0, 1)), self.ON_fit.max(axis=(0, 1))])
+        axs[0].imshow(self.ON_fit.T, cmap=cmap, clim=[self.ON_fit.min(), self.ON_fit.max()])
         axs[0].axis("off")
         axs[0].set_title("ON", fontsize=18)
-        axs[1].imshow(self.OFF_fit.T, cmap=cmap, clim=[self.OFF_fit.min(axis=(0, 1)), self.OFF_fit.max(axis=(0, 1))])
+        axs[1].imshow(self.OFF_fit.T, cmap=cmap, clim=[self.OFF_fit.min(), self.OFF_fit.max()])
         axs[1].axis("off")
         axs[1].set_title("OFF", fontsize=18)
-        axs[2].imshow(self.DIFF_fit.T, cmap=cmap, clim=[self.DIFF_fit.min(axis=(0, 1)), self.DIFF_fit.max(axis=(0, 1))])
+        axs[2].imshow(self.DIFF_fit.T, cmap=cmap, clim=[self.DIFF_fit.min(), self.DIFF_fit.max()])
         axs[2].axis("off")
         axs[2].set_title("ON - OFF", fontsize=18)
         plt.show(block=False)
