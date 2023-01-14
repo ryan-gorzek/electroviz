@@ -23,7 +23,7 @@ class Experiment:
             self, 
             experiment_path, 
             SGLX_name="ephys", 
-            bTsS_names=["contra_random_squares"], # ALSO CHANGE STIM TYPE BELOW
+            bTsS_names=["contra_random_squares"], 
         ):
         """"""
 
