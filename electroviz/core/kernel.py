@@ -42,6 +42,23 @@ class Kernel:
             spikes_per_sec = np.sum(resp.reshape(self._num_bins, -1), axis=1) / bin_size
             self._responses[:, *event.stim_indices] = spikes_per_sec
 
+    def get_response(
+            self, 
+            respone_window=(0.030, 0.060), 
+            baseline_window=(-0.040, -0.010), 
+            baseline_norm=True,  
+        ):
+        """"""
+
+        resp_on, resp_off = self._time_to_bins(response_window)
+        base_on, base_off = self._time_to_bins(baseline_window)
+        response_mean = self._responses.mean(axis=(1,2,3,4))
+        if baseline_norm == True:
+            response = response_mean[resp_on:resp_off].mean() - response_mean[base_on:base_off].mean()
+        else:
+            response = response_mean[resp_on:resp_off].mean()
+        return response
+
     def _time_to_bins(
             self, 
             window, 
@@ -124,23 +141,6 @@ class SparseNoiseKernel(Kernel):
             self.ON = np.empty(ON.shape[1:3]).fill(np.nan)
             self.OFF = np.empty(OFF.shape[1:3]).fill(np.nan)
             self.DIFF = np.empty(ON.shape[1:3]).fill(np.nan)
-
-    def get_response(
-            self, 
-            respone_window=(0.030, 0.060), 
-            baseline_window=(-0.040, -0.010), 
-            baseline_norm=True,  
-        ):
-        """"""
-
-        resp_on, resp_off = self._time_to_bins(response_window)
-        base_on, base_off = self._time_to_bins(baseline_window)
-        response_mean = self._responses.mean(axis=(1,2,3,4))
-        if baseline_norm == True:
-            response = response_mean[resp_on:resp_off].mean() - response_mean[base_on:base_off].mean()
-        else:
-            response = response_mean[resp_on:resp_off].mean()
-        return response
 
     def get_norm(
             self, 
@@ -260,46 +260,40 @@ class StaticGratingsKernel(Kernel):
                        )
 
         sample_window = np.array(time_window)*30000
-        self.num_samples = int(sample_window[1] - sample_window[0])
-        self.num_bins = int(self.num_samples/(bin_size*30000))
-        self.resp_window, self.base_window = resp_window, base_window
-        self.kernel = self.compute(resp_window, base_window)
+        num_samples = int(sample_window[1] - sample_window[0])
+        response_windows = [(on, on + bin_size) for on in np.arange(*response_window, self.bin_size)]
+        baseline_window = baseline_window
+        self.compute_kernels(response_windows, baseline_window)
+        # Initialize fit as None.
+        self.kernel_fit = None
 
-    def compute(
+    def compute_kernels(
             self, 
-            resp_window, 
-            base_window, 
+            response_windows, 
+            baseline_window, 
         ):
         """"""
 
-        resp_on, resp_off = self._time_to_bins(resp_window, self.time_window, self.num_bins)
-        base_on, base_off = self._time_to_bins(base_window, self.time_window, self.num_bins)
-        kernels = np.zeros(self._Stimulus.shape[0:2])
-        for stim_indices in np.ndindex(self._Stimulus.shape[:2]):
-            resp_count = self.responses[resp_on:resp_off, *stim_indices, :].mean(axis=(0, 1, 2))
-            base_count = self.responses[base_on:base_off, *stim_indices, :].mean(axis=(0, 1, 2))
-            kernels[*stim_indices] += (resp_count - base_count)
-        return kernels
-
-    # def _fit_2D_gaussian(
-    #         self, 
-    #     ):
-    #     """"""
-
-    def get_response(
-            self, 
-            base_norm=True, 
-        ):
-        """"""
-
-        resp_on, resp_off = self._time_to_bins(self.resp_window, self.time_window, self.num_bins)
-        base_on, base_off = self._time_to_bins(self.base_window, self.time_window, self.num_bins)
-        response_mean = self.responses.mean(axis=(1,2,3,4))
-        if base_norm == True:
-            response = response_mean[resp_on:resp_off].mean() - response_mean[base_on:base_off].mean()
+        self.response_windows = response_windows
+        self.baseline_window = baseline_window
+        kernel = np.empty((len(response_windows), *self._Stimulus.shape[0:2]))
+        self.kernel_S = np.empty((len(response_windows),))
+        for idx, response_window in enumerate(response_windows):
+            resp_on, resp_off = self._time_to_bins(response_window)
+            base_on, base_off = self._time_to_bins(baseline_window)
+            kernels = np.zeros(self._Stimulus.shape[0:3])
+            for stim_indices in np.ndindex(self._Stimulus.shape[:3]):
+                resp_rate = self._responses[resp_on:resp_off, *stim_indices, :].mean(axis=(0, 1))
+                base_rate = self._responses[base_on:base_off, *stim_indices, :].mean(axis=(0, 1))
+                kernels[*stim_indices] += (resp_rate - base_rate)
+            kernel[idx] = kernels[0]
+            self.kernel_S[idx] = np.linalg.norm(kernel[idx].flatten()) / np.linalg.norm(kernel[0].flatten())
+        # Get the kernel with the maximum norm (across time).
+        if not all((np.isinf(self.kernel_S) | np.isnan(self.kernel_S))):
+            (kernel_tmax,) = np.where(self.kernel_S == np.max(self.kernel_S))
+            self.kernel = kernel[kernel_tmax[0], :, :].squeeze()
         else:
-            response = response_mean[resp_on:resp_off].mean()
-        return response
+            self.kernel = np.empty(kernel.shape[1:3]).fill(np.nan)
 
     def plot_raw(
             self, 
