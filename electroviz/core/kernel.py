@@ -39,7 +39,7 @@ class Kernel:
         for event in stimulus:
             window = (sample_window + event.sample_onset).astype(int)
             resp = unit.get_spike_times(window)
-            spikes_per_sec = np.sum(resp.reshape(self._num_bins, -1), axis=1) / bin_size
+            spikes_per_sec = resp.reshape(self._num_bins, -1).sum(axis=1) / bin_size
             self._responses[:, *event.stim_indices] = spikes_per_sec
 
     def get_response(
