@@ -140,16 +140,16 @@ class Population:
     def sort(
             self, 
             metric, 
-            order="ascend", 
+            order="descend", 
         ):
         """"""
 
         if metric in self.units.columns:
-            sort_idx = np.argsort(self.units[metric].to_numpy())
+            sort_idx = np.argsort(self.remove(np.isnan(self.units[metric])).units[metric].to_numpy())
             if order == "ascend":
-                subset = self._get_subset(sort_idx)
+                subset = self.remove(np.isnan(self.units[metric]))._get_subset(sort_idx)
             elif order == "descend":
-                subset = self._get_subset(sort_idx[::-1])
+                subset = self.remove(np.isnan(self.units[metric]))._get_subset(sort_idx[::-1])
             return subset
 
     def remove(
@@ -158,7 +158,7 @@ class Population:
         ):
         """"""
 
-        if len(idx) == self.total_units:
+        if isinstance(idx[0], np.bool_):
             (keep_idx,) = np.where(idx == False)
         else:
             keep_idx = idx
@@ -167,7 +167,7 @@ class Population:
 
     def add_metric(
             self, 
-            unit_idx, 
+            unit_id, 
             metric_name, 
             metric, 
         ):
@@ -175,7 +175,8 @@ class Population:
         
         if not metric_name in self.units.columns:
             self.units[metric_name] = [np.nan]*self.units.shape[0]
-        self.units.at[unit_idx, metric_name] = metric
+        (unit_idx,) = np.where(self.units["unit_id"] == unit_id)
+        self.units.at[unit_idx[0], metric_name] = metric
     
     def __getitem__(
             self, 
