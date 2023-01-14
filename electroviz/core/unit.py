@@ -21,10 +21,19 @@ class Unit:
         ):
         """"""
         
-        self.unit_id = unit_id
+        self.ID = unit_id
         self._Sync = imec_sync
         self._Spikes = kilosort_spikes
         self.spike_times = np.empty((0, 0))
+        self.kernels = []
+
+    def add_kernel(
+            self, 
+            kernel, 
+        ):
+        """"""
+
+        self.kernels.append(kernel)
 
     def plot_aligned_response(
             self, 
@@ -80,6 +89,6 @@ class Unit:
         
         if self.spike_times.shape[0] == 0:
             spike_times_matrix = self._Spikes.spike_times.tocsr()
-            self.spike_times = spike_times_matrix[self.unit_id].tocsc()
+            self.spike_times = spike_times_matrix[self.ID].tocsc()
         return self.spike_times[0, sample_window[0]:sample_window[1]].toarray().squeeze()
         
