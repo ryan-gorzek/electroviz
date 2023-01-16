@@ -228,8 +228,8 @@ class StaticGratingsKernel(Kernel):
         ):
         """"""
 
-        orisfs = np.empty((len(response_windows), *self._Stimulus.shape[2:0:-1]))
-        orisf_S = (np.empty((len(response_windows),)) for k in range(2))
+        orisfs = np.empty((len(response_windows), *self._Stimulus.shape[:2]))
+        orisf_S = np.empty((len(response_windows),))
         for idx, response_window in enumerate(response_windows):
             resp_on, resp_off = self._time_to_bins(response_window)
             kernels = np.zeros(self._Stimulus.shape[:2])
@@ -259,7 +259,7 @@ class StaticGratingsKernel(Kernel):
         ax.imshow(self.orisf, cmap=cmap, clim=[self.orisf.min(), self.orisf.max()])
         ax.axis("off")
         plt.show(block=False)
-        fig.set_size_inches(3, 7)
+        fig.set_size_inches(4, 4)
 
     def plot_raw_delay(
             self, 
@@ -272,8 +272,8 @@ class StaticGratingsKernel(Kernel):
         fig, axs = plt.subplots(1, len(self.response_windows))
         _, _, _, orisf_all = self._compute_kernels(self.response_windows)
         for idx, orisf in enumerate(orisf_all):
-            axs[0][idx].imshow(orisf, cmap=cmap, clim=[orisf.min(), orisf.max()])
-            axs[0][idx].axis("off")
+            axs[idx].imshow(orisf, cmap=cmap, clim=[orisf.min(), orisf.max()])
+            axs[idx].axis("off")
         plt.show(block=False)
         fig.set_size_inches(len(self.response_windows) - 1, 2)
 
