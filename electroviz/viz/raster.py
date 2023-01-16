@@ -32,9 +32,13 @@ class Raster:
         fig, ax = plt.subplots()
         aspect_ratio = 1.75 / (responses.shape[0] / responses.shape[1])
         if z_score == True:
-            ax.imshow(zscore(responses, axis=1), cmap="binary", aspect=aspect_ratio)
+            ax.imshow(zscore(responses, axis=1), 
+                      cmap="binary", 
+                      aspect=aspect_ratio)
         else:
-            ax.imshow(responses, cmap="binary", aspect=aspect_ratio)
+            ax.imshow(responses, 
+                      cmap="binary", 
+                      aspect=aspect_ratio)
         ax.set_xticks(np.linspace(0, responses.shape[1], 6))
         ax.set_xticklabels(np.linspace(*time_window, 6))
         ax.set_xlabel("Time from Onset (ms)", fontsize=16)
