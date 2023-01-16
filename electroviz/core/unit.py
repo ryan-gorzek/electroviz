@@ -46,11 +46,12 @@ class Unit:
             stimulus, 
             time_window=(-50, 200), 
             bin_size=1, 
+            zscore=False, 
         ):
         """"""
 
         responses = self.get_response(stimulus, time_window, bin_size=bin_size)
-        Raster(time_window, responses, ylabel="Stimulus Event")
+        Raster(time_window, responses, ylabel="Stimulus Event", z_score=zscore)
 
     def get_response(
             self, 
