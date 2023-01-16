@@ -45,7 +45,7 @@ class Unit:
             self, 
             stimulus, 
             time_window=(-50, 200), 
-            bin_size=1, 
+            bin_size=5, 
             zscore=False, 
         ):
         """"""
@@ -80,10 +80,10 @@ class Unit:
         ):
         """"""
         
-        if not metric_name in self.units.columns:
+        if not metric_name in self._Population.units.columns:
             self._Population.units[metric_name] = [np.nan]*self._Population.units.shape[0]
         (unit_idx,) = np.where(self._Population.units["unit_id"] == self.ID)
-        self.units.at[unit_idx[0], metric_name] = metric
+        self._Population.units.at[unit_idx[0], metric_name] = metric
 
     def add_kernel(
             self, 
