@@ -11,6 +11,7 @@ from scipy.stats import zscore
 from scipy.optimize import curve_fit
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
+from electroviz.viz.psth import PSTH
 
 
 class Kernel:
@@ -23,41 +24,24 @@ class Kernel:
             self, 
             unit, 
             stimulus, 
-            time_window=(-0.050, 0.200), 
-            bin_size=0.005, 
+            time_window=(-50, 200), 
+            bin_size=5, 
         ):
         """"""
 
         self._Stimulus = stimulus
         self.time_window = time_window
         self.bin_size = bin_size
-        self._total_time = (time_window[1] + np.abs(time_window[0]))*1000
-        sample_window = np.array(time_window)*30000
+        self._total_time = (time_window[1] + np.abs(time_window[0]))
+        sample_window = np.array(time_window) * 30
         num_samples = int(sample_window[1] - sample_window[0])
-        self._num_bins = int(num_samples/(bin_size*30000))
+        self._num_bins = int(num_samples/(bin_size * 30))
         self._responses = np.zeros((self._num_bins, *stimulus.shape))
         for event in stimulus:
             window = (sample_window + event.sample_onset).astype(int)
             resp = unit.get_spike_times(window)
-            spikes_per_sec = resp.reshape(self._num_bins, -1).sum(axis=1) / bin_size
+            spikes_per_sec = resp.reshape(self._num_bins, -1).sum(axis=1) / (bin_size / 1000)
             self._responses[:, *event.stim_indices] = spikes_per_sec
-
-    def get_response(
-            self, 
-            response_window=(0.030, 0.060), 
-            baseline_window=(-0.040, -0.010), 
-            baseline_norm=True,  
-        ):
-        """"""
-
-        resp_on, resp_off = self._time_to_bins(response_window)
-        base_on, base_off = self._time_to_bins(baseline_window)
-        response_mean = self._responses.mean(axis=(1,2,3,4))
-        if baseline_norm == True:
-            response = response_mean[resp_on:resp_off].mean() - response_mean[base_on:base_off].mean()
-        else:
-            response = response_mean[resp_on:resp_off].mean()
-        return response
 
     def _time_to_bins(
             self, 
@@ -73,7 +57,6 @@ class Kernel:
         return int(on_idx[0]), int(off_idx[0] + 1)
 
 
-
 class SparseNoiseKernel(Kernel):
     """
 
@@ -84,10 +67,8 @@ class SparseNoiseKernel(Kernel):
             self, 
             unit, 
             stimulus, 
-            time_window=(-0.050, 0.200), 
-            bin_size=0.005, 
-            response_window=(0.000, 0.100), 
-            baseline_window=(-0.040, -0.010), 
+            time_window=(-50, 200), 
+            bin_size=5, 
         ):
         """"""
         
@@ -98,57 +79,48 @@ class SparseNoiseKernel(Kernel):
             bin_size=bin_size, 
                        )
 
-        sample_window = np.array(time_window)*30000
+        sample_window = np.array(time_window)*30
         num_samples = int(sample_window[1] - sample_window[0])
-        response_windows = [(on, on + bin_size) for on in np.arange(*response_window, self.bin_size)]
-        baseline_window = baseline_window
-        self.compute_kernels(response_windows, baseline_window)
+        self.response_windows = [(on, on + bin_size) for on in np.arange(*self.time_window, self.bin_size)]
+        kern, tmax, norm, _ = self._compute_kernels(self.response_windows)
+        self.ON, self.OFF, self.DIFF = kern
+        self.ON_tmax, self.OFF_tmax = tmax
+        self.ON_S, self.OFF_S = norm
         # Initialize fits as None.
         self.ON_fit, self.OFF_fit, self.DIFF_fit = None, None, None
 
-    def compute_kernels(
+    def _compute_kernels(
             self, 
             response_windows, 
-            baseline_window, 
         ):
         """"""
 
-        self.response_windows = response_windows
-        self.baseline_window = baseline_window
-        ON, OFF = (np.empty((len(response_windows), *self._Stimulus.shape[2:0:-1])) for k in range(2))
-        self.ON_S, self.OFF_S = (np.empty((len(response_windows),)) for k in range(2))
+        ONs, OFFs = (np.empty((len(response_windows), *self._Stimulus.shape[2:0:-1])) for k in range(2))
+        ON_S, OFF_S = (np.empty((len(response_windows),)) for k in range(2))
         for idx, response_window in enumerate(response_windows):
             resp_on, resp_off = self._time_to_bins(response_window)
-            base_on, base_off = self._time_to_bins(baseline_window)
-            kernels = np.zeros(self._Stimulus.shape[0:3])
+            kernels = np.zeros(self._Stimulus.shape[:3])
             for stim_indices in np.ndindex(self._Stimulus.shape[:3]):
                 resp_rate = self._responses[resp_on:resp_off, *stim_indices, :].mean(axis=(0, 1))
-                base_rate = self._responses[base_on:base_off, *stim_indices, :].mean(axis=(0, 1))
-                kernels[*stim_indices] += (resp_rate - base_rate)
-            ON[idx] = kernels[1].T
-            self.ON_S[idx] = np.linalg.norm(ON[idx].flatten()) / np.linalg.norm(ON[0].flatten())
-            OFF[idx] = kernels[0].T
-            self.OFF_S[idx] = np.linalg.norm(OFF[idx].flatten()) / np.linalg.norm(OFF[0].flatten())
+                kernels[*stim_indices] += resp_rate
+            ONs[idx] = kernels[1].T
+            ON_S[idx] = np.linalg.norm(ONs[idx].flatten()) / np.linalg.norm(ONs[0].flatten())
+            OFFs[idx] = kernels[0].T
+            OFF_S[idx] = np.linalg.norm(OFFs[idx].flatten()) / np.linalg.norm(OFFs[0].flatten())
         # Get the kernels with the maximum norm (across time).
-        if not all((np.isinf(self.ON_S) | np.isnan(self.ON_S)) |
-                   (np.isinf(self.OFF_S) | np.isnan(self.OFF_S))):
-            (ON_tmax,) = np.where(self.ON_S == np.max(self.ON_S))
-            self.ON = ON[ON_tmax[0], :, :].squeeze()
-            (OFF_tmax,) = np.where(self.OFF_S == np.max(self.OFF_S))
-            self.OFF = OFF[OFF_tmax[0], :, :].squeeze()
-            self.DIFF = self.ON - self.OFF
+        if not all((np.isinf(ON_S) | np.isnan(ON_S)) |
+                   (np.isinf(OFF_S) | np.isnan(OFF_S))):
+            (ON_tmax,) = np.where(ON_S == np.max(ON_S))[0]
+            ON_opt = ONs[ON_tmax, :, :].squeeze()
+            (OFF_tmax,) = np.where(OFF_S == np.max(OFF_S))[0]
+            OFF_opt = OFFs[OFF_tmax, :, :].squeeze()
+            DIFF_opt = ON_opt - OFF_opt
         else:
-            self.ON = np.empty(ON.shape[1:3]).fill(np.nan)
-            self.OFF = np.empty(OFF.shape[1:3]).fill(np.nan)
-            self.DIFF = np.empty(ON.shape[1:3]).fill(np.nan)
-
-    def get_norm(
-            self, 
-        ):
-        """"""
-
-        norms = (np.max(self.ON_S), np.max(self.OFF_S))
-        return np.max(norms)
+            ON_tmax, OFF_tmax = np.nan, np.nan
+            ON_opt = np.empty(ONs.shape[1:3]).fill(np.nan)
+            OFF_opt = np.empty(OFFs.shape[1:3]).fill(np.nan)
+            DIFF_opt = np.empty(ONs.shape[1:3]).fill(np.nan)
+        return (ON_opt, OFF_opt, DIFF_opt), (ON_tmax, OFF_tmax), (ON_S, OFF_S), (ONs, OFFs)
 
     def plot_raw(
             self, 
@@ -159,17 +131,17 @@ class SparseNoiseKernel(Kernel):
 
         mpl_use("Qt5Agg")
         fig, axs = plt.subplots(3, 1)
-        axs[0].imshow(self.ON, cmap=cmap, clim=[self.ON.min(axis=(0, 1)), self.ON.max(axis=(0, 1))])
+        axs[0].imshow(self.ON, cmap=cmap, clim=[self.ON.min(), self.ON.max()])
         axs[0].axis("off")
-        axs[0].set_title("ON", fontsize=18)
-        axs[1].imshow(self.OFF, cmap=cmap, clim=[self.OFF.min(axis=(0, 1)), self.OFF.max(axis=(0, 1))])
+        axs[0].set_title("ON", fontsize=16)
+        axs[1].imshow(self.OFF, cmap=cmap, clim=[self.OFF.min(), self.OFF.max()])
         axs[1].axis("off")
-        axs[1].set_title("OFF", fontsize=18)
-        axs[2].imshow(self.DIFF, cmap=cmap, clim=[self.DIFF.min(axis=(0, 1)), self.DIFF.max(axis=(0, 1))])
+        axs[1].set_title("OFF", fontsize=16)
+        axs[2].imshow(self.DIFF, cmap=cmap, clim=[self.DIFF.min(), self.DIFF.max()])
         axs[2].axis("off")
-        axs[2].set_title("ON - OFF", fontsize=18)
+        axs[2].set_title("ON - OFF", fontsize=16)
         plt.show(block=False)
-        fig.set_size_inches(4, 8)
+        fig.set_size_inches(3, 7)
 
     def plot_raw_delay(
             self, 
@@ -179,60 +151,46 @@ class SparseNoiseKernel(Kernel):
         """"""
 
         mpl_use("Qt5Agg")
-        fig, axs = plt.subplots(len(self.resp_windows), 3)
-        for ON, OFF in zip(self.ON, self.OFF):
-            kernels = self.compute(resp_window, self.base_window)
-            ON = kernels[1].T
-            OFF = kernels[0].T
+        fig, axs = plt.subplots(3, len(self.response_windows))
+        _, _, _, (ON_all, OFF_all) = self._compute_kernels(self.response_windows)
+        for idx, (ON, OFF) in enumerate(zip(ON_all, OFF_all)):
             DIFF = ON - OFF
-            axs[idx][0].imshow(ON, cmap=cmap, clim=[ON.min(), ON.max()])
-            axs[idx][0].axis("off")
-            axs[idx][0].set_title("ON", fontsize=18)
-            axs[idx][1].imshow(OFF, cmap=cmap, clim=[OFF.min(), OFF.max()])
-            axs[idx][1].axis("off")
-            axs[idx][1].set_title("OFF", fontsize=18)
-            axs[idx][2].imshow(DIFF, cmap=cmap, clim=[DIFF.min(), DIFF.max()])
-            axs[idx][2].axis("off")
-            axs[idx][2].set_title("ON - OFF", fontsize=18)
+            axs[0][idx].imshow(ON, cmap=cmap, clim=[ON.min(), ON.max()])
+            axs[0][idx].axis("off")
+            axs[1][idx].imshow(OFF, cmap=cmap, clim=[OFF.min(), OFF.max()])
+            axs[1][idx].axis("off")
+            axs[2][idx].imshow(DIFF, cmap=cmap, clim=[DIFF.min(), DIFF.max()])
+            axs[2][idx].axis("off")
+        axs[0][0].text(-0.2, 0.5, "ON", horizontalalignment="right",
+                                        verticalalignment="center", 
+                                        transform=axs[0][0].transAxes)
+        axs[1][0].text(-0.2, 0.5, "OFF", horizontalalignment="right",
+                                         verticalalignment="center", 
+                                         transform=axs[1][0].transAxes)
+        axs[2][0].text(-0.2, 0.5, "ON - OFF", horizontalalignment="right",
+                                              verticalalignment="center", 
+                                              transform=axs[2][0].transAxes)
         plt.show(block=False)
-        fig.set_size_inches(8, 4 * (len(resp_windows) - 1))
+        fig.set_size_inches(len(self.response_windows) - 1, 2)
 
-    def plot_fit(
-            self, 
-            cmap="viridis", 
-            save_path="", 
-        ):
-        """"""
-
-        mpl_use("Qt5Agg")
-        fig, axs = plt.subplots(3, 1)
-        axs[0].imshow(self.ON_fit.T, cmap=cmap, clim=[self.ON_fit.min(), self.ON_fit.max()])
-        axs[0].axis("off")
-        axs[0].set_title("ON", fontsize=18)
-        axs[1].imshow(self.OFF_fit.T, cmap=cmap, clim=[self.OFF_fit.min(), self.OFF_fit.max()])
-        axs[1].axis("off")
-        axs[1].set_title("OFF", fontsize=18)
-        axs[2].imshow(self.DIFF_fit.T, cmap=cmap, clim=[self.DIFF_fit.min(), self.DIFF_fit.max()])
-        axs[2].axis("off")
-        axs[2].set_title("ON - OFF", fontsize=18)
-        plt.show(block=False)
-        fig.set_size_inches(4, 8)
-
-    def plot_PETH(
+    def plot_norm_delay(
             self, 
         ):
         """"""
 
         mpl_use("Qt5Agg")
-        fig, axs = plt.subplots()
-        response = self._responses.mean(axis=(1,2,3,4))
-        axs.bar(range(self._num_bins), response, color="k")
-        axs.set_xlabel("Time from onset (ms)", fontsize=16)
-        axs.set_xticks(np.linspace(0, self._num_bins, 6))
-        axs.set_xticklabels(np.linspace(self.time_window[0]*1000, self.time_window[1]*1000, 6))
-        axs.set_ylabel("Spikes/s", fontsize=16)
+        fig, ax = plt.subplots()
+        t = np.linspace(0, self.ON_S.size, self.ON_S.size)
+        ax.bar(t, self.ON_S, color=(0.9, 0.2, 0.2, 0.5), label="ON")
+        ax.bar(t, self.OFF_S, color=(0.2, 0.2, 0.9, 0.5), label="OFF")
+        ax.legend(frameon=False)
+        ax.set_xticks(np.linspace(0, t.size, 6))
+        ax.set_xticklabels(np.linspace(*self.time_window, 6))
+        ax.set_xlabel("Time from Onset (ms)", fontsize=16)
+        ax.set_ylabel("|| Kernel(t) || / || Kernel(0) ||", fontsize=16)
         plt.show(block=False)
-        fig.set_size_inches(4, 4)
+        plt.tight_layout()
+        fig.set_size_inches(6, 6)
 
 
 class StaticGratingsKernel(Kernel):
@@ -245,10 +203,8 @@ class StaticGratingsKernel(Kernel):
             self, 
             unit, 
             stimulus, 
-            time_window=(-0.050, 0.200), 
-            bin_size=0.005, 
-            response_window=(0.000, 0.100), 
-            baseline_window=(-0.040, -0.010), 
+            time_window=(-50, 200), 
+            bin_size=5, 
         ):
         """"""
         
@@ -259,41 +215,37 @@ class StaticGratingsKernel(Kernel):
             bin_size=bin_size, 
                        )
 
-        sample_window = np.array(time_window)*30000
+        sample_window = np.array(time_window)*30
         num_samples = int(sample_window[1] - sample_window[0])
-        response_windows = [(on, on + bin_size) for on in np.arange(*response_window, self.bin_size)]
-        baseline_window = baseline_window
-        self.compute_kernels(response_windows, baseline_window)
-        # Initialize fit as None.
-        self.kernel_fit = None
+        self.response_windows = [(on, on + bin_size) for on in np.arange(*self.time_window, self.bin_size)]
+        self.orisf, self.orisf_tmax, self.orisf_S, _ = self._compute_kernels(self.response_windows)
+        # Initialize fits as None.
+        self.orisf_fit = None
 
-    def compute_kernels(
+    def _compute_kernels(
             self, 
             response_windows, 
-            baseline_window, 
         ):
         """"""
 
-        self.response_windows = response_windows
-        self.baseline_window = baseline_window
-        kernel = np.empty((len(response_windows), *self._Stimulus.shape[:2]))
-        self.kernel_S = np.empty((len(response_windows),))
+        orisfs = np.empty((len(response_windows), *self._Stimulus.shape[2:0:-1]))
+        orisf_S = (np.empty((len(response_windows),)) for k in range(2))
         for idx, response_window in enumerate(response_windows):
             resp_on, resp_off = self._time_to_bins(response_window)
-            base_on, base_off = self._time_to_bins(baseline_window)
             kernels = np.zeros(self._Stimulus.shape[:2])
             for stim_indices in np.ndindex(self._Stimulus.shape[:2]):
                 resp_rate = self._responses[resp_on:resp_off, *stim_indices, :].mean(axis=(0, 1, 2))
-                base_rate = self._responses[base_on:base_off, *stim_indices, :].mean(axis=(0, 1, 2))
-                kernels[*stim_indices] += (resp_rate - base_rate)
-            kernel[idx] = kernels
-            self.kernel_S[idx] = np.linalg.norm(kernel[idx].flatten()) / np.linalg.norm(kernel[0].flatten())
-        # Get the kernel with the maximum norm (across time).
-        if not all((np.isinf(self.kernel_S) | np.isnan(self.kernel_S))):
-            (kernel_tmax,) = np.where(self.kernel_S == np.max(self.kernel_S))
-            self.kernel = kernel[kernel_tmax[0], :, :].squeeze()
+                kernels[*stim_indices] += resp_rate
+            orisfs[idx] = kernels.T
+            orisf_S[idx] = np.linalg.norm(orisfs[idx].flatten()) / np.linalg.norm(orisfs[0].flatten())
+        # Get the kernels with the maximum norm (across time).
+        if not all((np.isinf(orisf_S) | np.isnan(orisf_S))):
+            (orisf_tmax,) = np.where(orisf_S == np.max(orisf_S))[0]
+            orisf_opt = orisfs[orisf_tmax, :, :].squeeze()
         else:
-            self.kernel = np.empty(kernel.shape[:2]).fill(np.nan)
+            orisf_tmax = np.nan
+            orisf_opt = np.empty(orisfs.shape[:2]).fill(np.nan)
+        return orisf_opt, orisf_tmax, orisf_S, orisfs
 
     def plot_raw(
             self, 
@@ -303,47 +255,42 @@ class StaticGratingsKernel(Kernel):
         """"""
 
         mpl_use("Qt5Agg")
-        fig, axs = plt.subplots()
-        axs.imshow(self.kernel, cmap=cmap, clim=[self.kernel.min(axis=(0, 1)), self.kernel.max(axis=(0, 1))])
-        axs.axis("off")
-        axs.set_title("Ori/SF", fontsize=18)
-        # Beef this up.
+        fig, ax = plt.subplots()
+        ax.imshow(self.orisf, cmap=cmap, clim=[self.orisf.min(), self.orisf.max()])
+        ax.axis("off")
         plt.show(block=False)
-        fig.set_size_inches(4, 4)
+        fig.set_size_inches(3, 7)
 
     def plot_raw_delay(
             self, 
-            time_window, 
             cmap="viridis", 
             save_path="", 
         ):
         """"""
 
-        resp_windows = [(on, on + self.bin_size) for on in np.arange(*time_window, self.bin_size)]
-        base_window = (self.base_window[0], self.base_window[0] + self.bin_size)
         mpl_use("Qt5Agg")
-        fig, axs = plt.subplots(len(resp_windows), 1)
-        for idx, resp_window in enumerate(resp_windows):
-            kernel = self.compute(resp_window, base_window)
-            axs[idx].imshow(kernel, cmap=cmap, clim=[kernel.min(axis=(0, 1)), kernel.max(axis=(0, 1))])
-            axs[idx].axis("off")
-            axs[idx].set_title("Ori/SF", fontsize=18)
-            # Beef this up.
+        fig, axs = plt.subplots(1, len(self.response_windows))
+        _, _, _, orisf_all = self._compute_kernels(self.response_windows)
+        for idx, orisf in enumerate(orisf_all):
+            axs[0][idx].imshow(orisf, cmap=cmap, clim=[orisf.min(), orisf.max()])
+            axs[0][idx].axis("off")
         plt.show(block=False)
-        fig.set_size_inches(8, 4 * (len(resp_windows) - 1))
+        fig.set_size_inches(len(self.response_windows) - 1, 2)
 
-    def plot_PETH(
+    def plot_norm_delay(
             self, 
         ):
         """"""
 
         mpl_use("Qt5Agg")
-        fig, axs = plt.subplots()
-        response = self.responses.mean(axis=(1,2,3,4))
-        axs.bar(range(self.num_bins), response, color="k")
-        axs.set_xlabel("Time from onset (ms)", fontsize=16)
-        axs.set_xticks(np.linspace(0, self.num_bins, 6))
-        axs.set_xticklabels(np.linspace(self.time_window[0]*1000, self.time_window[1]*1000, 6))
-        axs.set_ylabel("Spikes/s", fontsize=16)
+        fig, ax = plt.subplots()
+        t = np.linspace(0, self.orisf_S.size, self.orisf_S.size)
+        ax.bar(t, self.orisf_S, color=(0, 0, 0, 0.5), label="ON")
+        ax.legend(frameon=False)
+        ax.set_xticks(np.linspace(0, t.size, 6))
+        ax.set_xticklabels(np.linspace(*self.time_window, 6))
+        ax.set_xlabel("Time from Onset (ms)", fontsize=16)
+        ax.set_ylabel("|| Kernel(t) || / || Kernel(0) ||", fontsize=16)
         plt.show(block=False)
-        fig.set_size_inches(4, 4)
+        plt.tight_layout()
+        fig.set_size_inches(6, 6)
