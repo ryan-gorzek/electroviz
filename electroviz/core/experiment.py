@@ -23,7 +23,7 @@ class Experiment:
             self, 
             experiment_path, 
             SGLX_name="ephys", 
-            bTsS_names=["contra_random_squares"], 
+            bTsS_names=["contra_random_gratings_opto"], 
         ):
         """"""
 
