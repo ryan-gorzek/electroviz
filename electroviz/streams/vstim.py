@@ -15,8 +15,19 @@ class VStim:
             self, 
             btss_visprot, 
             btss_vstim, 
+            index=0, 
         ):
         """"""
 
         self.visprot = btss_visprot
-        self.events = btss_vstim.drop(["code"], axis=1)
+        self._events_all = btss_vstim.drop(["code"], axis=1)
+        events = []
+        prev_row = None
+        for row in self._events_all.itertuples(index=True):
+            if row[0] == 0:
+                events.append(row[1:])
+            elif row[-1] != prev_row:
+                events.append(row[1:])
+            prev_row = row[-1]
+        self.events = pd.DataFrame(events, columns=self._events_all.columns)
+        self.index = index

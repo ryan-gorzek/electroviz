@@ -17,6 +17,7 @@ class bTsS:
     def __new__(
             self, 
             btss_path, 
+            index=0, 
         ):
         """"""
 
@@ -25,6 +26,6 @@ class bTsS:
         #
         btss = []
         # 
-        vstim = VStim(visprot, riglog[0]["vstim"])
+        vstim = VStim(visprot, riglog[0]["vstim"], index=index)
         btss.append(vstim)
         return btss

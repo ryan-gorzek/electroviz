@@ -104,8 +104,19 @@ class Population:
         plt.axvline(spike_rates.mean(), color="k", linestyle="--")
         axs.set_xlabel("Spikes/s", fontsize=20)
         axs.set_ylabel("Probability", fontsize=20)
-        fig.set_size_inches(8, 8)
         plt.show(block=False)
+        fig.set_size_inches(8, 8)
+
+    def plot_corr(
+            self, 
+        ):
+        """"""
+        
+        cov = np.corrcoef(self.spike_times)
+        fig, ax = plt.subplots()
+        ax.imshow(cov, cmap="RdBu_r", clim=[-1, 1])
+        plt.show(block=False)
+        fig.set_size_inches(8, 8)
 
     def sort(
             self, 

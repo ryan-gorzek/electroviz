@@ -27,7 +27,7 @@ class NIDAQ:
         """"""
         
         # Read the NIDAQ metadata and binary files.
-        metadata, binary = read_NIDAQ(nidaq_path)
+        metadata, binary, offsets = read_NIDAQ(nidaq_path)
         num_samples = binary.shape[1]
         sampling_rate = float(metadata["niSampRate"])
         # Create a list for storing objects derived from the NIDAQ.
@@ -40,6 +40,9 @@ class NIDAQ:
                                      [sync_line], 
                                      metadata)
         nidaq.append(SyncChannel(sync_signal, sampling_rate))
+        # Get concatenation times if applicable.
+        if offsets is not None:
+            offsets = offsets[1][1:].astype(float)
         # Extract other specified digital channels.
         digital_lines = [NIDAQ.digital_lines[name] for name in NIDAQ.digital_lines.keys() if name != "sync"]
         for line in digital_lines:
@@ -48,5 +51,5 @@ class NIDAQ:
                                             0, 
                                             [line], 
                                             metadata)
-            nidaq.append(DigitalChannel(digital_signal, sampling_rate))
+            nidaq.append(DigitalChannel(digital_signal, sampling_rate, concat_times=offsets))
         return nidaq

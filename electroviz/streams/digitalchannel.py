@@ -21,6 +21,7 @@ class DigitalChannel:
             self, 
             signal, 
             sampling_rate, 
+            concat_times=None, 
         ):
         """
     
@@ -29,6 +30,7 @@ class DigitalChannel:
         # Get some basic data and parameters for easy access.
         self.signal = signal.squeeze()
         self.sampling_rate = sampling_rate
+        self.concat_times = concat_times
         self.total_samples = len(self.signal)
         self.total_time = self.total_samples / self.sampling_rate
         self._build_events_df()
@@ -304,10 +306,12 @@ class SyncChannel(DigitalChannel):
             self, 
             signal, 
             sampling_rate, 
+            concat_times=None, 
         ):
         """
 
         """
 
         super().__init__(signal, 
-                         sampling_rate)
+                         sampling_rate, 
+                         concat_times=None)

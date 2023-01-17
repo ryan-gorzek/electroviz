@@ -1,5 +1,5 @@
 # MIT License
-# Copyright (c) 2022 Ryan Gorzek
+# Copyright (c) 2022-3 Ryan Gorzek
 # https://github.com/gorzek-ryan/electroviz/blob/main/LICENSE
 # https://opensource.org/licenses/MIT
 
@@ -28,7 +28,6 @@ class Unit:
         self._Spikes = kilosort_spikes
         self._Population = population
         self.spike_times = np.empty((0, 0))
-        self.kernels = []
 
     def plot_PSTH(
             self, 
@@ -74,7 +73,6 @@ class Unit:
 
     def add_metric(
             self, 
-            unit_id, 
             metric_name, 
             metric, 
         ):
@@ -82,16 +80,8 @@ class Unit:
         
         if not metric_name in self._Population.units.columns:
             self._Population.units[metric_name] = [np.nan]*self._Population.units.shape[0]
-        (unit_idx,) = np.where(self._Population.units["unit_id"] == self.ID)
-        self._Population.units.at[unit_idx[0], metric_name] = metric
-
-    def add_kernel(
-            self, 
-            kernel, 
-        ):
-        """"""
-
-        self.kernels.append(kernel)
+        (unit_idx,) = np.where(self._Population.units["unit_id"] == self.ID)[0]
+        self._Population.units.at[unit_idx, metric_name] = metric
 
     def get_spike_times(
             self, 

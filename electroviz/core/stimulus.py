@@ -43,8 +43,10 @@ class VisualStimulus(Stimulus):
                         )
 
         # Stack photodiode and vstim dataframes.
-        vstim_df = self._map_btss_vstim(self._VStim.events)
-        self.events = pd.concat((self._Photodiode.events, vstim_df), axis=1)
+        vstim_events, event_idx = self._map_btss_vstim(self._VStim)
+        photodiode_events = self._Photodiode.events.iloc[event_idx].reset_index()
+        photodiode_events.drop(columns=["index"], inplace=True)
+        self.events = pd.concat((photodiode_events, vstim_events), axis=1)
 
     def __getitem__(
             self, 
@@ -81,7 +83,7 @@ class VisualStimulus(Stimulus):
 
     def _map_btss_vstim(
             self, 
-            vstim_df, 
+            vstim, 
         ):
         """
 
@@ -89,40 +91,17 @@ class VisualStimulus(Stimulus):
 
         # Define stimulus parameters from rig log to keep.
         param_names = ["contrast", "posx", "posy", "ori", "sf", "phase", "tf", "itrial", "istim"]
-        # Initialize list for stacking visual stimulus parameters.
-        params_list = []
-        vstim_times = np.array(vstim_df["timereceived"])
-        # Get the pc_clock dataframe for aligning bTsS trigger data.
-        df_align = self._PC_Clock.events
-        # Iterate through pc_clock pulses and find vstim entries that occur during the pulse.
-        for (onset_time, offset_time) in df_align[["time_onset", "time_offset"]].to_numpy():
-            vstim_logical = ((onset_time <= vstim_times) &
-                                (vstim_times <= offset_time))
-            if np.any(vstim_logical):
-                params = self._capture_vstim(vstim_df, vstim_logical, param_names)
-                params_list.append(params)
+        # Correct bTsS times for concatenation.
+        if self._PC_Clock.concat_times is not None:
+            concat_time = self._PC_Clock.concat_times[vstim.index]
+        else:
+            concat_time = 0.0
+        concat_idx = np.where(self._PC_Clock.events["time_onset"] >= concat_time)[0][0]
+        num_events = vstim.events.shape[0]
+        event_idx = np.arange(concat_idx, concat_idx + num_events, 1)
         # Create a dataframe from the visual stimuli parameters.
-        vstim_df_mapped = pd.DataFrame(params_list, columns=param_names)
-        return vstim_df_mapped
-
-    def _capture_vstim(
-            self, 
-            vstim_df, 
-            vstim_logical, 
-            param_names, 
-        ):
-        """"""
-
-        # Thoroughly check for correct alignment of riglog-encoded visual stimulus and NI-DAQ pc_clock signal.
-        vstim_params = vstim_df[param_names].values
-        vstim_params_capture = vstim_params[vstim_logical, :]
-        vstim_samples_match = all((vstim_params_capture == vstim_params_capture[[0], :]).all(axis=0))
-        # if vstim_samples_match == False:
-        #     warn("A stimulus from the bTsS rig log failed to match the NI-DAQ pc_clock signal.")
-        # Return the "unique" stimulus parameters for a given pc_clock pulse, but all should match.
-        # vstim_params_unique = np.unique(np.array(vstim_params_capture), axis=1).squeeze()
-        vstim_params = np.array(vstim_params_capture)[8, :]
-        return vstim_params
+        vstim_df_mapped = vstim.events[param_names]
+        return vstim_df_mapped, event_idx
 
     def _get_events(
             self, 
@@ -238,7 +217,7 @@ class StaticGratings(VisualStimulus):
 
 # class ContrastReversal(VisualStimulus):
 
-# class LightSquarePulse(OptogeneticStimulus):
+# class SquarePulse(OptogeneticStimulus):
 
-# class LightSineWave(OptogeneticStimulus):
+# class SineWave(OptogeneticStimulus):
         

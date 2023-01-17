@@ -122,6 +122,17 @@ class SparseNoiseKernel(Kernel):
             DIFF_opt = np.empty(ONs.shape[1:3]).fill(np.nan)
         return (ON_opt, OFF_opt, DIFF_opt), (ON_tmax, OFF_tmax), (ON_S, OFF_S), (ONs, OFFs)
 
+    # def _fit_kernels(
+    #         self, 
+    #     ):
+    #     """"""
+
+    #     def gauss2d(x, y, amp, x0, y0, a, b, c):
+    #         inner = a * (x - x0)**2 
+    #         inner += 2 * b * (x - x0)**2 * (y - y0)**2
+    #         inner += c * (y - y0)**2
+    #         return amp * np.exp(-inner)
+
     def plot_raw(
             self, 
             cmap="viridis", 
@@ -153,10 +164,11 @@ class SparseNoiseKernel(Kernel):
         mpl_use("Qt5Agg")
         fig, axs = plt.subplots(3, len(self.response_windows))
         _, _, _, (ON_all, OFF_all) = self._compute_kernels(self.response_windows)
-        for idx, (ON, OFF) in enumerate(zip(ON_all, OFF_all)):
+        for idx, (ON, OFF, window) in enumerate(zip(ON_all, OFF_all, self.response_windows)):
             DIFF = ON - OFF
             axs[0][idx].imshow(ON, cmap=cmap, clim=[ON.min(), ON.max()])
             axs[0][idx].axis("off")
+            axs[0][idx].set_title(window[0])
             axs[1][idx].imshow(OFF, cmap=cmap, clim=[OFF.min(), OFF.max()])
             axs[1][idx].axis("off")
             axs[2][idx].imshow(DIFF, cmap=cmap, clim=[DIFF.min(), DIFF.max()])
@@ -285,8 +297,7 @@ class StaticGratingsKernel(Kernel):
         mpl_use("Qt5Agg")
         fig, ax = plt.subplots()
         t = np.linspace(0, self.orisf_S.size, self.orisf_S.size)
-        ax.bar(t, self.orisf_S, color=(0, 0, 0, 0.5), label="ON")
-        ax.legend(frameon=False)
+        ax.bar(t, self.orisf_S, color=(0, 0, 0, 0.5))
         ax.set_xticks(np.linspace(0, t.size, 6))
         ax.set_xticklabels(np.linspace(*self.time_window, 6))
         ax.set_xlabel("Time from Onset (ms)", fontsize=16)
