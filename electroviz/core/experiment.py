@@ -1,5 +1,5 @@
 # MIT License
-# Copyright (c) 2022 Ryan Gorzek
+# Copyright (c) 2022-3 Ryan Gorzek
 # https://github.com/gorzek-ryan/electroviz/blob/main/LICENSE
 # https://opensource.org/licenses/MIT
 
@@ -23,10 +23,11 @@ class Experiment:
             self, 
             experiment_path, 
             SGLX_name="ephys", 
-            bTsS_names=["opto_tagging_pulse", 
-                        "ipsi_random_squares", "contra_random_squares", 
-                        "contra_random_gratings_opto", "ipsi_random_gratings_opto", 
-                        "contrast_reversal"], 
+            bTsS_names=["contra_random_squares"], 
+            # ["opto_tagging_pulse", 
+            #             "ipsi_random_squares", "contra_random_squares", 
+            #             "contra_random_gratings_opto", "ipsi_random_gratings_opto", 
+            #             "contrast_reversal"], 
         ):
         """"""
 

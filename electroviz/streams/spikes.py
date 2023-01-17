@@ -1,5 +1,5 @@
 # MIT License
-# Copyright (c) 2022 Ryan Gorzek
+# Copyright (c) 2022-3 Ryan Gorzek
 # https://github.com/gorzek-ryan/electroviz/blob/main/LICENSE
 # https://opensource.org/licenses/MIT
 
@@ -43,7 +43,8 @@ class Spikes:
         col_mask = np.ones(self.total_samples, dtype=bool)
         col_mask[drop_samples] = False
         self.total_samples += -len(drop_samples)
-        return self.spike_times[:, col_mask]
+        self.spike_times = self.spike_times[:, col_mask]
+        return None
 
     def _build_spike_times_matrix(
             self, 

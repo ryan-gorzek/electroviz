@@ -1,5 +1,5 @@
 # MIT License
-# Copyright (c) 2022 Ryan Gorzek
+# Copyright (c) 2022-3 Ryan Gorzek
 # https://github.com/gorzek-ryan/electroviz/blob/main/LICENSE
 # https://opensource.org/licenses/MIT
 
@@ -15,9 +15,12 @@ plt.rcParams["xtick.major.size"] = 8
 plt.rcParams["xtick.major.width"] = 1
 plt.rcParams["ytick.major.size"] = 8
 plt.rcParams["ytick.major.width"] = 1
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from matplotlib.ticker import FormatStrFormatter
 from electroviz.viz.psth import PSTH
 from electroviz.viz.raster import Raster
 from scipy.stats import zscore
+from math import remainder
 
 class Population:
     """
@@ -112,11 +115,22 @@ class Population:
         ):
         """"""
         
-        cov = np.corrcoef(self.spike_times)
+        mpl_use("Qt5Agg")
         fig, ax = plt.subplots()
-        ax.imshow(cov, cmap="RdBu_r", clim=[-1, 1])
+        corr_mat = np.corrcoef(self._bin_spikes())
+        ax.imshow(corr_mat, cmap="RdBu_r", clim=[-1, 1])
+        ax.set_xlabel("Unit")
+        ax.set_ylabel("Unit")
+        cax = inset_axes(ax, width="5%", height="90%", loc="center right", borderpad=-5)
+        colorbar = fig.colorbar(ax.images[0], cax=cax)
+        colorbar.set_label("Pearson Correlation Coefficient", color="k", fontsize=14)
+        cax.yaxis.tick_right()
+        cax.yaxis.set_label_position("right")
+        cax.yaxis.set_major_formatter(FormatStrFormatter("%.2f"))
+        cax.tick_params(labelsize=14)
+        plt.subplots_adjust(wspace=0, hspace=0)
         plt.show(block=False)
-        fig.set_size_inches(8, 8)
+        fig.set_size_inches(10, 8)
 
     def sort(
             self, 
@@ -185,4 +199,16 @@ class Population:
         subset.total_units = len(subset._Units)
         subset.units = self.units.iloc[slice_or_array].reset_index(drop=True)
         return subset
+
+    def _bin_spikes(
+            self, 
+            bin_size=100, 
+        ):
+        """"""
+        
+        drop_end = int(remainder(self.total_samples, (bin_size * 30)))
+        num_bins = int((self.total_samples - drop_end)/(bin_size * 30))
+        spike_times = self.spike_times[:, :-drop_end].toarray()
+        spike_rate = spike_times.reshape((len(self), num_bins, -1)).sum(axis=2) / (bin_size / 1000)
+        return spike_rate
         
