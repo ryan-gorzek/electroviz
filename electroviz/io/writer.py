@@ -5,7 +5,7 @@
 
 import numpy as np
 
-def save_matlab(
+def write_for_matlab(
         population, 
         stimulus, 
         save_path="", 

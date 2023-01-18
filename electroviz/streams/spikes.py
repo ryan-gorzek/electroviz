@@ -92,14 +92,17 @@ class Spikes:
         for depth in temp_depths:
             dist = np.abs(y_pos - depth)
             (idx,) = np.where(dist == np.min(dist))
-            temp_chans.append(idx[0])
+            try:
+                temp_chans.append(idx[0])
+            except:
+                temp_chans.append(np.nan)
         spike_depths = np.array(temp_chans)[spike_templates]
         # Map spike depths to cluster depths.
         cluster_depths = []
         for cluster in range(self.total_units):
             if cluster in spike_clusters:
                 cluster_idx = spike_clusters == cluster
-                cluster_depths.append(np.mean(spike_depths[cluster_idx]))
+                cluster_depths.append(np.nanmean(spike_depths[cluster_idx]))
             else:
                 cluster_depths.append(np.nan)
         return cluster_depths

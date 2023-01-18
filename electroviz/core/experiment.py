@@ -23,7 +23,7 @@ class Experiment:
             self, 
             experiment_path, 
             SGLX_name="ephys", 
-            bTsS_names=["contra_random_gratings_opto"], 
+            bTsS_names=["contra_random_gratings"], 
             # ["opto_tagging_pulse", 
             #             "ipsi_random_squares", "contra_random_squares", 
             #             "contra_random_gratings_opto", "ipsi_random_gratings_opto", 

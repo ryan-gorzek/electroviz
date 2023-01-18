@@ -110,10 +110,10 @@ class SparseNoiseKernel(Kernel):
         # Get the kernels with the maximum norm (across time).
         if not all((np.isinf(ON_S) | np.isnan(ON_S)) |
                    (np.isinf(OFF_S) | np.isnan(OFF_S))):
-            (ON_tmax,) = np.where(ON_S == np.max(ON_S))[0]
-            ON_opt = ONs[ON_tmax, ::-1, :].squeeze()
-            (OFF_tmax,) = np.where(OFF_S == np.max(OFF_S))[0]
-            OFF_opt = OFFs[OFF_tmax, ::-1, :].squeeze()
+            (ON_tmax,) = np.where(ON_S == np.max(ON_S))
+            ON_opt = ONs[ON_tmax[0], ::-1, :].squeeze()
+            (OFF_tmax,) = np.where(OFF_S == np.max(OFF_S))
+            OFF_opt = OFFs[OFF_tmax[0], ::-1, :].squeeze()
             DIFF_opt = ON_opt - OFF_opt
         else:
             ON_tmax, OFF_tmax = np.nan, np.nan
@@ -252,8 +252,8 @@ class StaticGratingsKernel(Kernel):
             orisf_S[idx] = np.linalg.norm(orisfs[idx].flatten()) / np.linalg.norm(orisfs[0].flatten())
         # Get the kernels with the maximum norm (across time).
         if not all((np.isinf(orisf_S) | np.isnan(orisf_S))):
-            (orisf_tmax,) = np.where(orisf_S == np.max(orisf_S))[0]
-            orisf_opt = orisfs[orisf_tmax, ::-1, :].squeeze()
+            (orisf_tmax,) = np.where(orisf_S == np.max(orisf_S))
+            orisf_opt = orisfs[orisf_tmax[0], ::-1, :].squeeze()
         else:
             orisf_tmax = np.nan
             orisf_opt = np.empty(orisfs.shape[:2]).fill(np.nan)
