@@ -122,17 +122,6 @@ class SparseNoiseKernel(Kernel):
             DIFF_opt = np.empty(ONs.shape[1:3]).fill(np.nan)
         return (ON_opt, OFF_opt, DIFF_opt), (ON_tmax, OFF_tmax), (ON_S, OFF_S), (ONs, OFFs)
 
-    # def _fit_kernels(
-    #         self, 
-    #     ):
-    #     """"""
-
-    #     def gauss2d(x, y, amp, x0, y0, a, b, c):
-    #         inner = a * (x - x0)**2 
-    #         inner += 2 * b * (x - x0)**2 * (y - y0)**2
-    #         inner += c * (y - y0)**2
-    #         return amp * np.exp(-inner)
-
     def plot_raw(
             self, 
             cmap="viridis", 

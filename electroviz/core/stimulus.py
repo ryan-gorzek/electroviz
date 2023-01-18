@@ -207,17 +207,4 @@ class StaticGratings(VisualStimulus):
                 for phase in sorted(np.unique(self.events["phase"])):
                     self.unique.append((ori, sf, phase))
         return None
-
-
-# class OptogeneticStimulus
-
-# class ParallelStimulus
-
-# class DriftingGratings(VisualStimulus):
-
-# class ContrastReversal(VisualStimulus):
-
-# class SquarePulse(OptogeneticStimulus):
-
-# class SineWave(OptogeneticStimulus):
         
