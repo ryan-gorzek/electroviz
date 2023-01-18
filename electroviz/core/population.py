@@ -206,7 +206,7 @@ class Population:
         ):
         """"""
         
-        drop_end = int(remainder(self.total_samples, (bin_size * 30)))
+        drop_end = int(self.total_samples % (bin_size * 30))
         num_bins = int((self.total_samples - drop_end)/(bin_size * 30))
         spike_times = self.spike_times[:, :-drop_end].toarray()
         spike_rate = spike_times.reshape((len(self), num_bins, -1)).sum(axis=2) / (bin_size / 1000)

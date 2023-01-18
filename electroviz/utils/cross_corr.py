@@ -45,18 +45,33 @@ def plot_corr_mat(
 def plot_cross_corr(
         pop_0, 
         pop_1, 
-        time_window=(-10, 10)
+        time_window=(-20, 20)
     ):
     """"""
 
     pop_0_spike_rates = pop_0._bin_spikes(bin_size=1)
     pop_1_spike_rates = pop_1._bin_spikes(bin_size=1)
-    corr = correlate(pop_0_spike_rates[0, :], pop_1_spike_rates[0, :])
+    cross_corr = np.empty((
+        len(pop_0) * len(pop_1), 
+        (pop_0_spike_rates.shape[1] * 2) - 1, 
+                            ))
+    peak = np.empty((len(pop_0) * len(pop_1),))
+    count = 0
+    for unit_0 in pop_0_spike_rates:
+        for unit_1 in pop_1_spike_rates:
+            corr = correlate(unit_0, unit_1)
+            PCC = np.corrcoef(unit_0, unit_1)[0, 1]
+            norm_cc = (corr / np.max(corr)) * PCC
+            print(norm_cc, np.max(norm_cc))
+            cross_corr[count, :] = norm_cc
+            peak[count] = np.where(norm_cc == np.max(norm_cc))[0][0]
+            count += 1
     lags = correlation_lags(pop_0_spike_rates.shape[1], pop_1_spike_rates.shape[1])
     plot_idx = (-10 <= lags) & (lags <= 10)
-    corr = (corr / np.max(corr)) * np.corrcoef(pop_0_spike_rates[0, :], pop_1_spike_rates[0, :])[0, 1]
     mpl_use("Qt5Agg")
     fig, ax = plt.subplots()
-    ax.plot(lags[plot_idx], corr[plot_idx])
+    ax.matshow(cross_corr[np.argsort(peak), :][:, plot_idx], cmap="inferno", clim=[-0.5, 0.5])
+    ax.set_xticks(range(sum(plot_idx)))
+    ax.set_xticklabels(lags[plot_idx])
     plt.show(block=False)
     fig.set_size_inches(8, 8)

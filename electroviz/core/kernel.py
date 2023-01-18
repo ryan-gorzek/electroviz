@@ -111,9 +111,9 @@ class SparseNoiseKernel(Kernel):
         if not all((np.isinf(ON_S) | np.isnan(ON_S)) |
                    (np.isinf(OFF_S) | np.isnan(OFF_S))):
             (ON_tmax,) = np.where(ON_S == np.max(ON_S))[0]
-            ON_opt = ONs[ON_tmax, :, :].squeeze()
+            ON_opt = ONs[ON_tmax, ::-1, :].squeeze()
             (OFF_tmax,) = np.where(OFF_S == np.max(OFF_S))[0]
-            OFF_opt = OFFs[OFF_tmax, :, :].squeeze()
+            OFF_opt = OFFs[OFF_tmax, ::-1, :].squeeze()
             DIFF_opt = ON_opt - OFF_opt
         else:
             ON_tmax, OFF_tmax = np.nan, np.nan
@@ -142,13 +142,13 @@ class SparseNoiseKernel(Kernel):
 
         mpl_use("Qt5Agg")
         fig, axs = plt.subplots(3, 1)
-        axs[0].imshow(self.ON, cmap=cmap, clim=[self.ON.min(), self.ON.max()])
+        axs[0].matshow(self.ON, cmap=cmap, clim=[self.ON.min(), self.ON.max()])
         axs[0].axis("off")
         axs[0].set_title("ON", fontsize=16)
-        axs[1].imshow(self.OFF, cmap=cmap, clim=[self.OFF.min(), self.OFF.max()])
+        axs[1].matshow(self.OFF, cmap=cmap, clim=[self.OFF.min(), self.OFF.max()])
         axs[1].axis("off")
         axs[1].set_title("OFF", fontsize=16)
-        axs[2].imshow(self.DIFF, cmap=cmap, clim=[self.DIFF.min(), self.DIFF.max()])
+        axs[2].matshow(self.DIFF, cmap=cmap, clim=[self.DIFF.min(), self.DIFF.max()])
         axs[2].axis("off")
         axs[2].set_title("ON - OFF", fontsize=16)
         plt.show(block=False)
@@ -166,12 +166,12 @@ class SparseNoiseKernel(Kernel):
         _, _, _, (ON_all, OFF_all) = self._compute_kernels(self.response_windows)
         for idx, (ON, OFF, window) in enumerate(zip(ON_all, OFF_all, self.response_windows)):
             DIFF = ON - OFF
-            axs[0][idx].imshow(ON, cmap=cmap, clim=[ON.min(), ON.max()])
+            axs[0][idx].matshow(ON, cmap=cmap, clim=[ON.min(), ON.max()])
             axs[0][idx].axis("off")
             axs[0][idx].set_title(window[0])
-            axs[1][idx].imshow(OFF, cmap=cmap, clim=[OFF.min(), OFF.max()])
+            axs[1][idx].matshow(OFF, cmap=cmap, clim=[OFF.min(), OFF.max()])
             axs[1][idx].axis("off")
-            axs[2][idx].imshow(DIFF, cmap=cmap, clim=[DIFF.min(), DIFF.max()])
+            axs[2][idx].matshow(DIFF, cmap=cmap, clim=[DIFF.min(), DIFF.max()])
             axs[2][idx].axis("off")
         axs[0][0].text(-0.2, 0.5, "ON", horizontalalignment="right",
                                         verticalalignment="center", 
@@ -246,14 +246,14 @@ class StaticGratingsKernel(Kernel):
             resp_on, resp_off = self._time_to_bins(response_window)
             kernels = np.zeros(self._Stimulus.shape[:2])
             for stim_indices in np.ndindex(self._Stimulus.shape[:2]):
-                resp_rate = self._responses[resp_on:resp_off, *stim_indices, :].mean(axis=(0, 1, 2))
+                resp_rate = self._responses[resp_on:resp_off, *stim_indices, :, :].mean(axis=(0, 1, 2))
                 kernels[*stim_indices] += resp_rate
-            orisfs[idx] = kernels.T
+            orisfs[idx] = kernels
             orisf_S[idx] = np.linalg.norm(orisfs[idx].flatten()) / np.linalg.norm(orisfs[0].flatten())
         # Get the kernels with the maximum norm (across time).
         if not all((np.isinf(orisf_S) | np.isnan(orisf_S))):
             (orisf_tmax,) = np.where(orisf_S == np.max(orisf_S))[0]
-            orisf_opt = orisfs[orisf_tmax, :, :].squeeze()
+            orisf_opt = orisfs[orisf_tmax, ::-1, :].squeeze()
         else:
             orisf_tmax = np.nan
             orisf_opt = np.empty(orisfs.shape[:2]).fill(np.nan)
@@ -268,8 +268,10 @@ class StaticGratingsKernel(Kernel):
 
         mpl_use("Qt5Agg")
         fig, ax = plt.subplots()
-        ax.imshow(self.orisf, cmap=cmap, clim=[self.orisf.min(), self.orisf.max()])
+        ax.matshow(self.orisf, cmap=cmap, clim=[self.orisf.min(), self.orisf.max()])
         ax.axis("off")
+        ax.set_xlabel("Spatial Frequency")
+        ax.set_ylabel("Orientation")
         plt.show(block=False)
         fig.set_size_inches(4, 4)
 
@@ -283,11 +285,12 @@ class StaticGratingsKernel(Kernel):
         mpl_use("Qt5Agg")
         fig, axs = plt.subplots(1, len(self.response_windows))
         _, _, _, orisf_all = self._compute_kernels(self.response_windows)
-        for idx, orisf in enumerate(orisf_all):
-            axs[idx].imshow(orisf, cmap=cmap, clim=[orisf.min(), orisf.max()])
+        for idx, (orisf, window) in enumerate(zip(orisf_all, self.response_windows)):
+            axs[idx].matshow(orisf, cmap=cmap, clim=[orisf.min(), orisf.max()])
             axs[idx].axis("off")
+            axs[idx].set_title(window[0])
         plt.show(block=False)
-        fig.set_size_inches(len(self.response_windows) - 1, 2)
+        fig.set_size_inches(len(self.response_windows), 4)
 
     def plot_norm_delay(
             self, 
