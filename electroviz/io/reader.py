@@ -19,9 +19,8 @@ def read_config(
     assert os.path.exists(experiment_path), "The specified path is not valid."
     config_filepath = glob.glob(experiment_path + "/*.electroviz.config")[0]
     assert os.path.exists(config_filepath), "Can't find electroviz config file."
-    config_array = np.loadtxt(config_filepath, dtype=str)
-    SGLX_name = config_array[0, 1]
-    bTsS_names = list(config_array[1, 1:])
+    SGLX_name = np.loadtxt(config_filepath, max_rows=1, dtype=str)[1]
+    bTsS_names = list(np.loadtxt(config_filepath, skiprows=1, max_rows=1, dtype=str)[1:])
     return SGLX_name, bTsS_names
 
 def parse_experiment_dir(
