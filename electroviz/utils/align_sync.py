@@ -15,7 +15,7 @@ def align_sync(
     ):
     """"""
 
-    syncs = [nidaq[0], *imec[0:2]]
+    syncs = [nidaq[0], *imec]
     # Get sample onsets, offsets, and durations from each object's sync signal.
     event_names = ["sample_onset", "sample_offset"]
     events = []
