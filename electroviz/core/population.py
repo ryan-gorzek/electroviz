@@ -139,6 +139,30 @@ class Population:
         return responses.mean(axis=2)
 
 
+    def plot_corr_mat(
+            self, 
+        ):
+        """"""
+        
+        mpl_use("Qt5Agg")
+        fig, ax = plt.subplots()
+        corr_mat = np.corrcoef(self._bin_spikes())
+        ax.imshow(corr_mat, cmap="RdBu_r", clim=[-1, 1])
+        ax.set_xlabel("Unit")
+        ax.set_ylabel("Unit")
+        cax = inset_axes(ax, width="5%", height="90%", loc="center right", borderpad=-5)
+        colorbar = fig.colorbar(ax.images[0], cax=cax)
+        colorbar.set_label("Pearson Correlation Coefficient", rotation=-90)
+        cax.yaxis.labelpad = 15
+        cax.yaxis.tick_right()
+        cax.yaxis.set_label_position("right")
+        cax.yaxis.set_major_formatter(FormatStrFormatter("%.2f"))
+        cax.tick_params(labelsize=12)
+        plt.subplots_adjust(left=0.12, right=0.75, top=0.95, bottom=0.1)
+        plt.show(block=False)
+        fig.set_size_inches(10, 8)
+
+
     def plot_rate_histogram(
             self, 
         ):
