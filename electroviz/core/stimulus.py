@@ -222,3 +222,54 @@ class StaticGratings(VisualStimulus):
                     self.unique.append((ori, sf, phase))
         return None
 
+
+
+
+class ContrastReversal(VisualStimulus):
+    """
+
+    """
+
+
+    def __init__(
+            self, 
+            nidaq=None, 
+            btss=None, 
+        ):
+        """"""
+
+        btss = self._match_vstim_df(btss)
+
+        super().__init__(
+                         nidaq=nidaq, 
+                         btss=btss, 
+                        )
+
+        self._get_events(params=["contrast"])
+        self._get_shape(params=["contrast"])
+        self._get_unique()
+
+
+    def _get_unique(
+            self, 
+        ):
+        """"""
+        
+        self.unique = []
+        for contrast in sorted(np.unique(self.events["contrast"])):
+                    self.unique.append((contrast))
+        return None
+
+
+    def _match_vstim_df(
+            self, 
+            btss, 
+        ):
+        """"""
+
+        btss_out = btss
+        btss_out[0].events["contrast"] = btss[0].events["indicator"]
+        for col in ["ori", "sf", "phase", "tf"]:
+            btss_out[0].events[col] = np.zeros((btss[0].events.shape[0],))
+        return btss_out
+

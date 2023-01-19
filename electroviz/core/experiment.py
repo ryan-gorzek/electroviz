@@ -10,7 +10,7 @@ from electroviz.streams.imec import Imec
 from electroviz.streams.kilosort import Kilosort
 from electroviz.utils.align_sync import align_sync
 from electroviz.streams.btss import bTsS
-from electroviz.core.stimulus import SparseNoise, StaticGratings
+from electroviz.core.stimulus import SparseNoise, StaticGratings, ContrastReversal
 from electroviz.core.population import Population
 
 class Experiment:
@@ -49,9 +49,9 @@ class Experiment:
                 self.stimuli.append(SparseNoise(self.nidaq, btss_obj))
             elif "random_gratings" in btss_name:
                 self.stimuli.append(StaticGratings(self.nidaq, btss_obj))
-            # elif "contrast_reversal" in name:
-            #     self.stimuli.append(ContrastReversal(self.nidaq, self.btss))
-            # elif "opto_tagging" in name:
+            elif "contrast_reversal" in btss_name:
+                self.stimuli.append(ContrastReversal(self.nidaq, btss_obj))
+            # elif "opto_tagging" in btss_name:
             #     self.stimuli.append(SquarePulse(self.nidaq, self.btss))
         # Create Population object.
         self.populations = []
