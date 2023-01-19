@@ -22,14 +22,11 @@ class Experiment:
     def __init__(
             self, 
             experiment_path, 
-            SGLX_name="ephys", 
-            bTsS_names=["opto_tagging_pulse", 
-                        "ipsi_random_squares", "contra_random_squares", 
-                        "contra_random_gratings_opto", "ipsi_random_gratings_opto", 
-                        "contrast_reversal"], 
         ):
         """"""
 
+        # Read electroviz config file from experiment directory.
+        SGLX_name, bTsS_names = read_config(experiment_path)
         # Parse the specified path to experiment directory.
         SGLX_dir, bTsS_dirs = parse_experiment_dir(experiment_path, SGLX_name, bTsS_names)
         # 
