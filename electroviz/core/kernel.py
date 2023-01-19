@@ -33,9 +33,9 @@ class Kernel:
         self.time_window = time_window
         self.bin_size = bin_size
         self._total_time = (time_window[1] + np.abs(time_window[0]))
-        sample_window = np.array(time_window) * (unit.sampling_rate / 1000)
+        sample_window = np.array(time_window) * 30
         num_samples = int(sample_window[1] - sample_window[0])
-        self._num_bins = int(num_samples/(bin_size * (unit.sampling_rate / 1000)))
+        self._num_bins = int(num_samples/(bin_size * 30))
         self._responses = np.zeros((self._num_bins, *stimulus.shape))
         for event in stimulus:
             window = (sample_window + event.sample_onset).astype(int)

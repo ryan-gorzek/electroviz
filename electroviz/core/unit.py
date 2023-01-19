@@ -66,9 +66,9 @@ class Unit:
         ):
         """"""
 
-        sample_window = np.array(time_window) * (self.sampling_rate / 1000)
+        sample_window = np.array(time_window) * 30
         num_samples = int(sample_window[1] - sample_window[0])
-        num_bins = int(num_samples/(bin_size * (self.sampling_rate / 1000)))
+        num_bins = int(num_samples/(bin_size * 30))
         responses = np.zeros((len(stimulus), num_bins))
         for event in stimulus:
             window = (sample_window + event.sample_onset).astype(int)

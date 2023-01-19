@@ -127,9 +127,9 @@ class Population:
         ):
         """"""
         
-        sample_window = np.array(time_window) * (self.sampling_rate / 1000)
+        sample_window = np.array(time_window) * 30
         num_samples = int(sample_window[1] - sample_window[0])
-        num_bins = int(num_samples/(bin_size * (self.sampling_rate / 1000)))
+        num_bins = int(num_samples/(bin_size * 30))
         responses = np.zeros((len(self), num_bins, len(stimulus)))
         for event in stimulus:
             window = (sample_window + event.sample_onset).astype(int)
@@ -205,8 +205,8 @@ class Population:
         ):
         """"""
         
-        drop_end = int(self.total_samples % (bin_size * (self.sampling_rate / 1000)))
-        num_bins = int((self.total_samples - drop_end)/(bin_size * (self.sampling_rate / 1000)))
+        drop_end = int(self.total_samples % (bin_size * 30))
+        num_bins = int((self.total_samples - drop_end)/(bin_size * 30))
         spike_times = self.spike_times[:, :-drop_end].toarray()
         spike_rate = spike_times.reshape((len(self), num_bins, -1)).sum(axis=2) / (bin_size / 1000)
         return spike_rate
