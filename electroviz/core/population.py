@@ -1,3 +1,4 @@
+
 # MIT License
 # Copyright (c) 2022-3 Ryan Gorzek
 # https://github.com/gorzek-ryan/electroviz/blob/main/LICENSE
@@ -37,6 +38,7 @@ class Population:
 
         self._Sync = imec
         self._Spikes = kilosort
+        self.sampling_rate = self._Sync.sampling_rate
         self.total_samples = self._Spikes.total_samples
         self.total_units = self._Spikes.total_units
         self.spike_times = self._Spikes.spike_times.tocsc()
@@ -125,9 +127,9 @@ class Population:
         ):
         """"""
         
-        sample_window = np.array(time_window) * 30
+        sample_window = np.array(time_window) * (self.sampling_rate / 1000)
         num_samples = int(sample_window[1] - sample_window[0])
-        num_bins = int(num_samples/(bin_size * 30))
+        num_bins = int(num_samples/(bin_size * (self.sampling_rate / 1000)))
         responses = np.zeros((len(self), num_bins, len(stimulus)))
         for event in stimulus:
             window = (sample_window + event.sample_onset).astype(int)
@@ -183,9 +185,6 @@ class Population:
         return subset
 
 
-
-
-
     def _get_subset(
             self, 
             slice_or_array, 
@@ -206,8 +205,8 @@ class Population:
         ):
         """"""
         
-        drop_end = int(self.total_samples % (bin_size * 30))
-        num_bins = int((self.total_samples - drop_end)/(bin_size * 30))
+        drop_end = int(self.total_samples % (bin_size * (self.sampling_rate / 1000)))
+        num_bins = int((self.total_samples - drop_end)/(bin_size * (self.sampling_rate / 1000)))
         spike_times = self.spike_times[:, :-drop_end].toarray()
         spike_rate = spike_times.reshape((len(self), num_bins, -1)).sum(axis=2) / (bin_size / 1000)
         return spike_rate

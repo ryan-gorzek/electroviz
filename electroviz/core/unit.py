@@ -1,3 +1,4 @@
+
 # MIT License
 # Copyright (c) 2022-3 Ryan Gorzek
 # https://github.com/gorzek-ryan/electroviz/blob/main/LICENSE
@@ -28,6 +29,7 @@ class Unit:
         self._Sync = imec_sync
         self._Spikes = kilosort_spikes
         self._Population = population
+        self.sampling_rate = self._Sync.sampling_rate
         self.spike_times = np.empty((0, 0))
 
 
@@ -64,9 +66,9 @@ class Unit:
         ):
         """"""
 
-        sample_window = np.array(time_window) * 30
+        sample_window = np.array(time_window) * (self.sampling_rate / 1000)
         num_samples = int(sample_window[1] - sample_window[0])
-        num_bins = int(num_samples/(bin_size * 30))
+        num_bins = int(num_samples/(bin_size * (self.sampling_rate / 1000)))
         responses = np.zeros((len(stimulus), num_bins))
         for event in stimulus:
             window = (sample_window + event.sample_onset).astype(int)
