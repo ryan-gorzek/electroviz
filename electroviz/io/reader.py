@@ -1,5 +1,6 @@
+
 # MIT License
-# Copyright (c) 2022 Ryan Gorzek
+# Copyright (c) 2022-3 Ryan Gorzek
 # https://github.com/gorzek-ryan/electroviz/blob/main/LICENSE
 # https://opensource.org/licenses/MIT
 
@@ -9,7 +10,6 @@ import glob
 from pathlib import Path
 import numpy as np
 from btss.utils import read_visual_protocol, parse_riglog
-
 
 def parse_experiment_dir(
         experiment_path, 
@@ -43,7 +43,8 @@ def parse_experiment_dir(
 def parse_SGLX_dir(
         SGLX_path,
     ):
-    """Find NIDAQ and Imec binary and metadata files within SpikeGLX subdirectory and return their paths."""
+    """"""
+
     imec_paths = []
     # Move through SpikeGLX directory, expecting NI-DAQ data at the top and subfolders with Imec data.
     for topdir, _, files in os.walk(SGLX_path):
@@ -85,7 +86,7 @@ def read_Kilosort(
 def read_Imec(
         imec_paths, 
     ):
-    """Read Imec metadata and binary files, as well as Kilosort output, from path."""
+    """"""
 
     imec_metadata, imec_binary = [], []
     for path in imec_paths:
@@ -102,7 +103,7 @@ def read_Imec(
 def read_NIDAQ(
         nidaq_path, 
     ):
-    """Read NI-DAQ metadata and binary files from path."""
+    """"""
 
     # Read the metadata using SpikeGLX datafile tools.
     metadata_path = glob.glob(nidaq_path + "/*.nidq.meta")[0]
@@ -158,3 +159,4 @@ def makeMemMapRaw(binFile, meta):
     rawData = np.memmap(binFile, dtype='int16', mode='r',
                         shape=(nChan, nFileSamp), offset=0, order='F')
     return(rawData)
+

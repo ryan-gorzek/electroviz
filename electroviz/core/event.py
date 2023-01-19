@@ -1,5 +1,6 @@
+
 # MIT License
-# Copyright (c) 2022 Ryan Gorzek
+# Copyright (c) 2022-3 Ryan Gorzek
 # https://github.com/gorzek-ryan/electroviz/blob/main/LICENSE
 # https://opensource.org/licenses/MIT
 
@@ -9,7 +10,8 @@ class Event(NamedTuple):
     """
 
     """
-    
+
+
     stim_indices: tuple = None
     index: int = None
     sample_onset: int = None
@@ -28,3 +30,4 @@ class Event(NamedTuple):
     tf: int = None
     itrial: int = None
     istim: int = None
+

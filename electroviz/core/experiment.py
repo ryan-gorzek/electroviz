@@ -1,3 +1,4 @@
+
 # MIT License
 # Copyright (c) 2022-3 Ryan Gorzek
 # https://github.com/gorzek-ryan/electroviz/blob/main/LICENSE
@@ -16,6 +17,7 @@ class Experiment:
     """
 
     """
+
 
     def __init__(
             self, 
@@ -59,9 +61,3 @@ class Experiment:
         for im, ks in zip(self.imec, self.kilosort):
             self.populations.append(Population(im, ks))
 
-
-    # def __repr__(
-    #         self, 
-    #     ):
-    #     """"""
-        

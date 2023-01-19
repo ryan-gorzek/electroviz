@@ -1,5 +1,5 @@
 # MIT License
-# Copyright (c) 2022 Ryan Gorzek
+# Copyright (c) 2022-3 Ryan Gorzek
 # https://github.com/gorzek-ryan/electroviz/blob/main/LICENSE
 # https://opensource.org/licenses/MIT
 
@@ -23,9 +23,7 @@ class DigitalChannel:
             sampling_rate, 
             concat_times=None, 
         ):
-        """
-    
-        """
+        """"""
 
         # Get some basic data and parameters for easy access.
         self.signal = signal.squeeze()
@@ -36,19 +34,21 @@ class DigitalChannel:
         self._build_events_df()
         self._get_events()
 
-    
+
     def __getitem__(
             self, 
             index, 
         ):
         """"""
+
         return self._Events[index]
 
-    
+
     def __iter__(
             self, 
         ):
         """"""
+
         self._Events_num = 0
         return iter(self._Events)
 
@@ -70,10 +70,7 @@ class DigitalChannel:
             self, 
             drop_samples, 
         ):
-        """
-        Aligning NIDAQ and Imec synchronization channels requires dropping some samples. This method accepts 
-        sample indices to drop and rebuild attributes accordingly.
-        """
+        """"""
 
         # Remove specified samples from the digital signal.
         self.signal = np.delete(self.signal, drop_samples)
@@ -99,9 +96,7 @@ class DigitalChannel:
     def _build_events_df(
             self, 
         ):
-        """
-        
-        """
+        """"""
 
         # Get value for digital signal at recording start and end.
         value_start = self.signal[0]
@@ -164,9 +159,7 @@ class DigitalChannel:
             self, 
             sample_num, 
         ):
-        """
-
-        """
+        """"""
 
         sample_length = 1/self.sampling_rate
         sample_times_all = np.arange(0, self.total_time, sample_length, dtype=float)
@@ -179,9 +172,7 @@ class DigitalChannel:
             time_window=(0, None), 
             return_range=True, 
         ):
-        """
-
-        """
+        """"""
 
         sample_length = 1/self.sampling_rate
         sample_times_all = np.arange(0, self.total_time, sample_length, dtype=float)
@@ -212,6 +203,10 @@ class DigitalChannel:
 
 
 class SyncChannel(DigitalChannel):
+    """
+
+    """
+
 
     def __init__(
             self, 
@@ -226,3 +221,4 @@ class SyncChannel(DigitalChannel):
         super().__init__(signal, 
                          sampling_rate, 
                          concat_times=None)
+

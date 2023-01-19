@@ -8,7 +8,7 @@ import numpy as np
 #    16-bit word that contains the digital lines of interest.
 # - dLineList is a zero-based list of one or more lines/bits
 #    to scan from word dwReq.
-#
+
 def extractDigital(rawData, firstSamp, lastSamp, dwReq, dLineList, meta):
     """"""
 

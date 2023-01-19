@@ -1,3 +1,4 @@
+
 # MIT License
 # Copyright (c) 2022-3 Ryan Gorzek
 # https://github.com/gorzek-ryan/electroviz/blob/main/LICENSE
@@ -32,3 +33,4 @@ def write_for_matlab(
     for name, arr in dict_out.items():
         path = save_path + name + ".npy"
         np.save(path, arr)
+

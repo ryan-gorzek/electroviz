@@ -1,5 +1,6 @@
+
 # MIT License
-# Copyright (c) 2022 Ryan Gorzek
+# Copyright (c) 2022-3 Ryan Gorzek
 # https://github.com/gorzek-ryan/electroviz/blob/main/LICENSE
 # https://opensource.org/licenses/MIT
 
@@ -12,9 +13,7 @@ def align_sync(
         imec, 
         kilosort, 
     ):
-    """
-    
-    """
+    """"""
 
     syncs = [nidaq[0], *imec[0:2]]
     # Get sample onsets, offsets, and durations from each object's sync signal.
@@ -61,3 +60,4 @@ def align_sync(
         obj.drop_and_rebuild(drop)
 
     return nidaq, imec, kilosort
+

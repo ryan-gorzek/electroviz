@@ -13,7 +13,8 @@ class Unit:
     """
     
     """
-    
+
+
     def __init__(
             self, 
             unit_id, 
@@ -29,6 +30,7 @@ class Unit:
         self._Population = population
         self.spike_times = np.empty((0, 0))
 
+
     def plot_PSTH(
             self, 
             stimulus, 
@@ -39,6 +41,7 @@ class Unit:
 
         responses = self.get_response(stimulus, time_window, bin_size=bin_size)
         PSTH(time_window, responses.mean(axis=0).squeeze())
+
 
     def plot_raster(
             self, 
@@ -51,6 +54,7 @@ class Unit:
 
         responses = self.get_response(stimulus, time_window, bin_size=bin_size)
         Raster(time_window, responses, ylabel="Stimulus Event", z_score=zscore)
+
 
     def get_response(
             self, 
@@ -71,6 +75,7 @@ class Unit:
             responses[event.index, :] = bin_resp
         return responses
 
+
     def add_metric(
             self, 
             metric_name, 
@@ -83,6 +88,7 @@ class Unit:
         (unit_idx,) = np.where(self._Population.units["unit_id"] == self.ID)[0]
         self._Population.units.at[unit_idx, metric_name] = metric
 
+
     def get_spike_times(
             self, 
             sample_window=(None, None), 
@@ -93,4 +99,4 @@ class Unit:
             spike_times_matrix = self._Spikes.spike_times.tocsr()
             self.spike_times = spike_times_matrix[self.ID].tocsc()
         return self.spike_times[0, sample_window[0]:sample_window[1]].toarray().squeeze()
-        
+

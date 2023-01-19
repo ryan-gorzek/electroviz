@@ -1,5 +1,6 @@
+
 # MIT License
-# Copyright (c) 2022 Ryan Gorzek
+# Copyright (c) 2022-3 Ryan Gorzek
 # https://github.com/gorzek-ryan/electroviz/blob/main/LICENSE
 # https://opensource.org/licenses/MIT
 
@@ -12,18 +13,19 @@ class Stimulus:
     """
 
     """
-    
+
+
     def __init__(
             self, 
             nidaq=None, 
             btss=None, 
         ):
-        """
-        
-        """
+        """"""
 
         self._Sync, self._PC_Clock, self._Photodiode = nidaq[:3]
         self._VStim = btss[0]
+
+
 
 
 class VisualStimulus(Stimulus):
@@ -31,11 +33,13 @@ class VisualStimulus(Stimulus):
 
     """
 
+
     def __init__(
             self, 
             nidaq=None, 
             btss=None, 
         ):
+        """"""
 
         super().__init__(
                          nidaq=nidaq, 
@@ -48,18 +52,21 @@ class VisualStimulus(Stimulus):
         photodiode_events.drop(columns=["index"], inplace=True)
         self.events = pd.concat((photodiode_events, vstim_events), axis=1)
 
+
     def __getitem__(
             self, 
             index, 
         ):
         """"""
+
         return self._Events[index]
 
-    
+
     def __iter__(
             self, 
         ):
         """"""
+
         self._Events_num = 0
         return iter(self._Events)
 
@@ -76,18 +83,18 @@ class VisualStimulus(Stimulus):
             self._Events_num += 1
         return event
 
+
     def __len__(self):
+        """"""
+
         return len(self._Events)
 
-    # def plot_btss_vstim_times
 
     def _map_btss_vstim(
             self, 
             vstim, 
         ):
-        """
-
-        """
+        """"""
 
         # Define stimulus parameters from rig log to keep.
         param_names = ["contrast", "posx", "posy", "ori", "sf", "phase", "tf", "itrial", "istim"]
@@ -103,6 +110,7 @@ class VisualStimulus(Stimulus):
         vstim_df_mapped = vstim.events[param_names]
         return vstim_df_mapped, event_idx
 
+
     def _get_events(
             self, 
             params, 
@@ -114,6 +122,7 @@ class VisualStimulus(Stimulus):
             stim_indices = self._get_stim_indices(row[0], params=params)
             self._Events.append(Event(stim_indices, *row))
         return None
+
 
     def _get_stim_indices(
             self, 
@@ -128,6 +137,7 @@ class VisualStimulus(Stimulus):
             (idx,) = np.where(np.unique(self.events[param]) == val)
             indices.append(idx[0])
         return tuple(indices)
+
 
     def _get_shape(
             self, 
@@ -151,6 +161,7 @@ class SparseNoise(VisualStimulus):
             nidaq=None, 
             btss=None, 
         ):
+        """"""
 
         super().__init__(
                          nidaq=nidaq, 
@@ -181,11 +192,13 @@ class StaticGratings(VisualStimulus):
 
     """
 
+
     def __init__(
             self, 
             nidaq=None, 
             btss=None, 
         ):
+        """"""
 
         super().__init__(
                          nidaq=nidaq, 
@@ -195,6 +208,7 @@ class StaticGratings(VisualStimulus):
         self._get_events(params=["ori", "sf", "phase", "itrial"])
         self._get_shape(params=["ori", "sf", "phase", "itrial"])
         self._get_unique()
+
 
     def _get_unique(
             self, 
@@ -207,4 +221,4 @@ class StaticGratings(VisualStimulus):
                 for phase in sorted(np.unique(self.events["phase"])):
                     self.unique.append((ori, sf, phase))
         return None
-        
+

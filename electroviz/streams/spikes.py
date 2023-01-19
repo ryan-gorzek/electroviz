@@ -1,3 +1,4 @@
+
 # MIT License
 # Copyright (c) 2022-3 Ryan Gorzek
 # https://github.com/gorzek-ryan/electroviz/blob/main/LICENSE
@@ -33,6 +34,7 @@ class Spikes:
                                                        kilosort_dict["channel_positions"], kilosort_dict["spike_templates"], 
                                                        kilosort_dict["amplitudes"], kilosort_dict["spike_clusters"])
 
+
     def drop_and_rebuild(
             self, 
             drop_samples, 
@@ -45,6 +47,7 @@ class Spikes:
         self.total_samples += -len(drop_samples)
         self.spike_times = self.spike_times[:, col_mask]
         return None
+
 
     def _build_spike_times_matrix(
             self, 
@@ -60,6 +63,7 @@ class Spikes:
         data = np.ones((spike_times.size,))
         spike_times_matrix = sparse.csr_matrix((data, (row_idx, col_idx)), shape=full_shape, dtype=bool)
         return spike_times_matrix
+
 
     def _get_cluster_depths(
             self, 
@@ -106,3 +110,4 @@ class Spikes:
             else:
                 cluster_depths.append(np.nan)
         return cluster_depths
+

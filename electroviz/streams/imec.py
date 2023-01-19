@@ -12,11 +12,12 @@ class Imec:
 
     """
 
+
     digital_lines = dict({
                         "sync" : 6, 
                         })
 
-    
+
     def __new__(
             self, 
             imec_path, 
@@ -39,3 +40,4 @@ class Imec:
                                          meta)
             imec.append(SyncChannel(sync_signal, sampling_rate))
         return imec
+

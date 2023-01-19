@@ -1,3 +1,4 @@
+
 # MIT License
 # Copyright (c) 2022-3 Ryan Gorzek
 # https://github.com/gorzek-ryan/electroviz/blob/main/LICENSE
@@ -46,3 +47,4 @@ class Raster:
         plt.show(block=False)
         plt.tight_layout()
         fig.set_size_inches(6, 9)
+

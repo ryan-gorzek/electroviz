@@ -27,6 +27,7 @@ class Population:
 
     """
 
+
     def __init__(
             self, 
             imec, 
@@ -54,6 +55,44 @@ class Population:
         # Define current index for iteration.
         self._current_Unit_idx = 0
 
+
+    def __getitem__(
+            self, 
+            input, 
+        ):
+        """"""
+
+        if isinstance(input, int):
+            subset = self._Units[input]
+        else:
+            try:
+                subset = self._get_subset(input)
+            except TypeError:
+                print("Failed.")
+        return subset
+
+
+    def __iter__(self):
+        """"""
+
+        return iter(self._Units)
+
+
+    def __next__(self):
+        """"""
+
+        if self._current_unit_idx < self.total_units:
+            unit = self._Units[self._current_unit_idx]
+            self._current_unit_idx += 1
+            return unit
+
+
+    def __len__(self):
+        """"""
+
+        return len(self._Units)
+
+
     def plot_PSTH(
             self, 
             stimulus, 
@@ -65,6 +104,7 @@ class Population:
         responses = self.get_response(stimulus, time_window, bin_size=bin_size)
         PSTH(time_window, responses.mean(axis=0).squeeze())
 
+
     def plot_raster(
             self, 
             stimulus, 
@@ -75,6 +115,7 @@ class Population:
         
         responses = self.get_response(stimulus, time_window, bin_size=bin_size)
         Raster(time_window, responses, ylabel="Unit")
+
 
     def get_response(
             self, 
@@ -95,6 +136,7 @@ class Population:
             responses[:, :, event.index] = bin_resp
         return responses.mean(axis=2)
 
+
     def plot_rate_histogram(
             self, 
         ):
@@ -109,6 +151,7 @@ class Population:
         axs.set_ylabel("Probability", fontsize=20)
         plt.show(block=False)
         fig.set_size_inches(8, 8)
+
 
     def sort(
             self, 
@@ -125,6 +168,7 @@ class Population:
                 subset = self.remove(np.isnan(self.units[metric]))._get_subset(sort_idx[::-1])
             return subset
 
+
     def remove(
             self, 
             idx, 
@@ -138,32 +182,9 @@ class Population:
         subset = self._get_subset(np.array(keep_idx))
         return subset
 
-    def __getitem__(
-            self, 
-            input, 
-        ):
-        """"""
 
-        if isinstance(input, int):
-            subset = self._Units[input]
-        else:
-            try:
-                subset = self._get_subset(input)
-            except TypeError:
-                print("Failed.")
-        return subset
 
-    def __iter__(self):
-        return iter(self._Units)
 
-    def __next__(self):
-        if self._current_unit_idx < self.total_units:
-            unit = self._Units[self._current_unit_idx]
-            self._current_unit_idx += 1
-            return unit
-
-    def __len__(self):
-        return len(self._Units)
 
     def _get_subset(
             self, 
@@ -178,6 +199,7 @@ class Population:
         subset.units = self.units.iloc[slice_or_array].reset_index(drop=True)
         return subset
 
+
     def _bin_spikes(
             self, 
             bin_size=100, 
@@ -189,4 +211,4 @@ class Population:
         spike_times = self.spike_times[:, :-drop_end].toarray()
         spike_rate = spike_times.reshape((len(self), num_bins, -1)).sum(axis=2) / (bin_size / 1000)
         return spike_rate
-        
+

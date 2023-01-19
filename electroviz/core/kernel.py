@@ -1,5 +1,6 @@
+
 # MIT License
-# Copyright (c) 2022 Ryan Gorzek
+# Copyright (c) 2022-3 Ryan Gorzek
 # https://github.com/gorzek-ryan/electroviz/blob/main/LICENSE
 # https://opensource.org/licenses/MIT
 
@@ -12,7 +13,6 @@ from scipy.optimize import curve_fit
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 from electroviz.viz.psth import PSTH
-
 
 class Kernel:
     """
@@ -43,6 +43,7 @@ class Kernel:
             spikes_per_sec = resp.reshape(self._num_bins, -1).sum(axis=1) / (bin_size / 1000)
             self._responses[:, *event.stim_indices] = spikes_per_sec
 
+
     def _time_to_bins(
             self, 
             window, 
@@ -55,6 +56,8 @@ class Kernel:
         off_dists = np.abs(time_window_bins - window[1])
         (off_idx,) = np.where(off_dists == np.min(off_dists))
         return int(on_idx[0]), int(off_idx[0] + 1)
+
+
 
 
 class SparseNoiseKernel(Kernel):
@@ -89,38 +92,6 @@ class SparseNoiseKernel(Kernel):
         # Initialize fits as None.
         self.ON_fit, self.OFF_fit, self.DIFF_fit = None, None, None
 
-    def _compute_kernels(
-            self, 
-            response_windows, 
-        ):
-        """"""
-
-        ONs, OFFs = (np.empty((len(response_windows), *self._Stimulus.shape[2:0:-1])) for k in range(2))
-        ON_S, OFF_S = (np.empty((len(response_windows),)) for k in range(2))
-        for idx, response_window in enumerate(response_windows):
-            resp_on, resp_off = self._time_to_bins(response_window)
-            kernels = np.zeros(self._Stimulus.shape[:3])
-            for stim_indices in np.ndindex(self._Stimulus.shape[:3]):
-                resp_rate = self._responses[resp_on:resp_off, *stim_indices, :].mean(axis=(0, 1))
-                kernels[*stim_indices] += resp_rate
-            ONs[idx] = kernels[1].T[::-1, :]
-            ON_S[idx] = np.linalg.norm(ONs[idx].flatten()) / np.linalg.norm(ONs[0].flatten())
-            OFFs[idx] = kernels[0].T[::-1, :]
-            OFF_S[idx] = np.linalg.norm(OFFs[idx].flatten()) / np.linalg.norm(OFFs[0].flatten())
-        # Get the kernels with the maximum norm (across time).
-        if not all((np.isinf(ON_S) | np.isnan(ON_S)) |
-                   (np.isinf(OFF_S) | np.isnan(OFF_S))):
-            (ON_tmax,) = np.where(ON_S == np.max(ON_S))
-            ON_opt = ONs[ON_tmax[0], :, :].squeeze()
-            (OFF_tmax,) = np.where(OFF_S == np.max(OFF_S))
-            OFF_opt = OFFs[OFF_tmax[0], :, :].squeeze()
-            DIFF_opt = ON_opt - OFF_opt
-        else:
-            ON_tmax, OFF_tmax = np.nan, np.nan
-            ON_opt = np.empty(ONs.shape[1:3]).fill(np.nan)
-            OFF_opt = np.empty(OFFs.shape[1:3]).fill(np.nan)
-            DIFF_opt = np.empty(ONs.shape[1:3]).fill(np.nan)
-        return (ON_opt, OFF_opt, DIFF_opt), (ON_tmax, OFF_tmax), (ON_S, OFF_S), (ONs, OFFs)
 
     def plot_raw(
             self, 
@@ -145,6 +116,7 @@ class SparseNoiseKernel(Kernel):
         axs[2].set_title("ON - OFF", fontsize=18)
         plt.show(block=False)
         fig.set_size_inches(4.5, 10)
+
 
     def plot_raw_delay(
             self, 
@@ -197,6 +169,7 @@ class SparseNoiseKernel(Kernel):
         fig.subplots_adjust(left=0.01, right=0.99)
         fig.set_size_inches(len(self.response_windows), 3)
 
+
     def plot_norm_delay(
             self, 
         ):
@@ -221,6 +194,42 @@ class SparseNoiseKernel(Kernel):
         plt.show(block=False)
         plt.tight_layout()
         fig.set_size_inches(6, 6)
+
+
+    def _compute_kernels(
+            self, 
+            response_windows, 
+        ):
+        """"""
+
+        ONs, OFFs = (np.empty((len(response_windows), *self._Stimulus.shape[2:0:-1])) for k in range(2))
+        ON_S, OFF_S = (np.empty((len(response_windows),)) for k in range(2))
+        for idx, response_window in enumerate(response_windows):
+            resp_on, resp_off = self._time_to_bins(response_window)
+            kernels = np.zeros(self._Stimulus.shape[:3])
+            for stim_indices in np.ndindex(self._Stimulus.shape[:3]):
+                resp_rate = self._responses[resp_on:resp_off, *stim_indices, :].mean(axis=(0, 1))
+                kernels[*stim_indices] += resp_rate
+            ONs[idx] = kernels[1].T[::-1, :]
+            ON_S[idx] = np.linalg.norm(ONs[idx].flatten()) / np.linalg.norm(ONs[0].flatten())
+            OFFs[idx] = kernels[0].T[::-1, :]
+            OFF_S[idx] = np.linalg.norm(OFFs[idx].flatten()) / np.linalg.norm(OFFs[0].flatten())
+        # Get the kernels with the maximum norm (across time).
+        if not all((np.isinf(ON_S) | np.isnan(ON_S)) |
+                   (np.isinf(OFF_S) | np.isnan(OFF_S))):
+            (ON_tmax,) = np.where(ON_S == np.max(ON_S))
+            ON_opt = ONs[ON_tmax[0], :, :].squeeze()
+            (OFF_tmax,) = np.where(OFF_S == np.max(OFF_S))
+            OFF_opt = OFFs[OFF_tmax[0], :, :].squeeze()
+            DIFF_opt = ON_opt - OFF_opt
+        else:
+            ON_tmax, OFF_tmax = np.nan, np.nan
+            ON_opt = np.empty(ONs.shape[1:3]).fill(np.nan)
+            OFF_opt = np.empty(OFFs.shape[1:3]).fill(np.nan)
+            DIFF_opt = np.empty(ONs.shape[1:3]).fill(np.nan)
+        return (ON_opt, OFF_opt, DIFF_opt), (ON_tmax, OFF_tmax), (ON_S, OFF_S), (ONs, OFFs)
+
+
 
 
 class StaticGratingsKernel(Kernel):
@@ -252,30 +261,6 @@ class StaticGratingsKernel(Kernel):
         # Initialize fits as None.
         self.orisf_fit = None
 
-    def _compute_kernels(
-            self, 
-            response_windows, 
-        ):
-        """"""
-
-        orisfs = np.empty((len(response_windows), *self._Stimulus.shape[:2]))
-        orisf_S = np.empty((len(response_windows),))
-        for idx, response_window in enumerate(response_windows):
-            resp_on, resp_off = self._time_to_bins(response_window)
-            kernels = np.zeros(self._Stimulus.shape[:2])
-            for stim_indices in np.ndindex(self._Stimulus.shape[:2]):
-                resp_rate = self._responses[resp_on:resp_off, *stim_indices, :, :].mean(axis=(0, 1, 2))
-                kernels[*stim_indices] += resp_rate
-            orisfs[idx] = kernels[::-1, :]
-            orisf_S[idx] = np.linalg.norm(orisfs[idx].flatten()) / np.linalg.norm(orisfs[0].flatten())
-        # Get the kernels with the maximum norm (across time).
-        if not all((np.isinf(orisf_S) | np.isnan(orisf_S))):
-            (orisf_tmax,) = np.where(orisf_S == np.max(orisf_S))
-            orisf_opt = orisfs[orisf_tmax[0], ::-1, :].squeeze()
-        else:
-            orisf_tmax = np.nan
-            orisf_opt = np.empty(orisfs.shape[:2]).fill(np.nan)
-        return orisf_opt, orisf_tmax, orisf_S, orisfs
 
     def plot_raw(
             self, 
@@ -299,6 +284,7 @@ class StaticGratingsKernel(Kernel):
         plt.show(block=False)
         fig.subplots_adjust(left=0.15, bottom=0.11, right=0.95, top=0.95)
         fig.set_size_inches(6, 6)
+
 
     def plot_raw_delay(
             self, 
@@ -328,6 +314,7 @@ class StaticGratingsKernel(Kernel):
         fig.subplots_adjust(left=0.01, right=0.99)
         fig.set_size_inches(len(self.response_windows), 3)
 
+
     def plot_norm_delay(
             self, 
         ):
@@ -349,3 +336,30 @@ class StaticGratingsKernel(Kernel):
         plt.show(block=False)
         plt.tight_layout()
         fig.set_size_inches(6, 6)
+
+
+    def _compute_kernels(
+            self, 
+            response_windows, 
+        ):
+        """"""
+
+        orisfs = np.empty((len(response_windows), *self._Stimulus.shape[:2]))
+        orisf_S = np.empty((len(response_windows),))
+        for idx, response_window in enumerate(response_windows):
+            resp_on, resp_off = self._time_to_bins(response_window)
+            kernels = np.zeros(self._Stimulus.shape[:2])
+            for stim_indices in np.ndindex(self._Stimulus.shape[:2]):
+                resp_rate = self._responses[resp_on:resp_off, *stim_indices, :, :].mean(axis=(0, 1, 2))
+                kernels[*stim_indices] += resp_rate
+            orisfs[idx] = kernels[::-1, :]
+            orisf_S[idx] = np.linalg.norm(orisfs[idx].flatten()) / np.linalg.norm(orisfs[0].flatten())
+        # Get the kernels with the maximum norm (across time).
+        if not all((np.isinf(orisf_S) | np.isnan(orisf_S))):
+            (orisf_tmax,) = np.where(orisf_S == np.max(orisf_S))
+            orisf_opt = orisfs[orisf_tmax[0], ::-1, :].squeeze()
+        else:
+            orisf_tmax = np.nan
+            orisf_opt = np.empty(orisfs.shape[:2]).fill(np.nan)
+        return orisf_opt, orisf_tmax, orisf_S, orisfs
+
