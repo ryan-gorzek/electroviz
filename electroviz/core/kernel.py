@@ -97,11 +97,15 @@ class SparseNoiseKernel(Kernel):
             self, 
             cmap="viridis", 
             save_path="", 
+            ax_in=None, 
         ):
         """"""
 
-        mpl_use("Qt5Agg")
-        fig, axs = plt.subplots(3, 1)
+        if ax_in is None:
+            mpl_use("Qt5Agg")
+            fig, axs = plt.subplots(3, 1)
+        else:
+            axs = ax_in
         axs[0].matshow(self.ON, cmap=cmap, clim=[self.ON.min(), self.ON.max()])
         axs[0].xaxis.tick_bottom()
         axs[0].axis("off")
@@ -114,8 +118,9 @@ class SparseNoiseKernel(Kernel):
         axs[2].xaxis.tick_bottom()
         axs[2].axis("off")
         axs[2].set_title("ON - OFF", fontsize=18)
-        plt.show(block=False)
-        fig.set_size_inches(4.5, 10)
+        if ax_in is None:
+            plt.show(block=False)
+            fig.set_size_inches(4.5, 10)
 
 
     def plot_raw_delay(
@@ -172,11 +177,15 @@ class SparseNoiseKernel(Kernel):
 
     def plot_norm_delay(
             self, 
+            ax_in=None, 
         ):
         """"""
 
-        mpl_use("Qt5Agg")
-        fig, ax = plt.subplots()
+        if ax_in is None:
+            mpl_use("Qt5Agg")
+            fig, ax = plt.subplots()
+        else:
+            ax = ax_in
         t = np.linspace(0, self.ON_S.size, self.ON_S.size)
         ax.hlines(1, -1, t.size + 1, colors=(0.0, 0.0, 0.0, 0.75), linestyles="--")
         ax.bar(t, self.ON_S, color=(0.9, 0.2, 0.2, 0.5), label="ON")
@@ -191,9 +200,10 @@ class SparseNoiseKernel(Kernel):
         rng = np.diff(ends)
         lims = ends + 0.1 * np.array((-rng, rng)).T
         ax.set_ylim(lims[0])
-        plt.show(block=False)
-        plt.tight_layout()
-        fig.set_size_inches(6, 6)
+        if ax_in is None:
+            plt.show(block=False)
+            plt.tight_layout()
+            fig.set_size_inches(6, 6)
 
 
     def _compute_kernels(
@@ -266,11 +276,15 @@ class StaticGratingsKernel(Kernel):
             self, 
             cmap="viridis", 
             save_path="", 
+            ax_in=None, 
         ):
         """"""
 
-        mpl_use("Qt5Agg")
-        fig, ax = plt.subplots()
+        if ax_in is None:
+            mpl_use("Qt5Agg")
+            fig, ax = plt.subplots()
+        else:
+            ax = ax_in
         ax.matshow(self.orisf, cmap=cmap, clim=[self.orisf.min(), self.orisf.max()])
         ax.xaxis.tick_bottom()
         oris = np.unique(np.array(self._Stimulus.unique)[:, 0])
@@ -281,9 +295,10 @@ class StaticGratingsKernel(Kernel):
         ax.set_yticks(np.arange(0, len(oris), 2))
         ax.set_yticklabels(oris[-1::-2].astype(int))
         ax.set_ylabel("Orientation")
-        plt.show(block=False)
-        fig.subplots_adjust(left=0.15, bottom=0.11, right=0.95, top=0.95)
-        fig.set_size_inches(6, 6)
+        if ax_in is None:
+            plt.show(block=False)
+            fig.subplots_adjust(left=0.15, bottom=0.11, right=0.95, top=0.95)
+            fig.set_size_inches(6, 6)
 
 
     def plot_raw_delay(
@@ -317,11 +332,15 @@ class StaticGratingsKernel(Kernel):
 
     def plot_norm_delay(
             self, 
+            ax_in=None, 
         ):
         """"""
 
-        mpl_use("Qt5Agg")
-        fig, ax = plt.subplots()
+        if ax_in is None:
+            mpl_use("Qt5Agg")
+            fig, ax = plt.subplots()
+        else:
+            ax = ax_in
         t = np.linspace(0, self.orisf_S.size, self.orisf_S.size)
         ax.hlines(1, -1, t.size + 1, colors=(0.0, 0.0, 0.0, 0.75), linestyles="--")
         ax.bar(t, self.orisf_S, color=(0, 0, 0, 0.5))
@@ -333,9 +352,10 @@ class StaticGratingsKernel(Kernel):
         rng = np.diff(ends)
         lims = ends + 0.1 * np.array((-rng, rng)).T
         ax.set_ylim(lims[0])
-        plt.show(block=False)
-        plt.tight_layout()
-        fig.set_size_inches(6, 6)
+        if ax_in is None:
+            plt.show(block=False)
+            plt.tight_layout()
+            fig.set_size_inches(6, 6)
 
 
     def _compute_kernels(

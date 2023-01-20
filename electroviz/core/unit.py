@@ -38,11 +38,12 @@ class Unit:
             stimulus, 
             time_window=(-50, 200), 
             bin_size=5, 
+            ax_in=None, 
         ):
         """"""
 
         responses = self.get_response(stimulus, time_window, bin_size=bin_size)
-        PSTH(time_window, responses.mean(axis=0).squeeze())
+        PSTH(time_window, responses.mean(axis=0).squeeze(), ax_in=ax_in)
 
 
     def plot_raster(
@@ -56,6 +57,55 @@ class Unit:
 
         responses = self.get_response(stimulus, time_window, bin_size=bin_size)
         Raster(time_window, responses, ylabel="Stimulus Event", z_score=zscore)
+
+
+    def plot_summary(
+            self, 
+            stimuli, 
+            kernels, 
+        ):
+        """"""
+
+        mpl_use("Qt5Agg")
+        fig, axs = plt.subplots(4, 5)
+
+        self.plot_PSTH(stimuli[0], ax_in=axs[0][0])
+        axs[0][0].set_xlabel("")
+        axs[0][0].set_xticklabels([])
+        kernels[0].plot_norm_delay(ax_in=axs[0][1])
+        axs[0][1].set_xlabel("")
+        axs[0][1].set_xticklabels([])
+        kernels[0].plot_raw(ax_in=axs[0][2:5])
+
+        self.plot_PSTH(stimuli[1], ax_in=axs[1][0])
+        axs[1][0].set_xlabel("")
+        axs[1][0].set_xticklabels([])
+        kernels[1].plot_norm_delay(ax_in=axs[1][1])
+        axs[1][1].set_xlabel("")
+        axs[1][1].set_xticklabels([])
+        kernels[1].plot_raw(ax_in=axs[1][2:5])
+
+        self.plot_PSTH(stimuli[2], ax_in=axs[2][0])
+        axs[2][0].set_xlabel("")
+        axs[2][0].set_xticklabels([])
+        kernels[2].plot_norm_delay(ax_in=axs[2][1])
+        axs[2][1].set_xlabel("")
+        axs[2][1].set_xticklabels([])
+        axs[2][2].axis("off")
+        kernels[2].plot_raw(ax_in=axs[2][3])
+        axs[2][3].set_xlabel("")
+        axs[2][3].set_xticklabels([])
+        axs[2][4].axis("off")
+
+        self.plot_PSTH(stimuli[3], ax_in=axs[3][0])
+        kernels[3].plot_norm_delay(ax_in=axs[3][1])
+        axs[3][2].axis("off")
+        kernels[3].plot_raw(ax_in=axs[3][3])
+        axs[3][4].axis("off")
+
+        fig.suptitle("Unit #" + str(self.ID))
+        plt.show(block=False)
+        fig.set_size_inches(30, 15)
 
 
     def get_response(

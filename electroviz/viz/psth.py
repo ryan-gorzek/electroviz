@@ -28,8 +28,11 @@ class PSTH:
         ):
         """"""
 
-        mpl_use("Qt5Agg")
-        fig, ax = plt.subplots()
+        if ax_in is None:
+            mpl_use("Qt5Agg")
+            fig, ax = plt.subplots()
+        else:
+            ax = ax_in
         t = np.linspace(0, responses.size, responses.size)
         ax.bar(t, responses, color="k")
         ax.set_xticks(np.linspace(0, t.size, 6))
@@ -39,8 +42,11 @@ class PSTH:
         ends = np.array((responses.min(), responses.max()))
         rng = np.diff(ends)
         lims = ends + 0.1 * np.array((-rng, rng)).T
+        if lims[0][0] < 0:
+            lims[0][0] = 0
         ax.set_ylim(lims[0])
-        plt.show(block=False)
-        plt.tight_layout()
-        fig.set_size_inches(6, 6)
+        if ax_in is None:
+            plt.show(block=False)
+            plt.tight_layout()
+            fig.set_size_inches(6, 6)
 
