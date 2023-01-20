@@ -68,7 +68,7 @@ class Unit:
 
         mpl_use("Qt5Agg")
         fig = plt.figure()
-        gs = fig.add_gridspec(12, 15, hspace=10, wspace=10)
+        gs = fig.add_gridspec(12, 15, hspace=2, wspace=2)
 
         ax_raster = fig.add_subplot(gs[:9, :3])
         self._Population.plot_raster(None, responses=self._Population._responses, ax_in=ax_raster)
@@ -118,7 +118,7 @@ class Unit:
         kernels[3].plot_raw(ax_in=ax_kern_isg)
 
         ax_norm_isg = fig.add_subplot(gs[9:13, 12:16])
-        kernels[3].plot_norm_delay(ax_in=ax_norm_csg)
+        kernels[3].plot_norm_delay(ax_in=ax_norm_isg)
 
         fig.suptitle("Unit #" + str(self.ID))
         plt.show(block=False)

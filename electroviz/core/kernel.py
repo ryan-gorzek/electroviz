@@ -199,6 +199,8 @@ class SparseNoiseKernel(Kernel):
         ends = np.array((norms.min(), norms.max()))
         rng = np.diff(ends)
         lims = ends + 0.1 * np.array((-rng, rng)).T
+        if lims[0][0] < 0:
+            lims[0][0] = 0
         ax.set_ylim(lims[0])
         if ax_in is None:
             plt.show(block=False)
@@ -351,6 +353,8 @@ class StaticGratingsKernel(Kernel):
         ends = np.array((self.orisf_S.min(), self.orisf_S.max()))
         rng = np.diff(ends)
         lims = ends + 0.1 * np.array((-rng, rng)).T
+        if lims[0][0] < 0:
+            lims[0][0] = 0
         ax.set_ylim(lims[0])
         if ax_in is None:
             plt.show(block=False)
