@@ -112,11 +112,13 @@ class Population:
             stimulus, 
             time_window=(-50, 200), 
             bin_size=1, 
+            fig_size=(6, 9), 
+            save_path="", 
         ):
         """"""
         
         responses = self.get_response(stimulus, time_window, bin_size=bin_size)
-        Raster(time_window, responses, ylabel="Unit")
+        Raster(time_window, responses, ylabel="Unit", fig_size=fig_size, save_path=save_path)
 
 
     def get_response(

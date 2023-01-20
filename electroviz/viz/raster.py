@@ -26,6 +26,8 @@ class Raster:
             responses, 
             z_score=True, 
             ylabel="", 
+            fig_size=(6, 9), 
+            save_path="", 
         ):
         """"""
 
@@ -46,5 +48,7 @@ class Raster:
         ax.set_ylabel(ylabel, fontsize=16)
         plt.show(block=False)
         plt.tight_layout()
-        fig.set_size_inches(6, 9)
+        fig.set_size_inches(*fig_size)
+        if save_path != "":
+            fig.savefig(save_path, bbox_inches="tight")
 
