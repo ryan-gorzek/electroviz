@@ -226,6 +226,8 @@ class Population:
 
         subset = copy.copy(self)
         subset._Units = list(np.array(self._Units)[slice_or_array])
+        for unit in subset._Units:
+            unit._Population = subset
         subset.spike_times = self.spike_times.tocsr()[slice_or_array, :].tocsc()
         subset.total_units = len(subset._Units)
         subset.units = self.units.iloc[slice_or_array].reset_index(drop=True)
