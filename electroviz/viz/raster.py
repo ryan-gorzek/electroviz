@@ -28,27 +28,27 @@ class Raster:
             ylabel="", 
             fig_size=(6, 9), 
             save_path="", 
+            ax_in=None, 
         ):
         """"""
 
-        mpl_use("Qt5Agg")
-        fig, ax = plt.subplots()
+        if ax_in is None:
+            mpl_use("Qt5Agg")
+            fig, ax = plt.subplots()
+        else:
+            ax = ax_in
         aspect_ratio = 1.75 / (responses.shape[0] / responses.shape[1])
         if z_score == True:
-            ax.imshow(zscore(responses, axis=1), 
-                      cmap="binary", 
-                      aspect=aspect_ratio)
-        else:
-            ax.imshow(responses, 
-                      cmap="binary", 
-                      aspect=aspect_ratio)
+            responses = zscore(responses, axis=1)
+        ax.imshow(responses, cmap="binary", aspect=aspect_ratio)
         ax.set_xticks(np.linspace(0, responses.shape[1], 6))
         ax.set_xticklabels(np.linspace(*time_window, 6))
         ax.set_xlabel("Time from Onset (ms)", fontsize=16)
         ax.set_ylabel(ylabel, fontsize=16)
-        plt.show(block=False)
-        plt.tight_layout()
-        fig.set_size_inches(*fig_size)
-        if save_path != "":
-            fig.savefig(save_path, bbox_inches="tight")
+        if ax_in is None:
+            plt.show(block=False)
+            plt.tight_layout()
+            fig.set_size_inches(*fig_size)
+            if save_path != "":
+                fig.savefig(save_path, bbox_inches="tight")
 

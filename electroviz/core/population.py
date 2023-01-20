@@ -56,6 +56,8 @@ class Population:
         self.units["spike_rate"] = self.units["total_spikes"] / self._Sync.total_time
         # Define current index for iteration.
         self._current_Unit_idx = 0
+        # Store data for raster plot.
+        self._responses = None
 
 
     def __getitem__(
@@ -114,11 +116,16 @@ class Population:
             bin_size=1, 
             fig_size=(6, 9), 
             save_path="", 
+            ax_in=None, 
+            responses=None, 
         ):
         """"""
         
-        responses = self.get_response(stimulus, time_window, bin_size=bin_size)
-        Raster(time_window, responses, ylabel="Unit", fig_size=fig_size, save_path=save_path)
+        if responses is None:
+            self._responses = self.get_response(stimulus, time_window, bin_size=bin_size)
+        else:
+            self._responses = responses
+        Raster(time_window, self._responses, ylabel="Unit", fig_size=fig_size, save_path=save_path, ax_in=ax_in)
 
 
     def get_response(

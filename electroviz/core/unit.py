@@ -67,41 +67,58 @@ class Unit:
         """"""
 
         mpl_use("Qt5Agg")
-        fig, axs = plt.subplots(4, 5)
+        fig = plt.figure()
+        gs = fig.add_gridspec(12, 15, hspace=10, wspace=10)
 
-        self.plot_PSTH(stimuli[0], ax_in=axs[0][0])
-        axs[0][0].set_xlabel("")
-        axs[0][0].set_xticklabels([])
-        kernels[0].plot_norm_delay(ax_in=axs[0][1])
-        axs[0][1].set_xlabel("")
-        axs[0][1].set_xticklabels([])
-        kernels[0].plot_raw(ax_in=axs[0][2:5])
+        ax_raster = fig.add_subplot(gs[:9, :3])
+        self._Population.plot_raster(None, responses=self._Population._responses, ax_in=ax_raster)
 
-        self.plot_PSTH(stimuli[1], ax_in=axs[1][0])
-        axs[1][0].set_xlabel("")
-        axs[1][0].set_xticklabels([])
-        kernels[1].plot_norm_delay(ax_in=axs[1][1])
-        axs[1][1].set_xlabel("")
-        axs[1][1].set_xticklabels([])
-        kernels[1].plot_raw(ax_in=axs[1][2:5])
+        ax_xcorr = fig.add_subplot(gs[:9, 3:6])
+        ax_xcorr.axis("off")
+        ax_hist = fig.add_subplot(gs[9:13, :3])
+        ax_hist.axis("off")
+        ax_peaks = fig.add_subplot(gs[9:13, 3:6])
+        ax_peaks.axis("off")
 
-        self.plot_PSTH(stimuli[2], ax_in=axs[2][0])
-        axs[2][0].set_xlabel("")
-        axs[2][0].set_xticklabels([])
-        kernels[2].plot_norm_delay(ax_in=axs[2][1])
-        axs[2][1].set_xlabel("")
-        axs[2][1].set_xticklabels([])
-        axs[2][2].axis("off")
-        kernels[2].plot_raw(ax_in=axs[2][3])
-        axs[2][3].set_xlabel("")
-        axs[2][3].set_xticklabels([])
-        axs[2][4].axis("off")
+        ax_psth_csn = fig.add_subplot(gs[:3, 6:9])
+        self.plot_PSTH(stimuli[0], ax_in=ax_psth_csn)
 
-        self.plot_PSTH(stimuli[3], ax_in=axs[3][0])
-        kernels[3].plot_norm_delay(ax_in=axs[3][1])
-        axs[3][2].axis("off")
-        kernels[3].plot_raw(ax_in=axs[3][3])
-        axs[3][4].axis("off")
+        ax_kon_csn = fig.add_subplot(gs[:1, 9:12])
+        ax_koff_csn = fig.add_subplot(gs[1:2, 9:12])
+        ax_kdiff_csn = fig.add_subplot(gs[2:3, 9:12])
+        kernels[0].plot_raw(ax_in=np.array((ax_kon_csn, ax_koff_csn, ax_kdiff_csn)))
+
+        ax_norm_csn = fig.add_subplot(gs[:3, 12:16])
+        kernels[0].plot_norm_delay(ax_in=ax_norm_csn)
+
+        ax_psth_isn = fig.add_subplot(gs[3:6, 6:9])
+        self.plot_PSTH(stimuli[1], ax_in=ax_psth_isn)
+
+        ax_kon_isn = fig.add_subplot(gs[3:4, 9:12])
+        ax_koff_isn = fig.add_subplot(gs[4:5, 9:12])
+        ax_kdiff_isn = fig.add_subplot(gs[5:6, 9:12])
+        kernels[1].plot_raw(ax_in=np.array((ax_kon_isn, ax_koff_isn, ax_kdiff_isn)))
+
+        ax_norm_isn = fig.add_subplot(gs[3:6, 12:16])
+        kernels[1].plot_norm_delay(ax_in=ax_norm_isn)
+
+        ax_psth_csg = fig.add_subplot(gs[6:9, 6:9])
+        self.plot_PSTH(stimuli[2], ax_in=ax_psth_csg)
+
+        ax_kern_csg = fig.add_subplot(gs[6:9, 9:12])
+        kernels[2].plot_raw(ax_in=ax_kern_csg)
+
+        ax_norm_csg = fig.add_subplot(gs[6:9, 12:16])
+        kernels[2].plot_norm_delay(ax_in=ax_norm_csg)
+
+        ax_psth_isg = fig.add_subplot(gs[9:13, 6:9])
+        self.plot_PSTH(stimuli[3], ax_in=ax_psth_isg)
+
+        ax_kern_isg = fig.add_subplot(gs[9:13, 9:12])
+        kernels[3].plot_raw(ax_in=ax_kern_isg)
+
+        ax_norm_isg = fig.add_subplot(gs[9:13, 12:16])
+        kernels[3].plot_norm_delay(ax_in=ax_norm_csg)
 
         fig.suptitle("Unit #" + str(self.ID))
         plt.show(block=False)
