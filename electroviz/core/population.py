@@ -102,11 +102,16 @@ class Population:
             stimulus, 
             time_window=(-50, 200), 
             bin_size=5, 
+            ax_in=None, 
+            responses=None, 
         ):
         """"""
 
-        responses = self.get_response(stimulus, time_window, bin_size=bin_size)
-        PSTH(time_window, responses.mean(axis=0).squeeze())
+        if responses is None:
+            self._responses = self.get_response(stimulus, time_window, bin_size=bin_size)
+        else:
+            self._responses = responses
+        PSTH(time_window, self._responses.mean(axis=0).squeeze(), ax_in=ax_in)
 
 
     def plot_raster(
