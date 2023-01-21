@@ -6,6 +6,7 @@
 
 import pandas as pd
 import numpy as np
+import copy
 from warnings import warn
 from electroviz.core.event import Event
 
@@ -24,34 +25,6 @@ class Stimulus:
 
         self._Sync, self._PC_Clock, self._Photodiode = nidaq[:3]
         self._VStim = btss[0]
-
-
-
-
-class VisualStimulus(Stimulus):
-    """
-
-    """
-
-
-    def __init__(
-            self, 
-            nidaq=None, 
-            btss=None, 
-        ):
-        """"""
-
-        super().__init__(
-                         nidaq=nidaq, 
-                         btss=btss, 
-                        )
-
-        # Stack photodiode and vstim dataframes.
-        vstim_events, event_idx = self._map_btss_vstim(self._VStim)
-        photodiode_events = self._Photodiode.events.iloc[event_idx].reset_index()
-        photodiode_events.drop(columns=["index"], inplace=True)
-        self.events = pd.concat((photodiode_events, vstim_events), axis=1)
-
 
     def __getitem__(
             self, 
@@ -88,6 +61,44 @@ class VisualStimulus(Stimulus):
         """"""
 
         return len(self._Events)
+
+
+    def randomize(
+            self, 
+        ):
+        """"""
+        
+        rand_idx = np.random.shuffle(range(len(self._Events)))
+        rand_set = copy.copy(self)
+        rand_set._Events = self._Events[rand_idx]
+        rand_set.events.reindex(rand_idx)
+        return rand_set
+
+
+
+class VisualStimulus(Stimulus):
+    """
+
+    """
+
+
+    def __init__(
+            self, 
+            nidaq=None, 
+            btss=None, 
+        ):
+        """"""
+
+        super().__init__(
+                         nidaq=nidaq, 
+                         btss=btss, 
+                        )
+
+        # Stack photodiode and vstim dataframes.
+        vstim_events, event_idx = self._map_btss_vstim(self._VStim)
+        photodiode_events = self._Photodiode.events.iloc[event_idx].reset_index()
+        photodiode_events.drop(columns=["index"], inplace=True)
+        self.events = pd.concat((photodiode_events, vstim_events), axis=1)
 
 
     def _map_btss_vstim(
