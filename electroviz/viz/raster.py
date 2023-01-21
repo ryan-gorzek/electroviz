@@ -35,9 +35,10 @@ class Raster:
         if ax_in is None:
             mpl_use("Qt5Agg")
             fig, ax = plt.subplots()
+            aspect_ratio = 1.75 / (responses.shape[0] / responses.shape[1])
         else:
             ax = ax_in
-        aspect_ratio = 1.75 / (responses.shape[0] / responses.shape[1])
+            aspect_ratio = "auto"
         if z_score == True:
             responses = zscore(responses, axis=1)
         ax.imshow(responses, cmap="binary", aspect=aspect_ratio)

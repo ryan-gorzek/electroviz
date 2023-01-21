@@ -39,7 +39,7 @@ class Kernel:
         self._responses = np.zeros((self._num_bins, *stimulus.shape))
         for event in stimulus:
             window = (sample_window + event.sample_onset).astype(int)
-            resp = unit.get_spike_times(window)
+            resp = unit.get_spike_times(sample_window=window)
             spikes_per_sec = resp.reshape(self._num_bins, -1).sum(axis=1) / (bin_size / 1000)
             self._responses[:, *event.stim_indices] = spikes_per_sec
 
@@ -196,12 +196,15 @@ class SparseNoiseKernel(Kernel):
         ax.set_xlabel("Time from Onset (ms)", fontsize=16)
         ax.set_ylabel("|| Kernel(t) || / || Kernel(0) ||", fontsize=16)
         norms = np.concatenate((self.ON_S, self.OFF_S))
-        ends = np.array((norms.min(), norms.max()))
+        ends = np.array((np.nanmin(norms), np.nanmax(norms)))
         rng = np.diff(ends)
         lims = ends + 0.1 * np.array((-rng, rng)).T
         if lims[0][0] < 0:
             lims[0][0] = 0
-        ax.set_ylim(lims[0])
+        try:
+            ax.set_ylim(lims[0])
+        except:
+            ax.set_ylim([0, 1])
         if ax_in is None:
             plt.show(block=False)
             plt.tight_layout()
@@ -223,9 +226,9 @@ class SparseNoiseKernel(Kernel):
                 resp_rate = self._responses[resp_on:resp_off, *stim_indices, :].mean(axis=(0, 1))
                 kernels[*stim_indices] += resp_rate
             ONs[idx] = kernels[1].T[::-1, :]
-            ON_S[idx] = np.linalg.norm(ONs[idx].flatten()) / np.linalg.norm(ONs[0].flatten())
+            ON_S[idx] = (np.linalg.norm(ONs[idx].flatten()) / np.linalg.norm(ONs[0].flatten())) ** 2
             OFFs[idx] = kernels[0].T[::-1, :]
-            OFF_S[idx] = np.linalg.norm(OFFs[idx].flatten()) / np.linalg.norm(OFFs[0].flatten())
+            OFF_S[idx] = (np.linalg.norm(OFFs[idx].flatten()) / np.linalg.norm(OFFs[0].flatten())) ** 2
         # Get the kernels with the maximum norm (across time).
         if not all((np.isinf(ON_S) | np.isnan(ON_S)) |
                    (np.isinf(OFF_S) | np.isnan(OFF_S))):
@@ -236,9 +239,9 @@ class SparseNoiseKernel(Kernel):
             DIFF_opt = ON_opt - OFF_opt
         else:
             ON_tmax, OFF_tmax = np.nan, np.nan
-            ON_opt = np.empty(ONs.shape[1:3]).fill(np.nan)
-            OFF_opt = np.empty(OFFs.shape[1:3]).fill(np.nan)
-            DIFF_opt = np.empty(ONs.shape[1:3]).fill(np.nan)
+            ON_opt = np.tile(np.nan, ONs.shape[1:3])
+            OFF_opt = np.tile(np.nan, OFFs.shape[1:3])
+            DIFF_opt = np.tile(np.nan, ONs.shape[1:3])
         return (ON_opt, OFF_opt, DIFF_opt), (ON_tmax, OFF_tmax), (ON_S, OFF_S), (ONs, OFFs)
 
 
@@ -291,8 +294,8 @@ class StaticGratingsKernel(Kernel):
         ax.xaxis.tick_bottom()
         oris = np.unique(np.array(self._Stimulus.unique)[:, 0])
         sfs = np.unique(np.array(self._Stimulus.unique)[:, 1])
-        ax.set_xticks(np.arange(0, len(sfs), 2))
-        ax.set_xticklabels(sfs[0::2])
+        ax.set_xticks(np.arange(1, len(sfs), 2))
+        ax.set_xticklabels(np.round(sfs[1::2], decimals=3))
         ax.set_xlabel("Spatial Frequency")
         ax.set_yticks(np.arange(0, len(oris), 2))
         ax.set_yticklabels(oris[-1::-2].astype(int))
@@ -377,13 +380,13 @@ class StaticGratingsKernel(Kernel):
                 resp_rate = self._responses[resp_on:resp_off, *stim_indices, :, :].mean(axis=(0, 1, 2))
                 kernels[*stim_indices] += resp_rate
             orisfs[idx] = kernels[::-1, :]
-            orisf_S[idx] = np.linalg.norm(orisfs[idx].flatten()) / np.linalg.norm(orisfs[0].flatten())
+            orisf_S[idx] = (np.linalg.norm(orisfs[idx].flatten()) / np.linalg.norm(orisfs[0].flatten())) ** 2
         # Get the kernels with the maximum norm (across time).
         if not all((np.isinf(orisf_S) | np.isnan(orisf_S))):
             (orisf_tmax,) = np.where(orisf_S == np.max(orisf_S))
             orisf_opt = orisfs[orisf_tmax[0], ::-1, :].squeeze()
         else:
             orisf_tmax = np.nan
-            orisf_opt = np.empty(orisfs.shape[:2]).fill(np.nan)
+            orisf_opt = np.tile(np.nan, orisfs.shape[:2])
         return orisf_opt, orisf_tmax, orisf_S, orisfs
 
