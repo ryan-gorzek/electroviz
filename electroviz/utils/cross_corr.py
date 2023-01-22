@@ -23,12 +23,13 @@ def cross_corr(
     xcorr_obs = np.zeros((self_responses.shape))
     # Random
     if rand_iters > 0:
-        rand_stim = stimulus.randomize()
-        resp_rand_self = self_unit.get_response(rand_stim, time_window=(-100, 100), bin_size=1)
-        resp_rand_other = other_unit.get_response(rand_stim, time_window=(-100, 100), bin_size=1)
-        xcorr_rand = np.zeros((*self_responses.shape, rand_iters))
+        stim_rand = stimulus.randomize()
+        resp_rand_self = self_unit.get_response(stim_rand, time_window=(-100, 100), bin_size=1)
+        resp_rand_other = other_unit.get_response(stim_rand, time_window=(-100, 100), bin_size=1)
     else:
-        resp_rand_self = None
+        resp_rand_self = np.zeros(resp_self.shape)
+        resp_rand_other = np.zeros(resp_other.shape)
+    xcorr_rand = np.zeros((*self_responses.shape, rand_iters))
     for idx, (obs_self, obs_other, rand_self, rand_other) in enumerate(zip(resp_self, resp_other, resp_rand_self, resp_rand_other)):
         # Observed.
         obs_corr = correlate(obs_self, obs_other, mode="same", method="fft")
@@ -37,17 +38,28 @@ def cross_corr(
             xcorr_obs[idx, :] = obs_corr / np.max(obs_corr)
         else:
             xcorr_obs[idx, :] = obs_corr
-        if rand_iters > 0
         # Random.
-        rand_corr = correlate(rand_self, rand_other, mode="same", method="fft")
-        rand_max = np.max(rand_corr)
-        if np.max(xcorr_max) != 0:
-            xcorr_rand[idx, :] = rand_corr / np.max(rand_corr)
-        else:
-            xcorr_rand[idx, :] = rand_corr
+        if rand_iters > 0
+            rand_corr = correlate(rand_self, rand_other, mode="same", method="fft")
+            rand_max = np.max(rand_corr)
+            if np.max(xcorr_max) != 0:
+                xcorr_rand[idx, :] = rand_corr / np.max(rand_corr)
+            else:
+                xcorr_rand[idx, :] = rand_corr
     # Random iteration if requested.
     if rand_iters > 0:
         for i in range(rand_iters - 1):
-
-    return np.nanmean(xcorr_obs) - np.nanmean(xcorr_rand)
+            rand_idx = np.random.shuffle(range(resp_rand_self.shape[0]))
+            resp_rand_self = resp_rand_self[rand_idx, :]
+            resp_rand_other = resp_rand_other[rand_idx, :]
+            for idx, (rand_self, rand_other) in enumerate(zip(resp_rand_self, resp_rand_other)):
+                rand_corr = correlate(rand_self, rand_other, mode="same", method="fft")
+                rand_max = np.max(rand_corr)
+                if np.max(xcorr_max) != 0:
+                    xcorr_rand[idx, :] = rand_corr / np.max(rand_corr)
+                else:
+                    xcorr_rand[idx, :] = rand_corr
+        return np.nanmean(xcorr_obs, axis=0) - np.nanmean(xcorr_rand, axis=(0, 2))
+    else:
+        return np.nanmean(xcorr_obs, axis=0)
 
