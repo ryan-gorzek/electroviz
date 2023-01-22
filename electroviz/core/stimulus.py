@@ -63,22 +63,6 @@ class Stimulus:
         return len(self._Events)
 
 
-    def get_flat_index(
-            self, 
-            sample_window, 
-        ):
-        """"""
-
-        onsets = np.tile(np.array(self.events["sample_onset"]), (2, 1)).T
-        windows = np.tile(np.array(sample_window), (onsets.shape[0], 1))
-        flat_index = np.empty((0,))
-        for o, w in zip(onsets, windows)
-            rng = o + w
-            idx = np.arange(*rng, 1)
-            flat_index = np.concatenate((flat_index, idx))
-        return flat_index
-
-
     def randomize(
             self, 
         ):
