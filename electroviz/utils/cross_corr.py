@@ -17,20 +17,20 @@ def cross_corr(
     ):
     """"""
 
-    xcorr_obs, xcorr_rand = np.zeros((resp_self.shape)), np.zeros((*resp_self.shape, rand_iters))
     responses = {}
-    responses["self_obs"] = unit.get_response(stimulus, time_window=time_window, bin_size=bin_size)
+    responses["self_obs"] = self_unit.get_response(stimulus, time_window=time_window, bin_size=bin_size)
     responses["other_obs"] = other_unit.get_response(stimulus, time_window=time_window, bin_size=bin_size)
+    xcorr_obs, xcorr_rand = np.zeros((responses["self_obs"].shape)), np.zeros((*responses["self_obs"].shape, 1))
     if rand_iters > 0:
         responses["self_rand"] = self_unit.get_response(stimulus.randomize(), time_window=time_window, bin_size=bin_size)
         responses["other_rand"] = other_unit.get_response(stimulus.randomize(), time_window=time_window, bin_size=bin_size)
-    
+        xcorr_rand = np.zeros((*responses["self_obs"].shape, rand_iters))
     for idx, (self_obs, other_obs) in enumerate(zip(responses["self_obs"], responses["other_obs"])):
         # Observed.
         obs_corr = correlate(self_obs, other_obs, mode="same", method="fft")
         obs_max = np.max(obs_corr)
         if np.max(obs_max) != 0:
-            xcorr_obs[idx, :] = obs_corr / obs_max
+            xcorr_obs[idx, :] = obs_corr # / obs_max
         else:
             xcorr_obs[idx, :] = obs_corr
         # Random.
@@ -54,8 +54,8 @@ def cross_corr(
                 rand_corr = correlate(self_rand, other_rand, mode="same", method="fft")
                 rand_max = np.max(rand_corr)
                 if np.max(rand_max) != 0:
-                    xcorr_rand[idx, :, i] = rand_corr / rand_max
+                    xcorr_rand[idx, :, i] = rand_corr # / rand_max
                 else:
                     xcorr_rand[idx, :, i] = rand_corr
-    return xcorr_obs.mean(axis=1) - xcorr_rand.mean(axis=(1, 2))
+    return xcorr_obs.mean(axis=0) - xcorr_rand.mean(axis=(0, 2))
 
