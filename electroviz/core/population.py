@@ -153,6 +153,25 @@ class Population:
         return responses.mean(axis=2)
 
 
+    def get_response_flat(
+            self, 
+            stimulus, 
+            time_window=(-50, 200), 
+            bin_size=1, 
+        ):
+        """"""
+        
+        sample_window = np.array(time_window) * 30
+        num_samples = int(sample_window[1] - sample_window[0])
+        num_bins = int(num_samples/(bin_size * 30))
+        responses = np.zeros((len(self), num_bins, len(stimulus)))
+        index = stimulus.get_flat_index(sample_window)
+        resp = self.spike_times[:, index].toarray().reshape(len(self), -1, num_samples)
+        bin_resp = resp.reshape((len(self), len(stimulus), num_bins, -1)).sum(axis=3)
+        responses = bin_resp / (bin_size / 1000)
+        return responses.mean(axis=1)
+
+
     def plot_corr_mat(
             self, 
         ):
