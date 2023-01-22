@@ -68,9 +68,10 @@ class Stimulus:
         ):
         """"""
         
-        rand_idx = np.random.shuffle(range(len(self._Events)))
+        rand_idx = list(range(len(self._Events)))
+        np.random.shuffle(rand_idx)
         rand_set = copy.copy(self)
-        rand_set._Events = self._Events[rand_idx]
+        rand_set._Events = [self._Events[idx] for idx in rand_idx]
         rand_set.events.reindex(rand_idx)
         return rand_set
 
