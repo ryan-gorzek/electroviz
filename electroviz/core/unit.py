@@ -54,11 +54,12 @@ class Unit:
             time_window=(-50, 200), 
             bin_size=5, 
             zscore=False, 
+            ax_in=None, 
         ):
         """"""
 
         responses = self.get_response(stimulus, time_window, bin_size=bin_size)
-        Raster(time_window, responses, ylabel="Stimulus Event", z_score=zscore)
+        Raster(time_window, responses, ylabel="Stimulus Event", z_score=zscore, ax_in=ax_in)
 
 
     def plot_summary(
