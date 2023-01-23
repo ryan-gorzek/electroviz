@@ -16,6 +16,7 @@ class UnitSummary:
 
 
     def __new__(
+            self, 
             unit, 
             stimuli, 
             kernels, 
@@ -120,7 +121,7 @@ class UnitSummary:
         kernels[3].plot_norm_delay(ax_in=ax_norm_isg)
         ax_norm_isg.set_ylabel("")
 
-        fig.suptitle("Unit #" + str(self.ID))
+        fig.suptitle("Unit #" + str(unit.ID))
         plt.show(block=False)
         fig.set_size_inches(30, 15)
 
