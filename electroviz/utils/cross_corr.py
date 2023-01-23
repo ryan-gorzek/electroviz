@@ -14,6 +14,7 @@ def cross_corr(
         time_window=(-100, 100), 
         bin_size=1, 
         rand_iters=0, 
+        return_raw=False, 
     ):
     """"""
 
@@ -28,21 +29,13 @@ def cross_corr(
     for idx, (self_obs, other_obs) in enumerate(zip(responses["self_obs"], responses["other_obs"])):
         # Observed.
         obs_corr = correlate(self_obs, other_obs, mode="same", method="fft")
-        obs_max = np.max(obs_corr)
-        if np.max(obs_max) != 0:
-            xcorr_obs[idx, :] = obs_corr # / obs_max
-        else:
-            xcorr_obs[idx, :] = obs_corr
+        xcorr_obs[idx, :] = obs_corr
         # Random.
         if rand_iters > 0:
             self_rand = responses["self_rand"][idx, :]
             other_rand = responses["other_rand"][idx, :]
             rand_corr = correlate(self_rand, other_rand, mode="same", method="fft")
-            rand_max = np.max(rand_corr)
-            if np.max(rand_max) != 0:
-                xcorr_rand[idx, :, 0] = rand_corr / rand_max
-            else:
-                xcorr_rand[idx, :, 0] = rand_corr
+            xcorr_rand[idx, :, 0] = rand_corr
     # Random iteration if requested.
     if rand_iters > 1:
         for i in range(1, rand_iters):
@@ -52,10 +45,9 @@ def cross_corr(
             for idx, (self_rand, other_rand) in enumerate(zip(responses["self_rand"][self_rand_idx, :], 
                                                               responses["other_rand"][other_rand_idx, :])):
                 rand_corr = correlate(self_rand, other_rand, mode="same", method="fft")
-                rand_max = np.max(rand_corr)
-                if np.max(rand_max) != 0:
-                    xcorr_rand[idx, :, i] = rand_corr # / rand_max
-                else:
-                    xcorr_rand[idx, :, i] = rand_corr
-    return xcorr_obs.mean(axis=0) - xcorr_rand.mean(axis=(0, 2))
+                xcorr_rand[idx, :, i] = rand_corr
+    if return_raw is False:
+        return xcorr_obs.mean(axis=0) - xcorr_rand.mean(axis=(0, 2))
+    else:
+        return xcorr_obs.mean(axis=0) - xcorr_rand.mean(axis=(0, 2)), xcorr_obs.mean(axis=0)
 

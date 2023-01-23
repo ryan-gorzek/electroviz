@@ -8,6 +8,7 @@ import numpy as np
 from matplotlib import use as mpl_use
 import matplotlib.pyplot as plt
 from itertools import chain
+from electroviz.utils.cross_corr import cross_corr
 
 class UnitSummary:
     """
@@ -145,11 +146,12 @@ class PairSummary:
         mpl_use("Qt5Agg")
         fig = plt.figure()
 
+        #### Unit 0
+
+        # Unit raster.
         gs_1 = fig.add_gridspec(12, 6, hspace=1, wspace=1, left=0.03, right=0.23, top=0.93, bottom=0.08)
         ax_raster_0 = fig.add_subplot(gs_1[:13, :3])
-        units[0].plot_raster(list(chain(*stimuli)), ax_in=ax_raster_0)
-        ax_raster_0.set_xticklabels([])
-        ax_raster_0.set_xlabel("")
+        units[0].plot_raster(list(chain(*stimuli)), zscore=True, ax_in=ax_raster_0)
 
         # Stimulus PSTHs.
         ax_psth_csn_0 = fig.add_subplot(gs_1[:3, 3:6])
@@ -176,7 +178,7 @@ class PairSummary:
         ax_psth_isg_0.set_ylabel("")
 
         # Contra Sparse Noise Kernels.
-        gs_2 = fig.add_gridspec(3, 3, hspace=0.01, wspace=1, left=0.26, right=0.36, top=0.96, bottom=0.73)
+        gs_2 = fig.add_gridspec(3, 3, hspace=0.01, wspace=1, left=0.26, right=0.36, top=0.95, bottom=0.73)
         ax_kon_csn_0 = fig.add_subplot(gs_2[:1, :3])
         ax_koff_csn_0 = fig.add_subplot(gs_2[1:2, :3])
         ax_kdiff_csn_0 = fig.add_subplot(gs_2[2:3, :3])
@@ -207,6 +209,79 @@ class PairSummary:
         xticklabels = ax_kern_isg_0.get_xticklabels()
         ax_kern_isg_0.set_xticklabels(xticklabels, rotation=45)
 
+        # Cross-Correlations.
+        xcorr_rand, xcorr_raw = cross_corr(units[0], units[1], stimuli[2], rand_iters=10, return_raw=True)
+        gs_5 = fig.add_gridspec(12, 6, hspace=1, wspace=1, left=0.39, right=0.59, top=0.93, bottom=0.08)
+        ax_xcorr_raw = fig.add_subplot(gs_5[:6, :6])
+        ax_xcorr_raw.bar(range(-100, 100), xcorr_obs, color=(0.9, 0.2, 0.2))
+        ax_xcorr_raw.set_xlabel("Time from Onset (ms)")
+        ax_xcorr_rand = fig.add_subplot(gs_5[6:13, :6])
+        ax_xcorr_rand.plot(range(-100, 100), xcorr_obs, color=(0.9, 0.2, 0.2))
+        ax_xcorr_rand.set_xlabel("Time from Onset (ms)")
+
+        #### Unit 1 (left to right)
+
+        # Contra Sparse Noise Kernels.
+        gs_6 = fig.add_gridspec(3, 3, hspace=0.01, wspace=1, left=0.62, right=0.72, top=0.95, bottom=0.73)
+        ax_kon_csn_1 = fig.add_subplot(gs_6[:1, :3])
+        ax_koff_csn_1 = fig.add_subplot(gs_6[1:2, :3])
+        ax_kdiff_csn_1 = fig.add_subplot(gs_6[2:3, :3])
+        kernels[1][0].plot_raw(ax_in=np.array((ax_kon_csn_1, ax_koff_csn_1, ax_kdiff_csn_1)))
+        ax_kon_csn_1.set_title("")
+        ax_koff_csn_1.set_title("")
+        ax_kdiff_csn_1.set_title("")
+
+        # Ipsi Sparse Noise Kernels.
+        gs_7 = fig.add_gridspec(3, 3, hspace=0.01, wspace=1, left=0.62, right=0.72, top=0.72, bottom=0.5)
+        ax_kon_isn_1 = fig.add_subplot(gs_7[:1, :3])
+        ax_koff_isn_1 = fig.add_subplot(gs_7[1:2, :3])
+        ax_kdiff_isn_1 = fig.add_subplot(gs_7[2:3, :3])
+        kernels[1][1].plot_raw(ax_in=np.array((ax_kon_isn_1, ax_koff_isn_1, ax_kdiff_isn_1)))
+        ax_kon_isn_1.set_title("")
+        ax_koff_isn_1.set_title("")
+        ax_kdiff_isn_1.set_title("")
+
+        # Orisf Kernels.
+        gs_8 = fig.add_gridspec(6, 3, hspace=1, wspace=1, left=0.62, right=0.72, top=0.48, bottom=0.08)
+        ax_kern_csg_1 = fig.add_subplot(gs_8[:3, :3])
+        kernels[1][2].plot_raw(ax_in=ax_kern_csg_1)
+        ax_kern_csg_1.set_xticklabels([])
+        ax_kern_csg_1.set_xlabel("")
+
+        ax_kern_isg_1 = fig.add_subplot(gs_8[3:6, :3])
+        kernels[1][3].plot_raw(ax_in=ax_kern_isg_1)
+        xticklabels = ax_kern_isg_1.get_xticklabels()
+        ax_kern_isg_1.set_xticklabels(xticklabels, rotation=45)
+
+        # Unit raster.
+        gs_9 = fig.add_gridspec(12, 6, hspace=1, wspace=1, left=0.75, right=0.95, top=0.93, bottom=0.08)
+        ax_raster_1 = fig.add_subplot(gs_9[:13, 3:6])
+        units[1].plot_raster(list(chain(*stimuli)), zscore=True, ax_in=ax_raster_1)
+
+        # Stimulus PSTHs.
+        ax_psth_csn_1 = fig.add_subplot(gs_9[:3, :3])
+        units[1].plot_PSTH(stimuli[0], ax_in=ax_psth_csn_1)
+        ax_psth_csn_1.set_xticklabels([])
+        ax_psth_csn_1.set_xlabel("")
+        ax_psth_csn_1.set_ylabel("")
+        ax_psth_csn_1.set_title("Spike Rate (Hz)")
+
+        ax_psth_isn_1 = fig.add_subplot(gs_9[3:6, :3])
+        units[1].plot_PSTH(stimuli[1], ax_in=ax_psth_isn_1)
+        ax_psth_isn_1.set_xticklabels([])
+        ax_psth_isn_1.set_xlabel("")
+        ax_psth_isn_1.set_ylabel("")
+
+        ax_psth_csg_1 = fig.add_subplot(gs_9[6:9, :3])
+        units[1].plot_PSTH(stimuli[2], ax_in=ax_psth_csg_0)
+        ax_psth_csg_1.set_xticklabels([])
+        ax_psth_csg_1.set_xlabel("")
+        ax_psth_csg_1.set_ylabel("")
+
+        ax_psth_isg_1 = fig.add_subplot(gs_9[9:13, :3])
+        units[1].plot_PSTH(stimuli[3], ax_in=ax_psth_isg_1)
+        ax_psth_isg_1.set_ylabel("")
+
         plt.show(block=False)
-        fig.set_size_inches(30, 15)
+        fig.set_size_inches(45, 25)
 
