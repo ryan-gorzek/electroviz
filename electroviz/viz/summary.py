@@ -211,16 +211,18 @@ class PairSummary:
         ax_kern_isg_0.set_xticklabels(xticklabels, rotation=45)
 
         # Cross-Correlations.
-        xcorr_rand, xcorr_raw = cross_corr(units[0], units[1], stimuli[2], rand_iters=100, return_raw=True)
+        xcorr_raw, xcorr_filt = cross_corr(units)
         gs_5 = fig.add_gridspec(12, 6, hspace=1, wspace=1, left=0.39, right=0.59, top=0.93, bottom=0.08)
         ax_xcorr_raw = fig.add_subplot(gs_5[:6, :6])
-        ax_xcorr_raw.bar(range(-100, 100), xcorr_raw, color=(0.9, 0.2, 0.2))
+        ax_xcorr_raw.bar(range(-50, 51), xcorr_raw, color=(0.9, 0.2, 0.2))
         ax_xcorr_raw.set_xlabel("Time from Onset (ms)")
-        ax_xcorr_rand = fig.add_subplot(gs_5[6:13, :6])
-        ax_xcorr_rand.hlines(0, -100, 100, colors="k", linestyles="--")
-        ax_xcorr_rand.plot(range(-100, 100), xcorr_rand, color=(0.9, 0.2, 0.2))
-        ax_xcorr_rand.set_xlabel("Time from Onset (ms)")
-
+        ax_xcorr_filt = fig.add_subplot(gs_5[6:13, :6])
+        ax_xcorr_filt.hlines(0, -50, 50, colors="k", linestyles="--")
+        ax_xcorr_filt.plot(range(-50, 51), xcorr_filt, color=(0.9, 0.2, 0.2))
+        ax_xcorr_filt.set_xlabel("Time from Onset (ms)")
+        ylim = ax_xcorr_filt.get_ylim()
+        ax_xcorr_filt.fill([2, 2, 5, 5], ylim + ylim[::-1], color=(0.6, 0.6, 0.6, 0.5))
+        
         #### Unit 1 (left to right)
 
         # Contra Sparse Noise Kernels.
