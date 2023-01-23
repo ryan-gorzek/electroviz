@@ -140,6 +140,7 @@ class PairSummary:
             stimuli, 
             units, 
             kernels, 
+            save_path="", 
         ):
         """"""
 
@@ -210,12 +211,13 @@ class PairSummary:
         ax_kern_isg_0.set_xticklabels(xticklabels, rotation=45)
 
         # Cross-Correlations.
-        xcorr_rand, xcorr_raw = cross_corr(units[0], units[1], stimuli[2], rand_iters=10, return_raw=True)
+        xcorr_rand, xcorr_raw = cross_corr(units[0], units[1], stimuli[2], rand_iters=100, return_raw=True)
         gs_5 = fig.add_gridspec(12, 6, hspace=1, wspace=1, left=0.39, right=0.59, top=0.93, bottom=0.08)
         ax_xcorr_raw = fig.add_subplot(gs_5[:6, :6])
         ax_xcorr_raw.bar(range(-100, 100), xcorr_raw, color=(0.9, 0.2, 0.2))
         ax_xcorr_raw.set_xlabel("Time from Onset (ms)")
         ax_xcorr_rand = fig.add_subplot(gs_5[6:13, :6])
+        ax_xcorr_rand.hlines(0, -100, 100, colors="k", linestyles="--")
         ax_xcorr_rand.plot(range(-100, 100), xcorr_rand, color=(0.9, 0.2, 0.2))
         ax_xcorr_rand.set_xlabel("Time from Onset (ms)")
 
@@ -286,4 +288,7 @@ class PairSummary:
 
         plt.show(block=False)
         fig.set_size_inches(40, 20)
+
+        if save_path != "":
+            fig.savefig(save_path, bbox_inches="tight")
 
