@@ -152,27 +152,27 @@ class PairSummary:
         ax_raster_0.set_xlabel("")
 
         # Stimulus PSTHs.
-        ax_psth_csn_0 = fig.add_subplot(gs_2[:3, 3:6])
-        unit[0].plot_PSTH(stimuli[0], ax_in=ax_psth_csn_0)
+        ax_psth_csn_0 = fig.add_subplot(gs_1[:3, 3:6])
+        units[0].plot_PSTH(stimuli[0], ax_in=ax_psth_csn_0)
         ax_psth_csn_0.set_xticklabels([])
         ax_psth_csn_0.set_xlabel("")
         ax_psth_csn_0.set_ylabel("")
         ax_psth_csn_0.set_title("Spike Rate (Hz)")
 
-        ax_psth_isn_0 = fig.add_subplot(gs_2[3:6, 3:6])
-        unit[0].plot_PSTH(stimuli[1], ax_in=ax_psth_isn_0)
+        ax_psth_isn_0 = fig.add_subplot(gs_1[3:6, 3:6])
+        units[0].plot_PSTH(stimuli[1], ax_in=ax_psth_isn_0)
         ax_psth_isn_0.set_xticklabels([])
         ax_psth_isn_0.set_xlabel("")
         ax_psth_isn_0.set_ylabel("")
 
-        ax_psth_csg_0 = fig.add_subplot(gs_2[6:9, 3:6])
-        unit[0].plot_PSTH(stimuli[2], ax_in=ax_psth_csg_0)
+        ax_psth_csg_0 = fig.add_subplot(gs_1[6:9, 3:6])
+        units[0].plot_PSTH(stimuli[2], ax_in=ax_psth_csg_0)
         ax_psth_csg_0.set_xticklabels([])
         ax_psth_csg_0.set_xlabel("")
         ax_psth_csg_0.set_ylabel("")
 
-        ax_psth_isg_0 = fig.add_subplot(gs_2[9:13, 3:6])
-        unit[0].plot_PSTH(stimuli[3], ax_in=ax_psth_isg_0)
+        ax_psth_isg_0 = fig.add_subplot(gs_1[9:13, 3:6])
+        units[0].plot_PSTH(stimuli[3], ax_in=ax_psth_isg_0)
         ax_psth_isg_0.set_ylabel("")
 
         # Contra Sparse Noise Kernels.
