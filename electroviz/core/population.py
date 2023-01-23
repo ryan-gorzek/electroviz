@@ -145,11 +145,11 @@ class Population:
         num_samples = int(sample_window[1] - sample_window[0])
         num_bins = int(num_samples/(bin_size * 30))
         responses = np.zeros((len(self), num_bins, len(stimulus)))
-        for event in stimulus:
+        for idx, event in enumerate(stimulus):
             window = (sample_window + event.sample_onset).astype(int)
             resp = self.spike_times[:, window[0]:window[1]].toarray()
             bin_resp = resp.reshape((len(self), num_bins, -1)).sum(axis=2) / (bin_size / 1000)
-            responses[:, :, event.index] = bin_resp
+            responses[:, :, idx] = bin_resp
         return responses.mean(axis=2)
 
 

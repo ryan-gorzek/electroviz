@@ -41,7 +41,8 @@ class Raster:
             aspect_ratio = "auto"
         if z_score == True:
             responses = zscore(responses, axis=1)
-        ax.imshow(responses, cmap="binary", aspect=aspect_ratio)
+        clim = [0, np.percentile(np.unique(responses.flatten()), 10)]
+        ax.imshow(responses, cmap="binary", clim=clim, aspect=aspect_ratio)
         ax.set_xticks(np.linspace(0, responses.shape[1], 6))
         ax.set_xticklabels(np.linspace(*time_window, 6))
         ax.set_xlabel("Time from Onset (ms)", fontsize=16)

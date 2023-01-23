@@ -151,7 +151,7 @@ class PairSummary:
         # Unit raster.
         gs_1 = fig.add_gridspec(12, 6, hspace=1, wspace=1, left=0.03, right=0.23, top=0.93, bottom=0.08)
         ax_raster_0 = fig.add_subplot(gs_1[:13, :3])
-        units[0].plot_raster(list(chain(*stimuli)), zscore=True, ax_in=ax_raster_0)
+        units[0].plot_raster(list(chain(*stimuli)), ax_in=ax_raster_0)
 
         # Stimulus PSTHs.
         ax_psth_csn_0 = fig.add_subplot(gs_1[:3, 3:6])
@@ -213,10 +213,10 @@ class PairSummary:
         xcorr_rand, xcorr_raw = cross_corr(units[0], units[1], stimuli[2], rand_iters=10, return_raw=True)
         gs_5 = fig.add_gridspec(12, 6, hspace=1, wspace=1, left=0.39, right=0.59, top=0.93, bottom=0.08)
         ax_xcorr_raw = fig.add_subplot(gs_5[:6, :6])
-        ax_xcorr_raw.bar(range(-100, 100), xcorr_obs, color=(0.9, 0.2, 0.2))
+        ax_xcorr_raw.bar(range(-100, 100), xcorr_raw, color=(0.9, 0.2, 0.2))
         ax_xcorr_raw.set_xlabel("Time from Onset (ms)")
         ax_xcorr_rand = fig.add_subplot(gs_5[6:13, :6])
-        ax_xcorr_rand.plot(range(-100, 100), xcorr_obs, color=(0.9, 0.2, 0.2))
+        ax_xcorr_rand.plot(range(-100, 100), xcorr_rand, color=(0.9, 0.2, 0.2))
         ax_xcorr_rand.set_xlabel("Time from Onset (ms)")
 
         #### Unit 1 (left to right)
@@ -256,7 +256,9 @@ class PairSummary:
         # Unit raster.
         gs_9 = fig.add_gridspec(12, 6, hspace=1, wspace=1, left=0.75, right=0.95, top=0.93, bottom=0.08)
         ax_raster_1 = fig.add_subplot(gs_9[:13, 3:6])
-        units[1].plot_raster(list(chain(*stimuli)), zscore=True, ax_in=ax_raster_1)
+        units[1].plot_raster(list(chain(*stimuli)), ax_in=ax_raster_1)
+        ax_raster_1.set_ylabel("")
+        ax_raster_1.set_yticklabels([])
 
         # Stimulus PSTHs.
         ax_psth_csn_1 = fig.add_subplot(gs_9[:3, :3])
@@ -273,7 +275,7 @@ class PairSummary:
         ax_psth_isn_1.set_ylabel("")
 
         ax_psth_csg_1 = fig.add_subplot(gs_9[6:9, :3])
-        units[1].plot_PSTH(stimuli[2], ax_in=ax_psth_csg_0)
+        units[1].plot_PSTH(stimuli[2], ax_in=ax_psth_csg_1)
         ax_psth_csg_1.set_xticklabels([])
         ax_psth_csg_1.set_xlabel("")
         ax_psth_csg_1.set_ylabel("")
@@ -283,5 +285,5 @@ class PairSummary:
         ax_psth_isg_1.set_ylabel("")
 
         plt.show(block=False)
-        fig.set_size_inches(45, 25)
+        fig.set_size_inches(40, 20)
 

@@ -84,11 +84,11 @@ class Unit:
         num_samples = int(sample_window[1] - sample_window[0])
         num_bins = int(num_samples/(bin_size * 30))
         responses = np.zeros((len(stimulus), num_bins))
-        for event in stimulus:
+        for idx, event in enumerate(stimulus):
             window = (sample_window + event.sample_onset).astype(int)
             resp = self.get_spike_times(sample_window=window)
             bin_resp = resp.reshape((num_bins, -1)).sum(axis=1) / (bin_size / 1000)
-            responses[event.index, :] = bin_resp
+            responses[idx, :] = bin_resp
         return responses
 
 
