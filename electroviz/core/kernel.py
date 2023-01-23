@@ -106,11 +106,12 @@ class SparseNoiseKernel(Kernel):
             fig, axs = plt.subplots(3, 1)
         else:
             axs = ax_in
-        axs[0].matshow(self.ON, cmap=cmap, clim=[self.ON.min(), self.ON.max()])
+        clim = [np.minimum(self.ON.min(), self.OFF.min()), np.maximum(self.ON.max(), self.OFF.max())]
+        axs[0].matshow(self.ON, cmap=cmap, clim=clim)
         axs[0].xaxis.tick_bottom()
         axs[0].axis("off")
         axs[0].set_title("ON", fontsize=18)
-        axs[1].matshow(self.OFF, cmap=cmap, clim=[self.OFF.min(), self.OFF.max()])
+        axs[1].matshow(self.OFF, cmap=cmap, clim=clim)
         axs[1].xaxis.tick_bottom()
         axs[1].axis("off")
         axs[1].set_title("OFF", fontsize=18)
