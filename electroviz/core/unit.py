@@ -80,6 +80,7 @@ class Unit:
         ):
         """"""
 
+        time_window = (time_window[0], time_window[1] + bin_size)
         sample_window = np.array(time_window) * 30
         num_samples = int(sample_window[1] - sample_window[0])
         num_bins = int(num_samples/(bin_size * 30))
