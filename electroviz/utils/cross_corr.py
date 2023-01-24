@@ -10,7 +10,7 @@ from scipy.signal import correlate, correlation_lags, butter, lfilter
 def cross_corr(
         units, 
         time_window=(-50, 50), 
-        bin_size=1, 
+        bin_size=0.5, 
     ):
     """"""
 
@@ -19,7 +19,7 @@ def cross_corr(
     xcorr = correlate(spikes_0, spikes_1, mode="same", method="fft")
     lags = correlation_lags(spikes_0.size, spikes_1.size, mode="same")
     window = np.logical_and(lags >= time_window[0]/bin_size, lags <= time_window[1]/bin_size)
-    b, a = butter(1, (75.0, 499.99), fs=1000/bin_size, btype="bandpass")
+    b, a = butter(1, (75.0, 750), fs=1000/bin_size, btype="bandpass")
     xcorr_filt = lfilter(b, a, xcorr)
     return xcorr[window], xcorr_filt[window]
 
