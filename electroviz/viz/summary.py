@@ -77,15 +77,23 @@ class UnitSummary:
         for ax in [ax_psth_csn, ax_psth_isn, ax_psth_csg, ax_psth_isg]:
             ax.set_ylim((0, np.max(ylims)))
 
-        # # Contra Sparse Noise Kernels.
-        # gs_3 = fig.add_gridspec(3, 6, hspace=0.01, wspace=1, left=0.60, right=0.76, top=0.96, bottom=0.73)
-        # ax_kon_csn = fig.add_subplot(gs_3[:1, :3])
-        # ax_koff_csn = fig.add_subplot(gs_3[1:2, :3])
-        # ax_kdiff_csn = fig.add_subplot(gs_3[2:3, :3])
-        # kernels[0].plot_raw(ax_in=np.array((ax_kon_csn, ax_koff_csn, ax_kdiff_csn)))
-        # ax_kon_csn.set_title("")
-        # ax_koff_csn.set_title("")
-        # ax_kdiff_csn.set_title("")
+        # Contra Sparse Noise Kernels.
+        gs_3 = fig.add_gridspec(3, 6, hspace=0.01, wspace=1, left=0.60, right=0.76, top=0.96, bottom=0.73)
+        ax_kon_csn = fig.add_subplot(gs_3[:1, :3])
+        ax_koff_csn = fig.add_subplot(gs_3[1:2, :3])
+        ax_kdiff_csn = fig.add_subplot(gs_3[2:3, :3])
+        kernels[0].plot_raw(ax_in=np.array((ax_kon_csn, ax_koff_csn, ax_kdiff_csn)))
+        ax_kon_csn.set_title("Peak")
+        ax_koff_csn.set_title("")
+        ax_kdiff_csn.set_title("")
+        ax_kon_csn_v = fig.add_subplot(gs_3[:1, 3:6])
+        ax_koff_csn_v = fig.add_subplot(gs_3[1:2, 3:6])
+        ax_kdiff_csn_v = fig.add_subplot(gs_3[2:3, 3:6])
+        kernels[0].plot_raw(ax_in=np.array((ax_kon_csn_v, ax_koff_csn_v, ax_kdiff_csn_v)), 
+                            type="valley")
+        ax_kon_csn.set_title("Valley")
+        ax_koff_csn.set_title("")
+        ax_kdiff_csn.set_title("")
 
         # # Ipsi Sparse Noise Kernels.
         # gs_4 = fig.add_gridspec(3, 6, hspace=0.01, wspace=1, left=0.60, right=0.76, top=0.72, bottom=0.5)
