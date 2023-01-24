@@ -120,9 +120,10 @@ class Unit:
             return self.spike_times[0, sample_window[0]:sample_window[1]].toarray().squeeze()
 
 
-    def _bin_spikes(
+    def bin_spikes(
             self, 
             bin_size=100, 
+            type="rate", 
         ):
         """"""
         
@@ -130,6 +131,9 @@ class Unit:
         num_bins = int((self.total_samples - drop_end)/(bin_size * 30))
         spike_times = self.get_spike_times()
         spike_times = spike_times[:-drop_end]
-        spike_rate = spike_times.reshape((num_bins, -1)).sum(axis=1) / (bin_size / 1000)
-        return spike_rate
+        if type == "rate":
+            spikes = spike_times.reshape((num_bins, -1)).sum(axis=1) / (bin_size / 1000)
+        elif type == "count":
+            spikes = spike_times.reshape((num_bins, -1)).sum(axis=1)
+        return spikes
 
