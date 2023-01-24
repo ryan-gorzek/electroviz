@@ -29,19 +29,24 @@ class UnitSummary:
         fig = plt.figure()
 
         # Unit Raster.
-        gs_1 = fig.add_gridspec(12, 3, hspace=1, wspace=1, left=0.04, right=0.36, top=0.93, bottom=0.08)
+        gs_1 = fig.add_gridspec(12, 3, hspace=1, wspace=1, left=0.04, right=0.20, top=0.93, bottom=0.08)
         ax_raster = fig.add_subplot(gs_1[:13, :3])
-        unit.plot_raster(list(chain(*stimuli)), zscore=True, ax_in=ax_raster)
-        ax_raster.set_xlim((0, 260))
-        colors = ((0.2, 0.2, 0.9), (0.9, 0.2, 0.2), (0.9, 0.2, 0.9), (0.9, 0.5, 0.2))
+        unit.plot_raster(list(chain(*stimuli)), ax_in=ax_raster)
+        ax_raster.set_title("Stimulus Events")
+        ax_raster.set_xlim((-3, 55))
+        colors = ((0.2, 0.2, 0.9), (0.9, 0.2, 0.2), (0.7, 0.2, 0.7), (0.9, 0.5, 0.2))
         prev_len = 0
         for stim, color in zip(stimuli, colors):
             stim_len = len(stim)
-            ax_raster.add_patch(Rectangle((prev_len, 251), 10, stim_len, color=color))
+            ax_raster.add_patch(Rectangle((53, prev_len), 2, stim_len, color=color))
             prev_len += stim_len
+        ax_raster.spines["right"].set_visible(False)
+        ax_raster.set_yticklabels([])
+        ax_raster.set_ylabel("")
+        ax_raster.set_yticks([])
 
         # Stimulus PSTHs.
-        gs_2 = fig.add_gridspec(12, 3, hspace=1, wspace=1, left=0.40, right=0.56, top=0.93, bottom=0.08)
+        gs_2 = fig.add_gridspec(12, 3, hspace=1, wspace=1, left=0.24, right=0.40, top=0.93, bottom=0.08)
         ax_psth_csn = fig.add_subplot(gs_2[:3, :3])
         unit.plot_PSTH(stimuli[0], ax_in=ax_psth_csn)
         ax_psth_csn.set_xticklabels([])
@@ -68,9 +73,9 @@ class UnitSummary:
         ylims = []
         for ax in [ax_psth_csn, ax_psth_isn, ax_psth_csg, ax_psth_isg]:
             ylim = ax.get_ylim()
-            ylims.append(ylims[1])
+            ylims.append(ylim[1])
         for ax in [ax_psth_csn, ax_psth_isn, ax_psth_csg, ax_psth_isg]:
-            ax.set_ylim((0, np.min(ylims)))
+            ax.set_ylim((0, np.max(ylims)))
 
         # # Contra Sparse Noise Kernels.
         # gs_3 = fig.add_gridspec(3, 6, hspace=0.01, wspace=1, left=0.60, right=0.76, top=0.96, bottom=0.73)
