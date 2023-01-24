@@ -288,7 +288,7 @@ class StaticGratingsKernel(Kernel):
             cmap="viridis", 
             save_path="", 
             ax_in=None, 
-            type="valley", 
+            type="peak", 
             return_t=False, 
         ):
         """"""
