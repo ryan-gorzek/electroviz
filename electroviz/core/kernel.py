@@ -85,12 +85,9 @@ class SparseNoiseKernel(Kernel):
         sample_window = np.array(time_window) * (unit.sampling_rate / 1000)
         num_samples = int(sample_window[1] - sample_window[0])
         self.response_windows = [(on, on + bin_size) for on in np.arange(*self.time_window, self.bin_size)]
-        kern, tmax, norm, _ = self._compute_kernels(self.response_windows)
-        self.ON, self.OFF, self.DIFF = kern
-        self.ON_tmax, self.OFF_tmax = tmax
-        self.ON_S, self.OFF_S = norm
-        # Initialize fits as None.
-        self.ON_fit, self.OFF_fit, self.DIFF_fit = None, None, None
+        kerns, norms = self._compute_kernels(self.response_windows)
+        self.ONs, self.OFFs = kerns
+        self.ON_norms, self.OFF_norms = norms
 
 
     def plot_raw(
@@ -98,6 +95,8 @@ class SparseNoiseKernel(Kernel):
             cmap="viridis", 
             save_path="", 
             ax_in=None, 
+            type="peak", 
+            return_t=False, 
         ):
         """"""
 
@@ -106,22 +105,43 @@ class SparseNoiseKernel(Kernel):
             fig, axs = plt.subplots(3, 1)
         else:
             axs = ax_in
-        clim = [np.minimum(self.ON.min(), self.OFF.min()), np.maximum(self.ON.max(), self.OFF.max())]
-        axs[0].matshow(self.ON, cmap=cmap, clim=clim)
+        
+        if not all((np.isinf(ON_norms) | np.isnan(ON_norms)) |
+                   (np.isinf(OFF_norms) | np.isnan(OFF_norms))):
+            if type == "peak":
+                (ON_t,) = np.where(ON_norms == ON_norms.max())
+                (OFF_t,) = np.where(OFF_norms == OFF_norms.max())
+            elif type == "valley":
+                (ON_t,) = np.where(ON_norms == ON_norms.min())
+                (OFF_t,) = np.where(OFF_norms == OFF_norms.min())
+            ON = self.ONs[ON_t[0], :, :].squeeze()
+            OFF = self.OFFs[ON_t[0], :, :].squeeze()
+            DIFF = ON - OFF
+            clim = [np.minimum(ON.min(), OFF.min()), np.maximum(ON.max(), OFF.max())]
+            clim_diff = [self.DIFF.min(), self.DIFF.max()]
+        else:
+            ON = np.tile(0.5, self.ONs[0].shape)
+            OFF = np.tile(0.5, self.OFFs[0].shape)
+            DIFF = np.tile(0.5, self.ONs[0].shape)
+            cmap = "binary"
+            clim, clim_diff = (0, 1), (0, 1)
+        axs[0].matshow(ON, cmap=cmap, clim=clim)
         axs[0].xaxis.tick_bottom()
         axs[0].axis("off")
         axs[0].set_title("ON", fontsize=18)
-        axs[1].matshow(self.OFF, cmap=cmap, clim=clim)
+        axs[1].matshow(OFF, cmap=cmap, clim=clim)
         axs[1].xaxis.tick_bottom()
         axs[1].axis("off")
         axs[1].set_title("OFF", fontsize=18)
-        axs[2].matshow(self.DIFF, cmap=cmap, clim=[self.DIFF.min(), self.DIFF.max()])
+        axs[2].matshow(DIFF, cmap=cmap, clim=clim_diff)
         axs[2].xaxis.tick_bottom()
         axs[2].axis("off")
         axs[2].set_title("ON - OFF", fontsize=18)
         if ax_in is None:
             plt.show(block=False)
             fig.set_size_inches(4.5, 10)
+        if return_t is True:
+            return (ON_t, OFF_t)
 
 
     def plot_raw_delay(
@@ -219,7 +239,7 @@ class SparseNoiseKernel(Kernel):
         """"""
 
         ONs, OFFs = (np.empty((len(response_windows), *self._Stimulus.shape[2:0:-1])) for k in range(2))
-        ON_S, OFF_S = (np.empty((len(response_windows),)) for k in range(2))
+        ON_norms, OFF_norms = (np.empty((len(response_windows),)) for k in range(2))
         for idx, response_window in enumerate(response_windows):
             resp_on, resp_off = self._time_to_bins(response_window)
             kernels = np.zeros(self._Stimulus.shape[:3])
@@ -227,23 +247,10 @@ class SparseNoiseKernel(Kernel):
                 resp_rate = self._responses[resp_on:resp_off, *stim_indices, :].mean(axis=(0, 1))
                 kernels[*stim_indices] += resp_rate
             ONs[idx] = kernels[1].T[::-1, :]
-            ON_S[idx] = (np.linalg.norm(ONs[idx].flatten()) / np.linalg.norm(ONs[0].flatten())) ** 2
+            ON_norms[idx] = (np.linalg.norm(ONs[idx].flatten()) / np.linalg.norm(ONs[0].flatten())) ** 2
             OFFs[idx] = kernels[0].T[::-1, :]
-            OFF_S[idx] = (np.linalg.norm(OFFs[idx].flatten()) / np.linalg.norm(OFFs[0].flatten())) ** 2
-        # Get the kernels with the maximum norm (across time).
-        if not all((np.isinf(ON_S) | np.isnan(ON_S)) |
-                   (np.isinf(OFF_S) | np.isnan(OFF_S))):
-            (ON_tmax,) = np.where(ON_S == np.max(ON_S))
-            ON_opt = ONs[ON_tmax[0], :, :].squeeze()
-            (OFF_tmax,) = np.where(OFF_S == np.max(OFF_S))
-            OFF_opt = OFFs[OFF_tmax[0], :, :].squeeze()
-            DIFF_opt = ON_opt - OFF_opt
-        else:
-            ON_tmax, OFF_tmax = np.nan, np.nan
-            ON_opt = np.tile(np.nan, ONs.shape[1:3])
-            OFF_opt = np.tile(np.nan, OFFs.shape[1:3])
-            DIFF_opt = np.tile(np.nan, ONs.shape[1:3])
-        return (ON_opt, OFF_opt, DIFF_opt), (ON_tmax, OFF_tmax), (ON_S, OFF_S), (ONs, OFFs)
+            OFF_norms[idx] = (np.linalg.norm(OFFs[idx].flatten()) / np.linalg.norm(OFFs[0].flatten())) ** 2
+        return (ONs, OFFs), (ON_norms, OFF_norms)
 
 
 
