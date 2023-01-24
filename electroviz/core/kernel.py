@@ -106,19 +106,19 @@ class SparseNoiseKernel(Kernel):
         else:
             axs = ax_in
         
-        if not all((np.isinf(ON_norms) | np.isnan(ON_norms)) |
-                   (np.isinf(OFF_norms) | np.isnan(OFF_norms))):
+        if not all((np.isinf(self.ON_norms) | np.isnan(self.ON_norms)) |
+                   (np.isinf(self.OFF_norms) | np.isnan(self.OFF_norms))):
             if type == "peak":
-                (ON_t,) = np.where(ON_norms == ON_norms.max())
-                (OFF_t,) = np.where(OFF_norms == OFF_norms.max())
+                (ON_t,) = np.where(self.ON_norms == self.ON_norms.max())
+                (OFF_t,) = np.where(self.OFF_norms == self.OFF_norms.max())
             elif type == "valley":
-                (ON_t,) = np.where(ON_norms == ON_norms.min())
-                (OFF_t,) = np.where(OFF_norms == OFF_norms.min())
+                (ON_t,) = np.where(self.ON_norms == self.ON_norms.min())
+                (OFF_t,) = np.where(self.OFF_norms == self.OFF_norms.min())
             ON = self.ONs[ON_t[0], :, :].squeeze()
             OFF = self.OFFs[ON_t[0], :, :].squeeze()
             DIFF = ON - OFF
             clim = [np.minimum(ON.min(), OFF.min()), np.maximum(ON.max(), OFF.max())]
-            clim_diff = [self.DIFF.min(), self.DIFF.max()]
+            clim_diff = [DIFF.min(), DIFF.max()]
         else:
             ON = np.tile(0.5, self.ONs[0].shape)
             OFF = np.tile(0.5, self.OFFs[0].shape)
