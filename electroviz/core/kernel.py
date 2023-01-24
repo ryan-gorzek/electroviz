@@ -280,9 +280,7 @@ class StaticGratingsKernel(Kernel):
         sample_window = np.array(time_window) * (unit.sampling_rate / 1000)
         num_samples = int(sample_window[1] - sample_window[0])
         self.response_windows = [(on, on + bin_size) for on in np.arange(*self.time_window, self.bin_size)]
-        self.orisf, self.orisf_tmax, self.orisf_S, _ = self._compute_kernels(self.response_windows)
-        # Initialize fits as None.
-        self.orisf_fit = None
+        self.kerns, self.norms = self._compute_kernels(self.response_windows)
 
 
     def plot_raw(
@@ -290,6 +288,8 @@ class StaticGratingsKernel(Kernel):
             cmap="viridis", 
             save_path="", 
             ax_in=None, 
+            type="valley", 
+            return_t=False, 
         ):
         """"""
 
@@ -298,7 +298,18 @@ class StaticGratingsKernel(Kernel):
             fig, ax = plt.subplots()
         else:
             ax = ax_in
-        ax.matshow(self.orisf, cmap=cmap, clim=[self.orisf.min(), self.orisf.max()])
+        if not all((np.isinf(self.norms) | np.isnan(self.norms))):
+            if type == "peak":
+                (t,) = np.where(self.norms == self.norms.max())
+            elif type == "valley":
+                (t,) = np.where(self.norms == self.norms.min())
+            orisf = self.kerns[t[0], :, :].squeeze()
+            clim = [orisf.min(), orisf.max()]
+        else:
+            orisf = np.tile(0.5, self.kerns[0].shape)
+            cmap = "binary"
+            clim = (0, 1)
+        ax.matshow(orisf, cmap=cmap, clim=clim)
         ax.xaxis.tick_bottom()
         oris = np.unique(np.array(self._Stimulus.unique)[:, 0])
         sfs = np.unique(np.array(self._Stimulus.unique)[:, 1])
@@ -312,6 +323,8 @@ class StaticGratingsKernel(Kernel):
             plt.show(block=False)
             fig.subplots_adjust(left=0.15, bottom=0.11, right=0.95, top=0.95)
             fig.set_size_inches(6, 6)
+        if return_t is True:
+            return t
 
 
     def plot_raw_delay(
@@ -380,7 +393,7 @@ class StaticGratingsKernel(Kernel):
         """"""
 
         orisfs = np.empty((len(response_windows), *self._Stimulus.shape[:2]))
-        orisf_S = np.empty((len(response_windows),))
+        orisf_norms = np.empty((len(response_windows),))
         for idx, response_window in enumerate(response_windows):
             resp_on, resp_off = self._time_to_bins(response_window)
             kernels = np.zeros(self._Stimulus.shape[:2])
@@ -388,13 +401,6 @@ class StaticGratingsKernel(Kernel):
                 resp_rate = self._responses[resp_on:resp_off, *stim_indices, :, :].mean(axis=(0, 1, 2))
                 kernels[*stim_indices] += resp_rate
             orisfs[idx] = kernels[::-1, :]
-            orisf_S[idx] = (np.linalg.norm(orisfs[idx].flatten()) / np.linalg.norm(orisfs[0].flatten())) ** 2
-        # Get the kernels with the maximum norm (across time).
-        if not all((np.isinf(orisf_S) | np.isnan(orisf_S))):
-            (orisf_tmax,) = np.where(orisf_S == np.max(orisf_S))
-            orisf_opt = orisfs[orisf_tmax[0], ::-1, :].squeeze()
-        else:
-            orisf_tmax = np.nan
-            orisf_opt = np.tile(np.nan, orisfs.shape[:2])
-        return orisf_opt, orisf_tmax, orisf_S, orisfs
+            orisf_norms[idx] = (np.linalg.norm(orisfs[idx].flatten()) / np.linalg.norm(orisfs[0].flatten())) ** 2
+        return orisfs, orisf_norms
 
