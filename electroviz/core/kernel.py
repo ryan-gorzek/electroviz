@@ -120,9 +120,10 @@ class SparseNoiseKernel(Kernel):
             clim = [np.minimum(ON.min(), OFF.min()), np.maximum(ON.max(), OFF.max())]
             clim_diff = [DIFF.min(), DIFF.max()]
         else:
-            ON = np.tile(0.5, self.ONs[0].shape)
-            OFF = np.tile(0.5, self.OFFs[0].shape)
-            DIFF = np.tile(0.5, self.ONs[0].shape)
+            ON_t, OFF_t = None, None
+            ON = np.tile(0.25, self.ONs[0].shape)
+            OFF = np.tile(0.25, self.OFFs[0].shape)
+            DIFF = np.tile(0.25, self.ONs[0].shape)
             cmap = "binary"
             clim, clim_diff = (0, 1), (0, 1)
         axs[0].matshow(ON, cmap=cmap, clim=clim)
@@ -306,7 +307,8 @@ class StaticGratingsKernel(Kernel):
             orisf = self.kerns[t[0], :, :].squeeze()
             clim = [orisf.min(), orisf.max()]
         else:
-            orisf = np.tile(0.5, self.kerns[0].shape)
+            t = None
+            orisf = np.tile(0.25, self.kerns[0].shape)
             cmap = "binary"
             clim = (0, 1)
         ax.matshow(orisf, cmap=cmap, clim=clim)
