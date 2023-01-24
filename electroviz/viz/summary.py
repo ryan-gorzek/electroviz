@@ -22,6 +22,7 @@ class UnitSummary:
             unit, 
             stimuli, 
             kernels, 
+            save_path="", 
         ):
         """"""
 
@@ -33,12 +34,12 @@ class UnitSummary:
         ax_raster = fig.add_subplot(gs_1[:13, :3])
         unit.plot_raster(list(chain(*stimuli)), ax_in=ax_raster)
         ax_raster.set_title("Stimulus Events")
-        ax_raster.set_xlim((-3, 55))
+        ax_raster.set_xlim((-1.25, 53.25))
         colors = ((0.2, 0.2, 0.9), (0.9, 0.2, 0.2), (0.7, 0.2, 0.7), (0.9, 0.5, 0.2))
         prev_len = 0
         for stim, color in zip(stimuli, colors):
             stim_len = len(stim)
-            ax_raster.add_patch(Rectangle((53, prev_len), 2, stim_len, color=color))
+            ax_raster.add_patch(Rectangle((51.25, prev_len), 2, stim_len, color=color))
             prev_len += stim_len
         ax_raster.spines["right"].set_visible(False)
         ax_raster.set_yticklabels([])
@@ -51,6 +52,7 @@ class UnitSummary:
         unit.plot_PSTH(stimuli[0], ax_in=ax_psth_csn)
         ax_psth_csn.set_xticklabels([])
         ax_psth_csn.set_xlabel("")
+        ax_psth_csn.set_xlim((-0.75, 51.75))
         ax_psth_csn.set_ylabel("Contra Sparse Noise", color=colors[0])
         ax_psth_csn.set_title("Spike Rate (Hz)")
 
@@ -58,16 +60,19 @@ class UnitSummary:
         unit.plot_PSTH(stimuli[1], ax_in=ax_psth_isn)
         ax_psth_isn.set_xticklabels([])
         ax_psth_isn.set_xlabel("")
+        ax_psth_isn.set_xlim((-0.75, 51.75))
         ax_psth_isn.set_ylabel("Ipsi Sparse Noise", color=colors[1])
 
         ax_psth_csg = fig.add_subplot(gs_2[6:9, :3])
         unit.plot_PSTH(stimuli[2], ax_in=ax_psth_csg)
         ax_psth_csg.set_xticklabels([])
         ax_psth_csg.set_xlabel("")
+        ax_psth_csg.set_xlim((-0.75, 51.75))
         ax_psth_csg.set_ylabel("Contra Static Gratings", color=colors[2])
 
         ax_psth_isg = fig.add_subplot(gs_2[9:13, :3])
         unit.plot_PSTH(stimuli[3], ax_in=ax_psth_isg)
+        ax_psth_isg.set_xlim((-0.75, 51.75))
         ax_psth_isg.set_ylabel("Ipsi Static Gratings", color=colors[3])
 
         ylims = []
@@ -115,7 +120,7 @@ class UnitSummary:
         ax_kon_isn = fig.add_subplot(gs_4[:1, :3])
         ax_koff_isn = fig.add_subplot(gs_4[1:2, :3])
         ax_kdiff_isn = fig.add_subplot(gs_4[2:3, :3])
-        kernels[0].plot_raw(ax_in=np.array((ax_kon_isn, ax_koff_isn, ax_kdiff_isn)))
+        kernels[1].plot_raw(ax_in=np.array((ax_kon_isn, ax_koff_isn, ax_kdiff_isn)))
         ax_kon_isn.axis("on")
         ax_kon_isn.set_frame_on(False)
         ax_kon_isn.set_xticks([])
@@ -137,7 +142,7 @@ class UnitSummary:
         ax_kon_isn_v = fig.add_subplot(gs_4[:1, 3:6])
         ax_koff_isn_v = fig.add_subplot(gs_4[1:2, 3:6])
         ax_kdiff_isn_v = fig.add_subplot(gs_4[2:3, 3:6])
-        kernels[0].plot_raw(ax_in=np.array((ax_kon_isn_v, ax_koff_isn_v, ax_kdiff_isn_v)), 
+        kernels[1].plot_raw(ax_in=np.array((ax_kon_isn_v, ax_koff_isn_v, ax_kdiff_isn_v)), 
                             type="valley")
         ax_kon_isn_v.set_title("")
         ax_koff_isn_v.set_title("")
@@ -156,10 +161,12 @@ class UnitSummary:
         ax_kern_csg_v.set_yticklabels([])
         ax_kern_csg_v.set_ylabel("")
         # Add times to PSTH.
-        y_peak = np.max(ylims) - 0.075*np.max(ylims)
-        ax_psth_csg.text(t_peak - 0.5, y_peak, "^")
-        y_valley = np.max(ylims) - 0.05*np.max(ylims)
-        ax_psth_csg.text(t_valley - 0.5, y_valley, "^", rotation=180)
+        if t_peak is not None:
+            y_peak = np.max(ylims) - 0.075*np.max(ylims)
+            ax_psth_csg.text(t_peak - 0.5, y_peak, "^")
+        if t_valley is not None:
+            y_valley = np.max(ylims) - 0.025*np.max(ylims)
+            ax_psth_csg.text(t_valley - 0.5, y_valley, "^", rotation=180)
 
         ax_kern_isg = fig.add_subplot(gs_5[3:6, :3])
         t_peak = kernels[3].plot_raw(ax_in=ax_kern_isg, return_t=True)
@@ -172,15 +179,21 @@ class UnitSummary:
         ax_kern_isg_v.set_yticklabels([])
         ax_kern_isg_v.set_ylabel("")
         # Add times to PSTH.
-        y_peak = np.max(ylims) - 0.075*np.max(ylims)
-        ax_psth_isg.text(t_peak - 0.5, y_peak, "^")
-        y_valley = np.max(ylims) - 0.05*np.max(ylims)
-        ax_psth_isg.text(t_valley - 0.5, y_valley, "^", rotation=180)
+        if t_peak is not None:
+            y_peak = np.max(ylims) - 0.075*np.max(ylims)
+            ax_psth_isg.text(t_peak - 0.5, y_peak, "^")
+        if t_valley is not None:
+            y_valley = np.max(ylims) - 0.025*np.max(ylims)
+            ax_psth_isg.text(t_valley - 0.5, y_valley, "^", rotation=180)
 
         # fig.suptitle("Unit #" + str(unit.ID))
         plt.show(block=False)
         fig.set_size_inches(30, 15)
-
+        if save_path != "":
+            try:
+                fig.savefig(save_path, bbox_inches="tight")
+            except:
+                pass
 
 
 
