@@ -16,9 +16,9 @@ class NIDAQ:
 
     digital_lines = dict({
                         "sync" : 7, 
-                        # "camera" : 5, 
                         "pc_clock" : 4, 
                         "photodiode" : 1, 
+                        "led" : 6, 
                           })
     
 

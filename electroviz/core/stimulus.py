@@ -285,3 +285,113 @@ class ContrastReversal(VisualStimulus):
             btss_out[0].events[col] = np.zeros((btss[0].events.shape[0],))
         return btss_out
 
+
+
+
+class OptogeneticStimulus(Stimulus):
+    """
+
+    """
+
+
+    def __init__(
+            self, 
+            nidaq=None, 
+            btss=None, 
+        ):
+        """"""
+
+        super().__init__(
+                         nidaq=nidaq, 
+                         btss=btss, 
+                        )
+
+        # Stack photodiode and vstim dataframes.
+        vstim_events, event_idx = self._map_btss_vstim(self._VStim)
+        photodiode_events = self._Photodiode.events.iloc[event_idx].reset_index()
+        photodiode_events.drop(columns=["index"], inplace=True)
+        self.events = pd.concat((photodiode_events, vstim_events), axis=1)
+
+
+    def _map_btss_vstim(
+            self, 
+            vstim, 
+        ):
+        """"""
+
+        # Define stimulus parameters from rig log to keep.
+        param_names = ["contrast", "posx", "posy", "ori", "sf", "phase", "tf", "itrial", "istim"]
+        # Correct bTsS times for concatenation.
+        if self._PC_Clock.concat_times is not None:
+            concat_time = self._PC_Clock.concat_times[vstim.index]
+        else:
+            concat_time = 0.0
+        concat_idx = np.where(self._PC_Clock.events["time_onset"] >= concat_time)[0][0]
+        num_events = vstim.events.shape[0]
+        event_idx = np.arange(concat_idx, concat_idx + num_events, 1)
+        # Create a dataframe from the visual stimuli parameters.
+        vstim_df_mapped = vstim.events[param_names]
+        return vstim_df_mapped, event_idx
+
+
+    def _get_events(
+            self, 
+            params, 
+        ):
+        """"""
+
+        self._Events = []
+        for row in self.events.itertuples():
+            stim_indices = self._get_stim_indices(row[0], params=params)
+            self._Events.append(Event(stim_indices, *row))
+        return None
+
+
+
+
+class SquarePulse(OptogeneticStimulus):
+    """
+
+    """
+
+
+    def __init__(
+            self, 
+            nidaq=None, 
+            btss=None, 
+        ):
+        """"""
+
+        btss = self._match_vstim_df(btss)
+
+        super().__init__(
+                         nidaq=nidaq, 
+                         btss=btss, 
+                        )
+
+        self._get_events(params=["itrial"])
+        self._get_shape(params=["itrial"])
+        self._get_unique()
+
+
+    def _get_unique(
+            self, 
+        ):
+        """"""
+        
+        self.unique = []
+        for itrial in sorted(np.unique(self.events["itrial"])):
+                    self.unique.append((itrial))
+        return None
+
+
+    def _match_vstim_df(
+            self, 
+            btss, 
+        ):
+        """"""
+
+        btss_out = btss
+        for col in ["ori", "sf", "phase", "tf"]:
+            btss_out[0].events[col] = np.zeros((btss[0].events.shape[0],))
+        return btss_out
