@@ -13,6 +13,7 @@ from scipy.optimize import curve_fit
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 from electroviz.viz.psth import PSTH
+import math
 
 class Kernel:
     """
@@ -405,4 +406,16 @@ class StaticGratingsKernel(Kernel):
             orisfs[idx] = kernels[::-1, :]
             orisf_norms[idx] = (np.linalg.norm(orisfs[idx].flatten()) / np.linalg.norm(orisfs[0].flatten())) ** 2
         return orisfs, orisf_norms
+
+
+    def _generate_grating(
+            self, 
+            event, 
+        ):
+        """"""
+
+        x, y = np.meshgrid(np.arange(300), np.arange(300))
+        gradient = np.sin(event.ori * math.pi / 180) * x - np.cos(event.ori * math.pi / 180) * y
+        grating = np.sin((2 * math.pi * gradient) / event.sf + (event.phase * math.pi) / 180)
+        return grating
 
