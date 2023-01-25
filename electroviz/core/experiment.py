@@ -31,9 +31,10 @@ class Experiment:
         SGLX_dir, bTsS_dirs = parse_experiment_dir(experiment_path, SGLX_name, bTsS_names)
         # 
         nidaq_dir, imec_dir = parse_SGLX_dir(experiment_path + SGLX_dir)
-        nidaq = NIDAQ(nidaq_dir)
         if not "opto_tagging_pulse" in bTsS_names:
-            nidaq = nidaq[:3]
+            nidaq = NIDAQ(nidaq_dir, opto=False)
+        else:
+            nidaq = NIDAQ(nidaq_dir)
         imec = Imec(imec_dir)
         total_imec_samples = [im.total_samples for im in imec]
         kilosort = Kilosort(imec_dir, total_imec_samples)

@@ -14,19 +14,26 @@ class NIDAQ:
     """
 
 
-    digital_lines = dict({
-                        "sync" : 7, 
-                        "pc_clock" : 4, 
-                        "photodiode" : 1, 
-                        "led" : 6, 
-                          })
-    
-
     def __new__(
             self, 
             nidaq_path, 
+            opto=True, 
         ):
         """"""
+
+        if opto is True:
+            self.digital_lines = dict({
+                            "sync" : 7, 
+                            "pc_clock" : 4, 
+                            "photodiode" : 1, 
+                            "led" : 6, 
+                            })
+        else:
+            self.digital_lines = dict({
+                            "sync" : 7, 
+                            "pc_clock" : 4, 
+                            "photodiode" : 1, 
+                            })
         
         # Read the NIDAQ metadata and binary files.
         metadata, binary, offsets = read_NIDAQ(nidaq_path)
@@ -35,7 +42,7 @@ class NIDAQ:
         # Create a list for storing objects derived from the NIDAQ.
         nidaq = []
         # Extract the sync channel first.
-        sync_line = NIDAQ.digital_lines["sync"]
+        sync_line = self.digital_lines["sync"]
         sync_signal = extractDigital(binary, 
                                      0, num_samples-1, 
                                      0, 
@@ -46,7 +53,7 @@ class NIDAQ:
         if offsets is not None:
             offsets = offsets[1][1:].astype(float)
         # Extract other specified digital channels.
-        digital_lines = [NIDAQ.digital_lines[name] for name in NIDAQ.digital_lines.keys() if name != "sync"]
+        digital_lines = [self.digital_lines[name] for name in self.digital_lines.keys() if name != "sync"]
         for line in digital_lines:
             digital_signal = extractDigital(binary, 
                                             0, num_samples-1, 
