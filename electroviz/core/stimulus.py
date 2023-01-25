@@ -346,6 +346,31 @@ class OptogeneticStimulus(Stimulus):
             self._Events.append(Event(stim_indices, *row))
         return None
 
+    
+    def _get_stim_indices(
+            self, 
+            row_index, 
+            params, 
+        ):
+        """"""
+
+        values = tuple(self.events[params].iloc[row_index])
+        indices = []
+        for val, param in zip(values, params):
+            (idx,) = np.where(np.unique(self.events[param]) == val)
+            indices.append(idx[0])
+        return tuple(indices)
+
+
+    def _get_shape(
+            self, 
+            params, 
+        ):
+        """"""
+        
+        self.shape = tuple(np.unique(self.events[param]).size for param in params)
+        return None
+
 
 
 
