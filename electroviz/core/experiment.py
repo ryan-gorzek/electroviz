@@ -46,16 +46,26 @@ class Experiment:
             btss_dir = experiment_path + cdir
             self.btss.append(bTsS(btss_dir, index=idx))
         # Create Stimulus objects.
-        self.stimuli = []
+        stimuli = []
         for btss_name, btss_obj in zip(bTsS_names, self.btss):
             if "random_squares" in btss_name:
-                self.stimuli.append(SparseNoise(self.nidaq, btss_obj))
+                stimuli.append(SparseNoise(self.nidaq, btss_obj))
             elif "random_gratings" in btss_name:
-                self.stimuli.append(StaticGratings(self.nidaq, btss_obj))
+                stimuli.append(StaticGratings(self.nidaq, btss_obj))
             elif "contrast_reversal" in btss_name:
-                self.stimuli.append(ContrastReversal(self.nidaq, btss_obj))
+                stimuli.append(ContrastReversal(self.nidaq, btss_obj))
             elif "opto_tagging" in btss_name:
-                self.stimuli.append(SquarePulse(self.nidaq, btss_obj))
+                stimuli.append(SquarePulse(self.nidaq, btss_obj))
+        # Reorder Stimulus objects for convenience.
+        stim_order = ["contra_random_squares", "ipsi_random_squares", 
+                      "contra_random_gratings", "ipsi_random_gratings", 
+                      "contrast_reversal", 
+                      "opto_tagging_pulse"]
+        self.stimuli = []
+        for stim in stim_order:
+            for name, obj in zip(bTsS_names, stimuli):
+                if stim in name:
+                    self.stimuli.append(obj)
         # Create Population object.
         self.populations = []
         for im, ks in zip(self.imec, self.kilosort):
