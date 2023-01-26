@@ -59,6 +59,24 @@ class Kernel:
         return int(on_idx[0]), int(off_idx[0] + 1)
 
 
+    def _rebase_norms(
+            self, 
+            kernels, 
+            norms, 
+        ):
+        """"""
+
+        base_norms = np.array([np.linalg.norm(kern.flatten()) for kern in kernels])
+        if not all(base_norms == 0):
+            (idx,) = np.where(base_norms > 0)
+            new_norms = np.empty(norms.shape)
+            for norm_idx, norm in enumerate(norms):
+                new_norms[norm_idx] = (np.linalg.norm(kernels[norm_idx].flatten()) / np.linalg.norm(kernels[idx[0]].flatten())) ** 2
+        else:
+            new_norms = norms
+        return new_norms
+
+
 
 
 class SparseNoiseKernel(Kernel):
@@ -252,6 +270,8 @@ class SparseNoiseKernel(Kernel):
             ON_norms[idx] = (np.linalg.norm(ONs[idx].flatten()) / np.linalg.norm(ONs[0].flatten())) ** 2
             OFFs[idx] = kernels[0].T[::-1, :]
             OFF_norms[idx] = (np.linalg.norm(OFFs[idx].flatten()) / np.linalg.norm(OFFs[0].flatten())) ** 2
+        ON_norms = self._rebase_norms(ONs, ON_norms)
+        OFF_norms = self._rebase_norms(OFFs, OFF_norms)
         return (ONs, OFFs), (ON_norms, OFF_norms)
 
 
@@ -405,6 +425,7 @@ class StaticGratingsKernel(Kernel):
                 kernels[*stim_indices] += resp_rate
             orisfs[idx] = kernels[::-1, :]
             orisf_norms[idx] = (np.linalg.norm(orisfs[idx].flatten()) / np.linalg.norm(orisfs[0].flatten())) ** 2
+        orisf_norms = self._rebase_norms(orisfs, orisf_norms)
         return orisfs, orisf_norms
 
 
