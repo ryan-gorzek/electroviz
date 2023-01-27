@@ -100,16 +100,23 @@ def read_Imec(
     ):
     """"""
 
-    imec_metadata, imec_binary = [], []
+    ap_metadata, ap_binary, lf_metadata, lf_binary = [], [], [], []
     for path in imec_paths:
-        # Read the metadata using SpikeGLX datafile tools.
-        metadata_path = glob.glob(path + "/*.ap.meta")[0]
-        meta = readMeta(metadata_path)
-        imec_metadata.append(meta)
-        # Read the binary file using SpikeGLX datafile tools.
-        binary_path = glob.glob(path + "/*.ap.bin")[0]
-        imec_binary.append(makeMemMapRaw(binary_path, meta))
-    return imec_metadata, imec_binary
+        # Read the ap metadata using SpikeGLX datafile tools.
+        ap_metadata_path = glob.glob(path + "/*.ap.meta")[0]
+        ap_meta = readMeta(ap_metadata_path)
+        ap_metadata.append(ap_meta)
+        # Read the ap binary file using SpikeGLX datafile tools.
+        ap_binary_path = glob.glob(path + "/*.ap.bin")[0]
+        ap_binary.append(makeMemMapRaw(ap_binary_path, ap_meta))
+        # Read the lf metadata using SpikeGLX datafile tools.
+        lf_metadata_path = glob.glob(path + "/*.lf.meta")[0]
+        lf_meta = readMeta(lf_metadata_path)
+        lf_metadata.append(lf_meta)
+        # Read the lf binary file using SpikeGLX datafile tools.
+        lf_binary_path = glob.glob(path + "/*.lf.bin")[0]
+        lf_binary.append(makeMemMapRaw(lf_binary_path, lf_meta))
+    return ap_metadata, ap_binary, lf_metadata, lf_binary, imec_paths
 
 
 def read_NIDAQ(
