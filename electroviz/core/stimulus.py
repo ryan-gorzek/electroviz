@@ -9,6 +9,7 @@ import numpy as np
 import copy
 from warnings import warn
 from electroviz.core.event import Event
+import copy
 
 class Stimulus:
     """
@@ -18,12 +19,18 @@ class Stimulus:
 
     def __init__(
             self, 
-            nidaq=None, 
             btss=None, 
+            nidaq_ap=None, 
+            nidaq_lf=None, 
         ):
         """"""
 
-        self._Sync, self._PC_Clock, self._Photodiode = nidaq[:3]
+        self._Sync, self._PC_Clock, self._Photodiode = nidaq_ap[:3]
+        if nidaq_lf is not None:
+            self._lf = True
+            self._Sync_, self._PC_Clock_, self._Photodiode_ = nidaq_lf[:3]
+        else:
+            self._lf = False
         self._VStim = btss[0]
 
     def __getitem__(
@@ -63,17 +70,20 @@ class Stimulus:
         return len(self._Events)
 
 
-    def randomize(
+    def lfp(
             self, 
         ):
         """"""
-        
-        rand_idx = list(range(len(self._Events)))
-        np.random.shuffle(rand_idx)
-        rand_set = copy.copy(self)
-        rand_set._Events = [self._Events[idx] for idx in rand_idx]
-        rand_set.events.reindex(rand_idx)
-        return rand_set
+
+        if self._lf is True:
+            swapped = copy.copy(self)
+            swapped._Sync, swapped._Sync_ = self._Sync_, self._Sync
+            swapped._PC_Clock, swapped._PC_Clock_ = self._PC_Clock_, self._PC_Clock
+            swapped._Photodiode, swapped._Photodiode_ = self._Photodiode_, self._Photodiode
+            swapped._Events, swapped._Events_ = self._Events_, self._Events
+            swapped._events, swapped._events_ = self._events_, self._events
+        return swapped
+
 
 
 
@@ -85,37 +95,51 @@ class VisualStimulus(Stimulus):
 
     def __init__(
             self, 
-            nidaq=None, 
             btss=None, 
+            nidaq_ap=None, 
+            nidaq_lf=None, 
         ):
         """"""
 
         super().__init__(
-                         nidaq=nidaq, 
                          btss=btss, 
+                         nidaq_ap=nidaq_ap, 
+                         nidaq_lf=nidaq_lf, 
                         )
 
-        # Stack photodiode and vstim dataframes.
+        # Stack photodiode and vstim dataframes for AP.
         vstim_events, event_idx = self._map_btss_vstim(self._VStim)
         photodiode_events = self._Photodiode.events.iloc[event_idx].reset_index()
         photodiode_events.drop(columns=["index"], inplace=True)
         self.events = pd.concat((photodiode_events, vstim_events), axis=1)
 
+        # Stack photodiode and vstim dataframes for LF.
+        if nidaq_lf is not None:
+            vstim_events, event_idx = self._map_btss_vstim(self._VStim, lf=True)
+            print(event_idx)
+            photodiode_events_lf = self._Photodiode_.events.iloc[event_idx].reset_index()
+            photodiode_events_lf.drop(columns=["index"], inplace=True)
+            self._events_ = pd.concat((photodiode_events_lf, vstim_events), axis=1)
 
     def _map_btss_vstim(
             self, 
             vstim, 
+            lf=False, 
         ):
         """"""
 
+        if lf is True:
+            pc_clock = self._PC_Clock_
+        else:
+            pc_clock = self._PC_Clock
         # Define stimulus parameters from rig log to keep.
         param_names = ["contrast", "posx", "posy", "ori", "sf", "phase", "tf", "itrial", "istim"]
         # Correct bTsS times for concatenation.
-        if self._PC_Clock.concat_times is not None:
-            concat_time = self._PC_Clock.concat_times[vstim.index]
+        if pc_clock.concat_times is not None:
+            concat_time = pc_clock.concat_times[vstim.index]
         else:
             concat_time = 0.0
-        concat_idx = np.where(self._PC_Clock.events["time_onset"] >= concat_time)[0][0]
+        concat_idx = np.where(pc_clock.events["time_onset"] >= concat_time)[0][0]
         num_events = vstim.events.shape[0]
         event_idx = np.arange(concat_idx, concat_idx + num_events, 1)
         # Create a dataframe from the visual stimuli parameters.
@@ -133,6 +157,11 @@ class VisualStimulus(Stimulus):
         for row in self.events.itertuples():
             stim_indices = self._get_stim_indices(row[0], params=params)
             self._Events.append(Event(stim_indices, *row))
+        # LFP.
+        self._Events_ = []
+        for row in self._events_.itertuples():
+            stim_indices = self._get_stim_indices(row[0], params=params)
+            self._Events_.append(Event(stim_indices, *row))
         return None
 
 
@@ -170,14 +199,16 @@ class SparseNoise(VisualStimulus):
 
     def __init__(
             self, 
-            nidaq=None, 
             btss=None, 
+            nidaq_ap=None, 
+            nidaq_lf=None, 
         ):
         """"""
 
         super().__init__(
-                         nidaq=nidaq, 
                          btss=btss, 
+                         nidaq_ap=nidaq_ap, 
+                         nidaq_lf=nidaq_lf, 
                         )
 
         self._get_events(params=["contrast", "posx", "posy", "itrial"])
@@ -207,14 +238,16 @@ class StaticGratings(VisualStimulus):
 
     def __init__(
             self, 
-            nidaq=None, 
             btss=None, 
+            nidaq_ap=None, 
+            nidaq_lf=None, 
         ):
         """"""
 
         super().__init__(
-                         nidaq=nidaq, 
                          btss=btss, 
+                         nidaq_ap=nidaq_ap, 
+                         nidaq_lf=nidaq_lf, 
                         )
 
         self._get_events(params=["ori", "sf", "phase", "itrial"])
@@ -245,16 +278,18 @@ class ContrastReversal(VisualStimulus):
 
     def __init__(
             self, 
-            nidaq=None, 
             btss=None, 
+            nidaq_ap=None, 
+            nidaq_lf=None, 
         ):
         """"""
 
         btss = self._match_vstim_df(btss)
 
         super().__init__(
-                         nidaq=nidaq, 
                          btss=btss, 
+                         nidaq_ap=nidaq_ap, 
+                         nidaq_lf=nidaq_lf, 
                         )
 
         self._get_events(params=["contrast"])
@@ -296,14 +331,16 @@ class OptogeneticStimulus(Stimulus):
 
     def __init__(
             self, 
-            nidaq=None, 
             btss=None, 
+            nidaq_ap=None, 
+            nidaq_lf=None, 
         ):
         """"""
 
         super().__init__(
-                         nidaq=nidaq, 
                          btss=btss, 
+                         nidaq_ap=nidaq_ap, 
+                         nidaq_lf=nidaq_lf, 
                         )
 
         # Stack photodiode and vstim dataframes.
@@ -382,16 +419,18 @@ class SquarePulse(OptogeneticStimulus):
 
     def __init__(
             self, 
-            nidaq=None, 
             btss=None, 
+            nidaq_ap=None, 
+            nidaq_lf=None, 
         ):
         """"""
 
         btss = self._match_vstim_df(btss)
 
         super().__init__(
-                         nidaq=nidaq, 
                          btss=btss, 
+                         nidaq_ap=nidaq_ap, 
+                         nidaq_lf=nidaq_lf, 
                         )
 
         self._get_events(params=["itrial"])
