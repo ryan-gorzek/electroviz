@@ -5,6 +5,7 @@
 # https://opensource.org/licenses/MIT
 
 import numpy as np
+from electroviz.viz.raster import Raster
 
 class Probe:
     """
@@ -62,23 +63,34 @@ class Probe:
         return self.channels.shape[0]
 
 
+    def plot_raster(
+            self, 
+            stimulus, 
+            time_window=(-50, 200), 
+            fig_size=(6, 9), 
+            save_path="", 
+            ax_in=None, 
+        ):
+        """"""
+
+        responses = self.get_response(stimulus, time_window)
+        Raster(time_window, responses, ylabel="Channel", fig_size=fig_size, save_path=save_path, ax_in=ax_in)
+
+
     def get_response(
             self, 
             stimulus, 
             time_window=(-50, 200), 
-            bin_size=1, 
         ):
         """"""
         
         stimulus = stimulus.lfp()
         sample_window = np.array(time_window) * 2.5
         num_samples = int(sample_window[1] - sample_window[0])
-        num_bins = int(num_samples/(bin_size * 2.5))
-        responses = np.zeros((len(self), num_bins, len(stimulus)))
+        responses = np.zeros((len(self), num_samples, len(stimulus)))
         for idx, event in enumerate(stimulus):
             window = (sample_window + event.sample_onset).astype(int)
-            resp = self.channels[:, window[0]:window[1]].toarray()
-            mean_resp = resp.reshape((len(self), num_bins, -1)).mean(axis=2)
-            responses[:, :, idx] = mean_resp
+            resp = self.channels[:, window[0]:window[1]]
+            responses[:, :, idx] = resp
         return responses.mean(axis=2)
 
