@@ -81,7 +81,7 @@ class Stimulus:
             swapped._PC_Clock, swapped._PC_Clock_ = self._PC_Clock_, self._PC_Clock
             swapped._Photodiode, swapped._Photodiode_ = self._Photodiode_, self._Photodiode
             swapped._Events, swapped._Events_ = self._Events_, self._Events
-            swapped._events, swapped._events_ = self._events_, self._events
+            swapped.events, swapped._events_ = self._events_, self.events
         return swapped
 
 
@@ -116,7 +116,6 @@ class VisualStimulus(Stimulus):
         # Stack photodiode and vstim dataframes for LF.
         if nidaq_lf is not None:
             vstim_events, event_idx = self._map_btss_vstim(self._VStim, lf=True)
-            print(event_idx)
             photodiode_events_lf = self._Photodiode_.events.iloc[event_idx].reset_index()
             photodiode_events_lf.drop(columns=["index"], inplace=True)
             self._events_ = pd.concat((photodiode_events_lf, vstim_events), axis=1)
