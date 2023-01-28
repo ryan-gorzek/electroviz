@@ -49,48 +49,48 @@ class Experiment:
         self.nidaq_ap, self.imec_ap, self.kilosort = align_ap_sync(nidaq, imec_ap, kilosort)
         self._nidaq = nidaq
         self._imec_lf = imec_lf
-        self.nidaq_lf, self.imec_lf, self.drops = align_lf_sync(nidaq, imec_lf)
+        self.nidaq_lf, self.imec_lf = align_lf_sync(nidaq, imec_lf)
 
         del nidaq
 
-        # print("Loading bTsS data...")
-        # # Parse bTsS directory.
-        # self.btss = []
-        # for idx, cdir in enumerate(bTsS_dirs):
-        #     btss_dir = experiment_path + cdir
-        #     self.btss.append(bTsS(btss_dir, index=idx))
-        # print("Creating Stimuli...")
-        # # Create Stimulus objects.
-        # stimuli = []
-        # for btss_name, btss_obj in zip(bTsS_names, self.btss):
-        #     if "random_squares" in btss_name:
-        #         stimuli.append(SparseNoise(btss_obj, self.nidaq_ap, self.nidaq_lf))
-        #     elif "random_gratings" in btss_name:
-        #         stimuli.append(StaticGratings(btss_obj, self.nidaq_ap, self.nidaq_lf))
-        #     elif "contrast_reversal" in btss_name:
-        #         stimuli.append(ContrastReversal(btss_obj, self.nidaq_ap, self.nidaq_lf))
-        #     elif "opto_tagging" in btss_name:
-        #         stimuli.append(SquarePulse(btss_obj, self.nidaq_ap, self.nidaq_lf))
-        # # Reorder Stimulus objects for convenience.
-        # stim_order = ["contra_random_squares", "ipsi_random_squares", 
-        #             "contra_random_gratings", "ipsi_random_gratings", 
-        #             "contrast_reversal", 
-        #             "opto_tagging_pulse"]
-        # self.stimuli = []
-        # for stim in stim_order:
-        #     for name, obj in zip(bTsS_names, stimuli):
-        #         if stim in name:
-        #             self.stimuli.append(obj)
-        # print("Creating Populations...")
-        # # Create Population object.
-        # self.populations = []
-        # for im, ks in zip(self.imec_ap, self.kilosort):
-        #     self.populations.append(Population(im, ks))
-        # print("Creating Probes...")
-        # # Create Probe object.
-        # self.probes = []
-        # for sy, im in np.array(self.imec_lf).reshape(-1, 2):
-        #     self.probes.append(Probe(sy, im))
+        print("Loading bTsS data...")
+        # Parse bTsS directory.
+        self.btss = []
+        for idx, cdir in enumerate(bTsS_dirs):
+            btss_dir = experiment_path + cdir
+            self.btss.append(bTsS(btss_dir, index=idx))
+        print("Creating Stimuli...")
+        # Create Stimulus objects.
+        stimuli = []
+        for btss_name, btss_obj in zip(bTsS_names, self.btss):
+            if "random_squares" in btss_name:
+                stimuli.append(SparseNoise(btss_obj, self.nidaq_ap, self.nidaq_lf))
+            elif "random_gratings" in btss_name:
+                stimuli.append(StaticGratings(btss_obj, self.nidaq_ap, self.nidaq_lf))
+            elif "contrast_reversal" in btss_name:
+                stimuli.append(ContrastReversal(btss_obj, self.nidaq_ap, self.nidaq_lf))
+            elif "opto_tagging" in btss_name:
+                stimuli.append(SquarePulse(btss_obj, self.nidaq_ap, self.nidaq_lf))
+        # Reorder Stimulus objects for convenience.
+        stim_order = ["contra_random_squares", "ipsi_random_squares", 
+                    "contra_random_gratings", "ipsi_random_gratings", 
+                    "contrast_reversal", 
+                    "opto_tagging_pulse"]
+        self.stimuli = []
+        for stim in stim_order:
+            for name, obj in zip(bTsS_names, stimuli):
+                if stim in name:
+                    self.stimuli.append(obj)
+        print("Creating Populations...")
+        # Create Population object.
+        self.populations = []
+        for im, ks in zip(self.imec_ap, self.kilosort):
+            self.populations.append(Population(im, ks))
+        print("Creating Probes...")
+        # Create Probe object.
+        self.probes = []
+        for sy, im in np.array(self.imec_lf).reshape(-1, 2):
+            self.probes.append(Probe(im, sy))
 
         print("Done!")
 
