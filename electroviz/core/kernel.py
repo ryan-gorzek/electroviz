@@ -161,7 +161,7 @@ class SparseNoiseKernel(Kernel):
             plt.show(block=False)
             fig.set_size_inches(4.5, 10)
         if return_t is True:
-            return (ON_t, OFF_t)
+            return (ON_t[0], OFF_t[0])
 
 
     def plot_raw_delay(
@@ -347,7 +347,10 @@ class StaticGratingsKernel(Kernel):
             fig.subplots_adjust(left=0.15, bottom=0.11, right=0.95, top=0.95)
             fig.set_size_inches(6, 6)
         if return_t is True:
-            return t
+            if t is not None:
+                return t[0]
+            else:
+                return t
 
 
     def plot_raw_delay(

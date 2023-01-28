@@ -189,10 +189,7 @@ class UnitSummary:
         plt.show(block=False)
         fig.set_size_inches(30, 15)
         if save_path != "":
-            try:
-                fig.savefig(save_path, bbox_inches="tight")
-            except:
-                pass
+            fig.savefig(save_path, bbox_inches="tight")
 
 
 
