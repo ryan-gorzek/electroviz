@@ -6,6 +6,13 @@
 
 import numpy as np
 from electroviz.viz.raster import Raster
+import copy
+from scipy.signal import butter, lfilter
+from electroviz.utils.icsd import compute_csd
+import quantities as pq
+import matplotlib.pyplot as plt
+from matplotlib import use as mpl_use
+from scipy.stats import zscore
 
 class Probe:
     """
@@ -22,6 +29,7 @@ class Probe:
 
         self._Sync = sync
         self.channels = lfp.channels
+        self.channel_positions = lfp.channel_positions
         self.sampling_rate = lfp.sampling_rate
         self.total_samples = lfp.total_samples
         self.total_time = lfp.total_samples / lfp.sampling_rate
@@ -63,10 +71,54 @@ class Probe:
         return self.channels.shape[0]
 
 
+    def plot_CSD(
+            self, 
+            stimulus, 
+        ):
+        """"""
+
+        chan_mask = self.filter_channels(x=43).channel_positions[:, 1] <= 1000
+        channels = self.filter_channels(x=43)._filter_freq().get_response(stimulus, time_window=(0, 100))
+        chans_in = channels[chan_mask, :]
+        contacts = np.linspace(0, 1000E-6, 25)*pq.m
+        csd = compute_csd(chans_in, coord_electrodes=contacts, mode="exp", gauss_filter=(1.4, 0), diam=800E-6 * pq.m)
+
+        mpl_use("Qt5Agg")
+        fig, ax = plt.subplots()
+        ax.imshow(zscore(np.array(csd), axis=1), cmap="RdBu_r", aspect=5)
+        ax.set_xticks(np.arange(0, 101, 10))
+        ax.set_xticklabels(np.arange(0, 101, 10))
+        ax.set_yticks(np.arange(0, 25, 5))
+        ax.set_yticklabels(np.arange(0, 1000, 200))
+        plt.show(block=False)
+
+
+    def plot_power(
+            self, 
+        ):
+        """"""
+
+        chan_mask = self.filter_channels(x=43).channel_positions[:, 1] <= 1000
+        channels = self.filter_channels(x=43).channels[chan_mask, :]
+        powers = np.zeros((channels.shape[0],))
+        for chan, power in zip(channels, powers):
+            ps = np.abs(np.fft.fft(chan))**2
+            time_step = 1 / 2500
+            freqs = np.fft.fftfreq(chan.size, time_step)
+            idx = np.argsort(freqs)
+            cut = int((idx.size / 2500) * 750)
+            power = ps[idx][:cut].mean()
+        
+        mpl_use("Qt5Agg")
+        fig, ax = plt.subplots()
+        ax.plot(powers, np.arange(0, powers.size, 1))
+        plt.show(block=False)
+
     def plot_raster(
             self, 
             stimulus, 
             time_window=(-50, 200), 
+            yscale="Depth", 
             fig_size=(6, 9), 
             save_path="", 
             ax_in=None, 
@@ -74,23 +126,68 @@ class Probe:
         """"""
 
         responses = self.get_response(stimulus, time_window)
-        Raster(time_window, responses, ylabel="Channel", fig_size=fig_size, save_path=save_path, ax_in=ax_in)
+        if yscale == "Depth":
+            depths = self.channel_positions[:, 1].astype(int)
+            Raster(time_window, responses, ylabel="Depth", cmap="RdBu_r", yscale=depths, fig_size=fig_size, save_path=save_path, ax_in=ax_in)
+        elif yscale == "Channel":
+            Raster(time_window, responses, ylabel="Channel", fig_size=fig_size, save_path=save_path, ax_in=ax_in)
+
+
+    def filter_channels(
+            self, 
+            x=None, 
+            y=None, 
+        ):
+        """"""
+
+        if (x is not None) & (y is not None):
+            mask = np.logical_and(self.channel_positions[:, 0] == x, self.channel_positions[:, 1] == y)
+        if x is not None:
+            mask = self.channel_positions[:, 0] == x
+        elif y is not None:
+            mask = self.channel_positions[:, 1] == y
+
+        subset = copy.copy(self)
+        subset.channel_positions = self.channel_positions[mask, :]
+        subset.total_channels = np.nonzero(mask)
+        subset.channels = self.channels[mask, :]
+        return subset
 
 
     def get_response(
             self, 
             stimulus, 
             time_window=(-50, 200), 
+            bin_size=1, 
         ):
         """"""
         
         stimulus = stimulus.lfp()
         sample_window = np.array(time_window) * 2.5
         num_samples = int(sample_window[1] - sample_window[0])
-        responses = np.zeros((len(self), num_samples, len(stimulus)))
+        num_bins = int(time_window[1] - time_window[0])
+        responses = np.zeros((len(self), num_bins, len(stimulus)))
         for idx, event in enumerate(stimulus):
             window = (sample_window + event.sample_onset).astype(int)
             resp = self.channels[:, window[0]:window[1]]
-            responses[:, :, idx] = resp
+            bin_idx = 0
+            for bin_pair in np.arange(0, num_samples, 5, dtype=int):
+                middle = resp[:, bin_pair + 2]  / 2
+                first_bin = (resp[:, bin_pair : bin_pair+1].mean(axis=1) + middle) / 2.5
+                second_bin = (resp[:, bin_pair+3 : bin_pair+5].mean(axis=1) + middle) / 2.5
+                responses[:, bin_idx, idx] = first_bin
+                responses[:, bin_idx+1, idx] = second_bin
+                bin_idx += 2
         return responses.mean(axis=2)
+
+
+    def _filter_freq(
+            self, 
+        ):
+        """"""
+
+        subset = copy.copy(self)
+        b, a = butter(5, 500, fs=2500, btype="low")
+        subset.channels = lfilter(b, a, self.channels)
+        return subset
 
