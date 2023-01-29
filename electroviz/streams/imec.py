@@ -83,6 +83,8 @@ class ImecLF:
             # Extract probe data.
             chan_list = np.arange(0, 384, 1)
             channels = gainCorrectIM(bnry, chan_list, meta, path + "/channels.mymemmap")
-            imec_lf.append(LFP(channels, sampling_rate))
+            channel_positions = np.load(path + "/channel_positions.npy")
+            channel_map = np.load(path + "/channel_map.npy")
+            imec_lf.append(LFP(channels[channel_map, :].squeeze(), channel_positions, sampling_rate))
         return imec_lf
 
