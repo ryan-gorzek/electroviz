@@ -15,11 +15,13 @@ class LFP:
     def __init__(
             self, 
             channels, 
+            channel_positions, 
             sampling_rate, 
         ):
         """"""
 
-        self.channels = channels[:384, :]
+        self.channels = channels
+        self.channel_positions = channel_positions
         self.sampling_rate = sampling_rate
         self.total_samples = self.channels.shape[1]
         self.total_time = self.total_samples / self.sampling_rate
