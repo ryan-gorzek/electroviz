@@ -1130,4 +1130,109 @@ def estimate_csd(lfp, coord_electrode, sigma, method='standard', diam=None,
 
     return csd, csd_filtered
 
+import scipy.signal as ss
+from glob import glob
+import numpy as np
+import os
+import sys
+from scipy.ndimage import gaussian_filter
+import quantities as pq
+import matplotlib.pyplot as plt
+
+def compute_csd(lfp, method = 'delta', gauss_filter = (1.4,0), coord_electrodes = np.linspace(0,1000E-6,26) * pq.m,\
+                diam = 800E-6 * pq.m, sigma = 0.3*pq.S/pq.m, sigma_top = 0.3*pq.S/pq.m, h = 40*1E-6*pq.m, mode = 'sim'):
+    
+    '''
+    This function computes CSD from LFP using the delta iCSD (https://doi.org/10.1016/j.jneumeth.2005.12.005)
+    Parameters
+    ---------
+        lfp : local field potential
+        method : method by which CSD is calculated in iCSD
+        gauss_filter : smoothing parameter, given in sigma
+        coord_electrodes : depth of electrodes on probe
+        diam : diameter of laterally constant CSD assumed
+        sigma : conductivity in extracellular medium
+        sigma_top : conductivity in extracellular medium at top channel
+        h : spacing between electrodes
+        mode : indicates whether it is calculated for simulation or experimental LFP
+    Returns
+    ---------
+        csd : current source density
+    '''
+
+    # simulation LFP is given in mV, while experimental LFP is given in V
+    if mode == 'sim':
+        lfp = lfp*1E-3*pq.V
+    elif mode == 'exp':
+        lfp = lfp*pq.V
+    else:
+        lfp = lfp*1E-3*pq.V
+    
+    delta_input = {
+    'lfp' : lfp,
+    'coord_electrode' : coord_electrodes,
+    'diam' : diam,
+    'sigma' : sigma,
+    'sigma_top' : sigma_top,
+    'f_type' : 'gaussian',  # gaussian filter. Not used
+    'f_order' : (0, 0),     # 3-point filter
+    }
+    
+    step_input = {
+    'lfp' : lfp,
+    'coord_electrode' : coord_electrodes,
+    'diam' : diam,
+    'h' : h,
+    'sigma' : sigma,
+    'sigma_top' : sigma_top,
+    'tol' : 1E-12,          # Tolerance in numerical integration
+    'f_type' : 'gaussian',
+    'f_order' : (3, 1),
+    }
+    
+    spline_input = {
+    'lfp' : lfp,
+    'coord_electrode' : coord_electrodes,
+    'diam' : diam,
+    'sigma' : sigma,
+    'sigma_top' : sigma_top,
+    'num_steps' : len(coord_electrodes)*4,      # Spatial CSD upsampling to N steps
+    'tol' : 1E-12,
+    'f_type' : 'gaussian',
+    'f_order' : (20, 5),
+    }
+
+    if method == 'delta':
+        csd_dict = dict(
+            delta_icsd = DeltaiCSD(**delta_input)
+        )
+    elif method == 'step':
+        csd_dict = dict(
+            step_icsd = StepiCSD(**step_input)
+        )
+    elif method == 'spline':
+        csd_dict = dict(
+            spline_icsd = SplineiCSD(**spline_input)
+        )
+        
+    #TODO: Set up the input for the other methods
+    '''elif method == 'step':
+        step_icsd = icsd.StepiCSD(**step_input),
+    elif method == 'spline':
+        spline_icsd = icsd.SplineiCSD(**spline_input),
+    elif method == 'standard':
+        std_csd = icsd.StandardCSD(**std_input),'''
+  
+
+    for method_, csd_obj in list(csd_dict.items()):
+        csd_raw = csd_obj.get_csd()
+        
+    # Converting from planar to volume density
+    if method == 'delta':
+        csd_raw = csd_raw / h
+        
+    # Apply spatial filtering
+    csd = gaussian_filter(csd_raw, sigma = gauss_filter)*csd_raw.units
+    
+    return csd
     
