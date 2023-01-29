@@ -89,7 +89,6 @@ class Spikes:
         #
         temp_channel_amps[temp_channel_amps < thresh_vals.T] = 0
         #
-        # temp_x_depths = np.sum(temp_channel_amps*channel_positions[:, 0].T, axis=1)/np.sum(temp_channel_amps, axis=1)
         y_pos = channel_positions[:, 1]
         temp_depths = np.sum(temp_channel_amps*y_pos.T, axis=1)/np.sum(temp_channel_amps, axis=1)
         temp_chans = []
