@@ -21,14 +21,16 @@ class DigitalChannel:
             self, 
             signal, 
             sampling_rate, 
-            concat_times=None, 
+            sample_start, 
+            time_start, 
         ):
         """"""
 
         # Get some basic data and parameters for easy access.
         self.signal = signal.squeeze()
         self.sampling_rate = sampling_rate
-        self.concat_times = concat_times
+        self.sample_start = sample_start
+        self.time_start = time_start
         self.total_samples = len(self.signal)
         self.total_time = self.total_samples / self.sampling_rate
         self._build_events_df()
@@ -66,33 +68,6 @@ class DigitalChannel:
         return event
 
 
-    def drop_and_rebuild(
-            self, 
-            drop_samples, 
-        ):
-        """"""
-
-        # Remove specified samples from the digital signal.
-        self.signal = np.delete(self.signal, drop_samples)
-        # Update signal parameters.
-        self.total_samples = len(self.signal)
-        self.total_time = self.total_samples / self.sampling_rate
-        # Update the event times dataframe and list of Event objects.
-        self._build_events_df()
-        self._get_events()
-        # Check for single-sample events and flip them.
-        if any(self.events["sample_duration"] == 1):
-            (idx,) = np.where(self.events["sample_duration"] == 1)
-            sample_index = self.events.at[idx[0], "sample_onset"]
-            digital_value = self.events.at[idx[0], "digital_value"]
-            if digital_value == 0:
-                self.signal[sample_index] = 1
-            elif digital_value == 1:
-                self.signal[sample_index] = 0
-            self._build_events_df()
-            self._get_events()
-
-
     def _build_events_df(
             self, 
         ):
@@ -113,11 +88,6 @@ class DigitalChannel:
         sample_offsets = np.append(sample_onsets_all[1:] - 1, [self.signal.size - 1], axis=0)
         # Get the number of samples in each pulse.
         sample_duration = (sample_offsets - sample_onsets) + 1
-        # Get the onset and offset times (in seconds) relative to the start of the recording.
-        time_onsets = self._get_sample_time(sample_onsets)
-        time_offsets = self._get_sample_time(sample_offsets)
-        # Get the duration of each pulse in seconds.
-        time_duration = time_offsets - time_onsets
         # Get the value of each pulse by taking the mean of each range (onset, offset).
         value_array = np.zeros((sample_onsets.size,), dtype=int)
         for idx, (onset, offset) in enumerate(zip(sample_onsets, sample_offsets)):
@@ -131,12 +101,9 @@ class DigitalChannel:
 
         # Add signal parameters to a dictionary:
         events_dict = {
-            "sample_onset" :    sample_onsets,   # (# of samples to onset from sample 0, the start of recording)
-            "sample_offset" :   sample_offsets,  # (# of samples to onset from sample 0, the start of recording)
+            "sample_onset" :    sample_onsets + self.sample_start,   # (# of samples to onset from sample 0, the start of recording)
+            "sample_offset" :   sample_offsets + self.sample_start,  # (# of samples to onset from sample 0, the start of recording)
             "sample_duration" : sample_duration, # (# of samples from onset to offset, inclusive)
-            "time_onset" :      time_onsets,     # (seconds to sample onset, from time 0, the start of recording)
-            "time_offset" :     time_offsets,    # (seconds to sample onset, from time 0, the start of recording)
-            "time_duration" :   time_duration,   # (seconds from onset to offset, ???)
             "digital_value" :   value_array,     # (0 or 1, should alternate when there is no blank)
                         }
         # Create dataframe.
@@ -153,18 +120,6 @@ class DigitalChannel:
         for row in self.events.itertuples():
             self._Events.append(Event(*row))
         return None
-
-
-    def _get_sample_time(
-            self, 
-            sample_num, 
-        ):
-        """"""
-
-        sample_length = 1/self.sampling_rate
-        sample_times_all = np.arange(0, self.total_time, sample_length, dtype=float)
-        sample_times = sample_times_all[sample_num]
-        return sample_times
 
 
     def _get_time_sample(
@@ -212,7 +167,8 @@ class SyncChannel(DigitalChannel):
             self, 
             signal, 
             sampling_rate, 
-            concat_times=None, 
+            sample_start, 
+            time_start, 
         ):
         """
 
@@ -220,5 +176,6 @@ class SyncChannel(DigitalChannel):
 
         super().__init__(signal, 
                          sampling_rate, 
-                         concat_times=None)
+                         sample_start, 
+                         time_start)
 
