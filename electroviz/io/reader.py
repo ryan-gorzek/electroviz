@@ -82,13 +82,15 @@ def read_Kilosort(
     kilosort_dicts = []
     for path in kilosort_paths:
         # Read Kilosort spike data into numpy arrays.
-        kilosort_names = ["spike_clusters.npy", "spike_times.npy", "cluster_group.tsv", 
-                        "templates.npy", "whitening_mat_inv.npy", "channel_positions.npy", 
-                        "spike_templates.npy", "amplitudes.npy"]
+        kilosort_names = ["spike_clusters.npy", "spike_times.npy", "cluster_info.tsv", 
+                          "templates.npy", "whitening_mat_inv.npy", "channel_positions.npy", 
+                          "spike_templates.npy", "amplitudes.npy"]
         kilosort_dict = {}
         for fname in kilosort_names:
             key, ext = Path(fname).stem, Path(fname).suffix
-            if "tsv" in ext:
+            if "cluster_info" in key:
+                kilosort_dict[key] = np.loadtxt(path + "/" + fname, dtype=str, skiprows=1, usecols=10)
+            elif "tsv" in ext:
                 kilosort_dict[key] = np.loadtxt(path + "/" + fname, dtype=str, skiprows=1, usecols=1)
             else:
                 kilosort_dict[key] = np.load(path + "/" + fname)
@@ -128,8 +130,15 @@ def read_NIDAQ(
 
     metadata_paths = glob.glob(nidaq_path + "/*.nidq.meta")
     binary_paths = glob.glob(nidaq_path + "/*.nidq.bin")
+    meta_paths, bnry_paths = [], []
+    for gate in nidaq_gates:
+        gate_id = "ephys_g{0}_t0".format(gate)
+        for meta, bnry in zip(metadata_paths, binary_paths):
+            if (gate_id in meta) and (gate_id in bnry):
+                meta_paths.append(meta)
+                bnry_paths.append(bnry)
     nidaq_metadata, nidaq_binary = [], []
-    for meta, bnry in zip(metadata_paths, binary_paths):
+    for meta, bnry in zip(meta_paths, bnry_paths):
         nidaq_metadata.append(readMeta(meta))
         nidaq_binary.append(makeMemMapRaw(bnry, nidaq_metadata[-1]))
     return nidaq_binary, nidaq_metadata
