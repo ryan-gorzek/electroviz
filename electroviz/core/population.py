@@ -51,7 +51,9 @@ class Population:
         self.units = pd.DataFrame()
         self.units["unit_id"] = np.arange(0, self.total_units)
         self.units["quality"] = self._Spikes.cluster_quality
-        self.units["depth"] = self._Spikes.cluster_depths
+        self.units["peak_channel"] = np.array(self._Spikes.peak_channels)
+        self.units["x_position"] = np.array(self._Spikes.cluster_positions)[:, 0]
+        self.units["y_position"] = np.array(self._Spikes.cluster_positions)[:, 1]
         self.units["total_spikes"] = self.spike_times.getnnz(1)
         self.units["spike_rate"] = self.units["total_spikes"] / self._Sync.total_time
         # Define current index for iteration.
@@ -123,14 +125,38 @@ class Population:
             save_path="", 
             ax_in=None, 
             responses=None, 
+            depth_norm=False, 
         ):
         """"""
         
         if responses is None:
             self._responses = self.get_response(stimulus, time_window, bin_size=bin_size)
+            plot_responses = self._responses
         else:
             self._responses = responses
-        Raster(time_window, self._responses, ylabel="Unit", fig_size=fig_size, save_path=save_path, ax_in=ax_in)
+            plot_responses = responses
+
+        if depth_norm is True:
+            _, peak_counts = np.unique(self.units["peak_channel"], return_counts=True)
+            max_count = np.max(peak_counts)
+            depth_responses = np.zeros((max_count*382, plot_responses.shape[1]))
+            depth_starts = np.arange(0, max_count*382, max_count)
+            channel_idx, prev_channel = 0, 0
+            for idx, (resp, depth) in enumerate(zip(plot_responses, self.units["peak_channel"])):
+                if idx == 0:
+                    mat_idx = 0
+                    prev_channel = 0
+                    channel_idx += 1
+                elif prev_channel == int(depth):
+                    mat_idx = depth_starts[int(depth)] + channel_idx
+                    channel_idx += 1
+                else:
+                    prev_channel = int(depth)
+                    channel_idx = 0
+                    mat_idx = depth_starts[int(depth)] + channel_idx
+                depth_responses[mat_idx, :] = resp
+            plot_responses = depth_responses
+        Raster(time_window, plot_responses, ylabel="Unit", fig_size=fig_size, save_path=save_path, ax_in=ax_in)
 
 
     def get_response(
