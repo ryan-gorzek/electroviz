@@ -28,7 +28,7 @@ class Probe:
         """"""
 
         self._Sync = sync
-        self.channels = lfp.channels
+        self.channels = lfp.channels[::-1, :]
         self.channel_positions = lfp.channel_positions
         self.sampling_rate = lfp.sampling_rate
         self.total_samples = lfp.total_samples
@@ -74,18 +74,26 @@ class Probe:
     def plot_CSD(
             self, 
             stimulus, 
+            subtract=False, 
         ):
         """"""
 
         chan_mask = self.filter_channels(x=43).channel_positions[:, 1] <= 1000
-        channels = self.filter_channels(x=43)._filter_freq().get_response(stimulus, time_window=(0, 100))
+        channels = self.filter_channels(x=43)._filter_freq().get_response(stimulus, time_window=(-50, 100))
         chans_in = channels[chan_mask, :]
+        if subtract is True:
+            chans_in = chans_in[:, 50:].T - chans_in[:, :50].mean(axis=1)
+        else:
+            chans_in = chans_in[:, 50:].T
         contacts = np.linspace(0, 1000E-6, 25)*pq.m
-        csd = compute_csd(chans_in, coord_electrodes=contacts, mode="exp", gauss_filter=(1.4, 0), diam=800E-6 * pq.m)
+        csd = compute_csd(chans_in.T, coord_electrodes=contacts, mode="exp", gauss_filter=(1.4, 0), diam=800E-6 * pq.m)
 
         mpl_use("Qt5Agg")
         fig, ax = plt.subplots()
-        ax.imshow(zscore(np.array(csd), axis=1), cmap="RdBu_r", aspect=5)
+        if subtract is True:
+            ax.imshow(csd, cmap="RdBu_r", aspect=5, clim=(-200, 200))
+        else:
+            ax.imshow(zscore(np.array(csd), axis=1), cmap="RdBu_r", aspect=5)
         ax.set_xticks(np.arange(0, 101, 10))
         ax.set_xticklabels(np.arange(0, 101, 10))
         ax.set_yticks(np.arange(0, 25, 5))
@@ -113,6 +121,26 @@ class Probe:
         fig, ax = plt.subplots()
         ax.plot(powers, np.arange(0, powers.size, 1))
         plt.show(block=False)
+
+
+    def plot_channels(
+            self, 
+            stimulus, 
+            time_window=(-50, 200), 
+            yscale="Depth", 
+            fig_size=(6, 9), 
+            save_path="", 
+        ):
+        """"""
+
+        responses = self.get_response(stimulus, time_window)
+
+        mpl_use("Qt5Agg")
+        fig, ax = plt.subplots()
+        for idx, resp in enumerate(responses[::-2]):
+            ax.plot(range(*time_window), zscore(resp) + idx, color="k")
+        plt.show(block=False)
+
 
     def plot_raster(
             self, 
