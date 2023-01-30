@@ -25,18 +25,4 @@ class LFP:
         self.sampling_rate = sampling_rate
         self.total_samples = self.channels.shape[1]
         self.total_time = self.total_samples / self.sampling_rate
-        
-
-    def drop_and_rebuild(
-            self, 
-            drop_samples, 
-        ):
-        """"""
-
-        # Create column (sample) logical index from sample indices.
-        col_mask = np.ones(self.total_samples, dtype=bool)
-        col_mask[drop_samples] = False
-        self.total_samples += -len(drop_samples)
-        self.channels = self.channels[:, col_mask]
-        return None
 
