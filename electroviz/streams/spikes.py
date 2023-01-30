@@ -30,23 +30,9 @@ class Spikes:
         # Store Kilosort quality labels.
         self.cluster_quality = kilosort_dict["cluster_group"]
         # Get depth (along the probe) of each spike.
-        self.cluster_depths = self._get_cluster_depths(kilosort_dict["templates"], kilosort_dict["whitening_mat_inv"], 
-                                                       kilosort_dict["channel_positions"], kilosort_dict["spike_templates"], 
-                                                       kilosort_dict["amplitudes"], kilosort_dict["spike_clusters"])
-
-
-    def drop_and_rebuild(
-            self, 
-            drop_samples, 
-        ):
-        """"""
-
-        # Create column (sample) logical index from sample indices.
-        col_mask = np.ones(self.total_samples, dtype=bool)
-        col_mask[drop_samples] = False
-        self.total_samples += -len(drop_samples)
-        self.spike_times = self.spike_times[:, col_mask]
-        return None
+        self.peak_channels, self.cluster_positions = self._get_cluster_locations(kilosort_dict["templates"], kilosort_dict["whitening_mat_inv"], 
+                                                                                 kilosort_dict["channel_positions"], kilosort_dict["spike_templates"], 
+                                                                                 kilosort_dict["amplitudes"], kilosort_dict["spike_clusters"])
 
 
     def _build_spike_times_matrix(
@@ -65,7 +51,7 @@ class Spikes:
         return spike_times_matrix
 
 
-    def _get_cluster_depths(
+    def _get_cluster_locations(
             self, 
             templates, 
             inv_whitening_matrix, 
@@ -100,13 +86,16 @@ class Spikes:
             except:
                 temp_chans.append(np.nan)
         spike_depths = np.array(temp_chans)[spike_templates]
-        # Map spike depths to cluster depths.
-        cluster_depths = []
+        # Map spike depths to cluster peak channels and depths.
+        peak_channels, cluster_positions = [], []
         for cluster in range(self.total_units):
             if cluster in spike_clusters:
                 cluster_idx = spike_clusters == cluster
-                cluster_depths.append(np.nanmean(spike_depths[cluster_idx]))
+                peak_channel = int(np.nanmean(spike_depths[cluster_idx]))
+                peak_channels.append(peak_channel)
+                cluster_positions.append(channel_positions[peak_channel, :])
             else:
-                cluster_depths.append(np.nan)
-        return cluster_depths
+                peak_channels.append(np.nan)
+                cluster_positions.append(np.array([np.nan, np.nan]))
+        return peak_channels, cluster_positions
 
