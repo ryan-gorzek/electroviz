@@ -6,6 +6,7 @@
 
 import numpy as np
 from scipy.interpolate import interp1d
+import copy
 
 def align_sync(
         nidaq, 
@@ -15,8 +16,10 @@ def align_sync(
 
     imec_onsets = np.array(imec_sync.events["sample_onset"])
     imec_offsets = np.array(imec_sync.events["sample_offset"])
+    print(imec_onsets.size, imec_offsets.size)
     prev_onsets, prev_offsets = 0, 0
-    for ni in nidaq:
+    nidq = copy.deepcopy(nidaq)
+    for ni in nidq:
 
         ni_onsets = np.array(ni[0].events["sample_onset"])
         ni_offsets = np.array(ni[0].events["sample_offset"])
@@ -32,4 +35,6 @@ def align_sync(
         prev_onsets += ni_onsets.size
         prev_offsets += ni_offsets.size
 
-    return nidaq
+    print(prev_onsets, prev_offsets)
+
+    return nidq
