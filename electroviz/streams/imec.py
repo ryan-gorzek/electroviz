@@ -42,7 +42,7 @@ class ImecAP:
                                          0, 
                                          [sync_line], 
                                          meta)
-            imec_ap.append(SyncChannel(sync_signal, sampling_rate))
+            imec_ap.append(SyncChannel(sync_signal, sampling_rate, 0, 0.0))
         return imec_ap
 
 
@@ -79,7 +79,7 @@ class ImecLF:
                                          0, 
                                          [sync_line], 
                                          meta)
-            imec_lf.append(SyncChannel(sync_signal, sampling_rate))
+            imec_lf.append(SyncChannel(sync_signal, sampling_rate, 0, 0.0))
             # Extract probe data.
             chan_list = np.arange(0, 384, 1)
             channels = gainCorrectIM(bnry, chan_list, meta, path + "/channels.mymemmap")
