@@ -289,6 +289,7 @@ class StaticGratingsKernel(Kernel):
             stimulus, 
             time_window=(-50, 200), 
             bin_size=5, 
+            avg_gratings=False, 
         ):
         """"""
         
@@ -303,6 +304,8 @@ class StaticGratingsKernel(Kernel):
         num_samples = int(sample_window[1] - sample_window[0])
         self.response_windows = [(on, on + bin_size) for on in np.arange(*self.time_window, self.bin_size)]
         self.kerns, self.norms = self._compute_kernels(self.response_windows)
+        if avg_gratings is True:
+            self.avg_gratings = self._compute_average_gratings(self.response_windows, self.norms)
 
 
     def plot_raw(
@@ -412,6 +415,22 @@ class StaticGratingsKernel(Kernel):
             fig.set_size_inches(6, 6)
 
 
+
+    def plot_average_gratings(
+            self, 
+            ax_in=None, 
+        ):
+        """"""
+
+        if ax_in is None:
+            mpl_use("Qt5Agg")
+            fig, ax = plt.subplots()
+        else:
+            ax = ax_in
+        ax.imshow(self.avg_gratings)
+        ax.axis("off")
+        plt.show(block=False)
+
     def _compute_kernels(
             self, 
             response_windows, 
@@ -432,14 +451,21 @@ class StaticGratingsKernel(Kernel):
         return orisfs, orisf_norms
 
 
-    def _generate_grating(
+    def _compute_average_gratings(
             self, 
-            event, 
+            response_windows, 
+            norms, 
         ):
         """"""
 
-        x, y = np.meshgrid(np.arange(300), np.arange(300))
-        gradient = np.sin(event.ori * math.pi / 180) * x - np.cos(event.ori * math.pi / 180) * y
-        grating = np.sin((2 * math.pi * gradient) / event.sf + (event.phase * math.pi) / 180)
-        return grating
+        gratings = self._Stimulus.gratings
+        gratings_mult = []
+        if not all((np.isinf(self.norms) | np.isnan(self.norms))):
+            (t,) = np.where(self.norms == self.norms.max())
+            resp_on, resp_off = self._time_to_bins(response_windows[t[0]])
+            for idx, stim_indices in enumerate(np.ndindex(self._Stimulus.shape[:2])):
+                resp_rate = self._responses[resp_on:resp_off, *stim_indices, :, :].mean(axis=(0, 1, 2))
+                mult = gratings[idx, :, :] * resp_rate 
+                gratings_mult.append(mult)
+        return np.array(gratings_mult).mean(axis=0)
 
