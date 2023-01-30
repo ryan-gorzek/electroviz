@@ -10,6 +10,8 @@ import copy
 from warnings import warn
 from electroviz.core.event import Event
 import copy
+import glob
+from PIL import Image
 
 class Stimulus:
     """
@@ -108,42 +110,24 @@ class VisualStimulus(Stimulus):
                         )
 
         # Stack photodiode and vstim dataframes for AP.
-        vstim_events, event_idx = self._map_btss_vstim(self._VStim)
-        photodiode_events = self._Photodiode.events.iloc[event_idx].reset_index()
-        photodiode_events.drop(columns=["index"], inplace=True)
-        self.events = pd.concat((photodiode_events, vstim_events), axis=1)
+        vstim_events = self._map_btss_vstim(self._VStim)
+        self.events = pd.concat((self._Photodiode.events, vstim_events), axis=1)
 
         # Stack photodiode and vstim dataframes for LF.
         if nidaq_lf is not None:
-            vstim_events, event_idx = self._map_btss_vstim(self._VStim, lf=True)
-            photodiode_events_lf = self._Photodiode_.events.iloc[event_idx].reset_index()
-            photodiode_events_lf.drop(columns=["index"], inplace=True)
-            self._events_ = pd.concat((photodiode_events_lf, vstim_events), axis=1)
+            vstim_events = self._map_btss_vstim(self._VStim)
+            self._events_ = pd.concat((self._Photodiode_.events, vstim_events), axis=1)
 
     def _map_btss_vstim(
             self, 
             vstim, 
-            lf=False, 
         ):
         """"""
 
-        if lf is True:
-            pc_clock = self._PC_Clock_
-        else:
-            pc_clock = self._PC_Clock
         # Define stimulus parameters from rig log to keep.
         param_names = ["contrast", "posx", "posy", "ori", "sf", "phase", "tf", "itrial", "istim"]
-        # Correct bTsS times for concatenation.
-        if pc_clock.concat_times is not None:
-            concat_time = pc_clock.concat_times[vstim.index]
-        else:
-            concat_time = 0.0
-        concat_idx = np.where(pc_clock.events["time_onset"] >= concat_time)[0][0]
-        num_events = vstim.events.shape[0]
-        event_idx = np.arange(concat_idx, concat_idx + num_events, 1)
-        # Create a dataframe from the visual stimuli parameters.
         vstim_df_mapped = vstim.events[param_names]
-        return vstim_df_mapped, event_idx
+        return vstim_df_mapped
 
 
     def _get_events(
@@ -252,6 +236,7 @@ class StaticGratings(VisualStimulus):
         self._get_events(params=["ori", "sf", "phase", "itrial"])
         self._get_shape(params=["ori", "sf", "phase", "itrial"])
         self._get_unique()
+        self._get_gratings()
 
 
     def _get_unique(
@@ -265,6 +250,20 @@ class StaticGratings(VisualStimulus):
                 for phase in sorted(np.unique(self.events["phase"])):
                     self.unique.append((ori, sf, phase))
         return None
+
+    
+    def _get_gratings(
+            self, 
+            path="E:/random_gratings/*.png", 
+        ):
+        """"""
+
+        gratings_files = glob.glob(path)
+        self.gratings = []
+        for grat in gratings_files[1::8]:
+            img = Image.open(grat).convert("RGBA")
+            self.gratings.append(np.array(img))
+        self.gratings = np.array(self.gratings)
 
 
 
@@ -343,10 +342,9 @@ class OptogeneticStimulus(Stimulus):
                         )
 
         # Stack photodiode and vstim dataframes.
-        vstim_events, event_idx = self._map_btss_vstim(self._VStim)
-        photodiode_events = self._Photodiode.events.iloc[event_idx].reset_index()
-        photodiode_events.drop(columns=["index"], inplace=True)
-        self.events = pd.concat((photodiode_events, vstim_events), axis=1)
+        vstim_events = self._map_btss_vstim(self._VStim)
+        self.events = pd.concat((self._Photodiode.events, vstim_events), axis=1)
+        print(self._Photodiode.events, vstim_events, self.events)
 
 
     def _map_btss_vstim(
@@ -357,17 +355,8 @@ class OptogeneticStimulus(Stimulus):
 
         # Define stimulus parameters from rig log to keep.
         param_names = ["contrast", "posx", "posy", "ori", "sf", "phase", "tf", "itrial", "istim"]
-        # Correct bTsS times for concatenation.
-        if self._PC_Clock.concat_times is not None:
-            concat_time = self._PC_Clock.concat_times[vstim.index]
-        else:
-            concat_time = 0.0
-        concat_idx = np.where(self._PC_Clock.events["time_onset"] >= concat_time)[0][0]
-        num_events = vstim.events.shape[0]
-        event_idx = np.arange(concat_idx, concat_idx + num_events, 1)
-        # Create a dataframe from the visual stimuli parameters.
         vstim_df_mapped = vstim.events[param_names]
-        return vstim_df_mapped, event_idx
+        return vstim_df_mapped
 
 
     def _get_events(
