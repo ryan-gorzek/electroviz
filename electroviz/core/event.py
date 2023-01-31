@@ -17,9 +17,6 @@ class Event(NamedTuple):
     sample_onset: int = None
     sample_offset: int = None
     sample_duration: int = None
-    time_onset: float  = None
-    time_offset: float = None
-    time_duration: float = None
     digital_value: int = None
     contrast: int = None
     posx: int = None
