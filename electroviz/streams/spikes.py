@@ -21,18 +21,20 @@ class Spikes:
         """"""
 
         # Get the total number of units identified by Kilosort (index starts at 0).
-        self.total_units = int(np.max(kilosort_dict["spike_clusters"]) + 1)
+        self.total_units = np.unique(kilosort_dict["spike_clusters"]).size
         # Get the total number of samples in recording, passed from Imec data.
         self.total_samples = total_imec_samples
         # Build (sparse) spike times matrix in compressed sparse column format.
         self.spike_times = self._build_spike_times_matrix(kilosort_dict["spike_clusters"].squeeze(), 
                                                           kilosort_dict["spike_times"].squeeze())
+        print(self.spike_times.size)
         # Store Kilosort quality labels.
-        self.cluster_quality = kilosort_dict["cluster_group"]
+        self.cluster_quality = kilosort_dict["cluster_info"]
         # Get depth (along the probe) of each spike.
         self.peak_channels, self.cluster_positions = self._get_cluster_locations(kilosort_dict["templates"], kilosort_dict["whitening_mat_inv"], 
                                                                                  kilosort_dict["channel_positions"], kilosort_dict["spike_templates"], 
                                                                                  kilosort_dict["amplitudes"], kilosort_dict["spike_clusters"])
+        self.kilosort_dict = kilosort_dict
 
 
     def _build_spike_times_matrix(
@@ -43,11 +45,13 @@ class Spikes:
         """"""
 
         # Create a units-by-samples scipy sparse coordinate matrix to store spike times.
-        full_shape = (self.total_units, self.total_samples)
+        full_shape = (spike_clusters.max() + 1, self.total_samples)
         row_idx = spike_clusters
         col_idx = spike_times
         data = np.ones((spike_times.size,))
         spike_times_matrix = sparse.csr_matrix((data, (row_idx, col_idx)), shape=full_shape, dtype=bool)
+        mask = np.array([clust for clust in np.arange(0, spike_clusters.max() + 1, 1) if clust in spike_clusters])
+        spike_times_matrix = spike_times_matrix[mask, :]
         return spike_times_matrix
 
 
