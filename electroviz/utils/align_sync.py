@@ -27,6 +27,11 @@ def align_sync(
         im_offsets = imec_offsets[prev_offsets : prev_offsets + ni_offsets.size]
 
         ni_correct = interp1d(ni_offsets, im_offsets, fill_value="extrapolate")
+
+        # if imec_onsets[0] < imec_offsets[0]:
+        #     ni_correct = interp1d(ni_offsets, im_offsets, fill_value="extrapolate")
+        # else:
+        #     ni_correct = interp1d(ni_offsets, im_offsets, fill_value="extrapolate")
         
         for ni_signal in ni:
             ni_signal.events["sample_onset"] = ni_correct(np.array(ni_signal.events["sample_onset"]))
