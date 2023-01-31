@@ -89,7 +89,7 @@ def read_Kilosort(
         for fname in kilosort_names:
             key, ext = Path(fname).stem, Path(fname).suffix
             if "cluster_info" in key:
-                kilosort_dict[key] = np.loadtxt(path + "/" + fname, dtype=str, skiprows=1, usecols=10)
+                kilosort_dict[key] = np.loadtxt(path + "/" + fname, dtype=str, skiprows=1, usecols=3)
             elif "tsv" in ext:
                 kilosort_dict[key] = np.loadtxt(path + "/" + fname, dtype=str, skiprows=1, usecols=1)
             else:
