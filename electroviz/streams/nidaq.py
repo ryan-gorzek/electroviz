@@ -61,7 +61,8 @@ class NIDAQ:
                         for ev_idx in event_idx:
                             sample_idx = channel.events["sample_onset"][ev_idx]
                             digital_signal = channel.signal
-                            digital_signal[sample_idx - 4] = 1 - channel.events["digital_value"][ev_idx]
+                            for sample in range(5):
+                                digital_signal[sample_idx - sample] = 1 - channel.events["digital_value"][ev_idx]
                         channel = DigitalChannel(digital_signal, sampling_rate, sample_start, time_start)
                     gate.append(channel)
             nidaq.append(gate)
