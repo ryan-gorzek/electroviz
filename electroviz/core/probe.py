@@ -91,7 +91,7 @@ class Probe:
         mpl_use("Qt5Agg")
         fig, ax = plt.subplots()
         if subtract is True:
-            ax.imshow(csd, cmap="RdBu_r", aspect=5, clim=(-200, 200))
+            ax.imshow(csd, cmap="RdBu_r", aspect=5, clim=(-350, 350))
         else:
             ax.imshow(zscore(np.array(csd), axis=1), cmap="RdBu_r", aspect=5)
         ax.set_xticks(np.arange(0, 101, 10))
