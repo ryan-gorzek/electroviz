@@ -49,8 +49,8 @@ class Experiment:
         self.kilosort = Kilosort(imec_dir, total_ap_samples)
 
         print("Aligning Syncs...")
-        self.nidaq_ap = align_sync(nidaq, self.imec_ap[0])
-        self.nidaq_lf = align_sync(nidaq, self.imec_lf[0])
+        self.nidaq_ap = align_sync(nidaq, self.imec_ap[0], nidaq_dir, type="AP")
+        self.nidaq_lf = align_sync(nidaq, self.imec_lf[0], nidaq_dir, type="LF")
 
         print("Creating Stimuli...")
         stimuli = []
