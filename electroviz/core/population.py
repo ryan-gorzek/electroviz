@@ -49,7 +49,7 @@ class Population:
             self._Units.append(unit)
         # Populate unit metrics dataframe.
         self.units = pd.DataFrame()
-        self.units["unit_id"] = np.arange(0, self.total_units)
+        self.units["unit_id"] = self._Spikes.cluster_id
         self.units["quality"] = self._Spikes.cluster_quality
         self.units["peak_channel"] = np.array(self._Spikes.peak_channels)
         self.units["x_position"] = np.array(self._Spikes.cluster_positions)[:, 0]
