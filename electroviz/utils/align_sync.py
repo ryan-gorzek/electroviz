@@ -11,12 +11,18 @@ import copy
 def align_sync(
         nidaq, 
         imec_sync, 
+        nidaq_path, 
+        type, 
     ):
     """"""
 
-    imec_onsets = np.array(imec_sync.events["sample_onset"])
-    imec_offsets = np.array(imec_sync.events["sample_offset"])
-    print(imec_onsets.size, imec_offsets.size)
+    if type == "AP":
+        imec_onsets = np.loadtxt(nidaq_path + "/ap_onsets.csv")
+        imec_offsets = np.loadtxt(nidaq_path + "/ap_offsets.csv")
+    elif type == "LF":
+        imec_onsets = np.loadtxt(nidaq_path + "/lf_onsets.csv")
+        imec_offsets = np.loadtxt(nidaq_path + "/lf_offsets.csv")   
+
     prev_onsets, prev_offsets = 0, 0
     nidq = copy.deepcopy(nidaq)
     for ni in nidq:
@@ -27,11 +33,6 @@ def align_sync(
         im_offsets = imec_offsets[prev_offsets : prev_offsets + ni_offsets.size]
 
         ni_correct = interp1d(ni_offsets, im_offsets, fill_value="extrapolate")
-
-        # if imec_onsets[0] < imec_offsets[0]:
-        #     ni_correct = interp1d(ni_offsets, im_offsets, fill_value="extrapolate")
-        # else:
-        #     ni_correct = interp1d(ni_offsets, im_offsets, fill_value="extrapolate")
         
         for ni_signal in ni:
             ni_signal.events["sample_onset"] = ni_correct(np.array(ni_signal.events["sample_onset"]))
@@ -39,7 +40,5 @@ def align_sync(
 
         prev_onsets += ni_onsets.size
         prev_offsets += ni_offsets.size
-
-    print(prev_onsets, prev_offsets)
 
     return nidq
