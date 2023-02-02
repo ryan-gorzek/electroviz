@@ -14,7 +14,7 @@ plt.rcParams["ytick.major.size"] = 8
 plt.rcParams["ytick.major.width"] = 1
 from scipy.stats import zscore
 
-class Raster:
+class RateRaster:
     """
 
     """
@@ -47,8 +47,52 @@ class Raster:
         ax.set_xticks(np.linspace(0, responses.shape[1], 6))
         ax.set_xticklabels(np.linspace(*time_window, 6))
         ax.set_xlabel("Time from Onset (ms)", fontsize=16)
-        ax.set_yticks(np.arange(0, responses.shape[0] - 1, 20))
-        ax.set_yticklabels(np.arange(0, responses.shape[0] - 1, 20, dtype=int))
+        ax.set_yticks(np.arange(0, responses.shape[0] - 1, 40))
+        ax.set_yticklabels(np.arange(0, responses.shape[0] - 1, 40, dtype=int))
+        ax.set_ylabel(ylabel, fontsize=16)
+        if yscale is not None:
+            yticks = ax.get_yticks()
+            ax.set_yticklabels(yscale[yticks])
+        if ax_in is None:
+            plt.show(block=False)
+            plt.tight_layout()
+            fig.set_size_inches(*fig_size)
+            if save_path != "":
+                fig.savefig(save_path, bbox_inches="tight")
+
+
+class SpikeRaster:
+    """
+
+    """
+
+
+    def __new__(
+            self, 
+            time_window, 
+            spikes, 
+            ylabel="", 
+            yscale=None, 
+            fig_size=(6, 9), 
+            save_path="", 
+            ax_in=None, 
+        ):
+        """"""
+
+        if ax_in is None:
+            mpl_use("Qt5Agg")
+            fig, ax = plt.subplots()
+        else:
+            ax = ax_in
+        spike_idx = []
+        for event in spikes:
+            spike_idx.append(np.where(event)[0])
+        plt.eventplot(spike_idx, color="k")
+        ax.set_xticks(np.linspace(0, spikes.shape[1], 6))
+        ax.set_xticklabels(np.linspace(*time_window, 6))
+        ax.set_xlabel("Time from Onset (ms)", fontsize=16)
+        ax.set_yticks(np.arange(0, spikes.shape[0] - 1, 40))
+        ax.set_yticklabels(np.arange(0, spikes.shape[0] - 1, 40, dtype=int))
         ax.set_ylabel(ylabel, fontsize=16)
         if yscale is not None:
             yticks = ax.get_yticks()
