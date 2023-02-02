@@ -14,6 +14,7 @@ import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 from electroviz.viz.psth import PSTH
 import math
+from scipy.ndimage import gaussian_filter
 
 class Kernel:
     """
@@ -133,8 +134,8 @@ class SparseNoiseKernel(Kernel):
             elif type == "valley":
                 (ON_t,) = np.where(self.ON_norms == self.ON_norms.min())
                 (OFF_t,) = np.where(self.OFF_norms == self.OFF_norms.min())
-            ON = self.ONs[ON_t[0], :, :].squeeze()
-            OFF = self.OFFs[ON_t[0], :, :].squeeze()
+            ON = gaussian_filter(self.ONs[ON_t[0], :, :].squeeze(), 1)
+            OFF = gaussian_filter(self.OFFs[ON_t[0], :, :].squeeze(), 1)
             DIFF = ON - OFF
             clim = [np.minimum(ON.min(), OFF.min()), np.maximum(ON.max(), OFF.max())]
             clim_diff = [DIFF.min(), DIFF.max()]
@@ -328,7 +329,7 @@ class StaticGratingsKernel(Kernel):
                 (t,) = np.where(self.norms == self.norms.max())
             elif type == "valley":
                 (t,) = np.where(self.norms == self.norms.min())
-            orisf = self.kerns[t[0], :, :].squeeze()
+            orisf = gaussian_filter(self.kerns[t[0], :, :].squeeze(), 1)
             clim = [orisf.min(), orisf.max()]
         else:
             t = None
