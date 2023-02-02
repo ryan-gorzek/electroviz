@@ -8,8 +8,9 @@ import numpy as np
 from matplotlib import use as mpl_use
 import matplotlib.pyplot as plt
 from electroviz.viz.psth import PSTH
-from electroviz.viz.raster import Raster
+from electroviz.viz.raster import SpikeRaster
 from electroviz.viz.summary import UnitSummary
+from phylib.io.model import load_model
 
 class Unit:
     """
@@ -20,6 +21,7 @@ class Unit:
     def __init__(
             self, 
             unit_id, 
+            peak_channel, 
             imec_sync, 
             kilosort_spikes, 
             population, 
@@ -27,6 +29,7 @@ class Unit:
         """"""
         
         self.ID = unit_id
+        self.peak_channel = peak_channel
         self._Sync = imec_sync
         self._Spikes = kilosort_spikes
         self._Population = population
@@ -52,14 +55,12 @@ class Unit:
             self, 
             stimulus, 
             time_window=(-50, 200), 
-            bin_size=5, 
-            zscore=False, 
             ax_in=None, 
         ):
         """"""
 
-        responses = self.get_response(stimulus, time_window, bin_size=bin_size)
-        Raster(time_window, responses, ylabel="Stimulus Event", z_score=zscore, ax_in=ax_in)
+        spikes = self.get_spikes(stimulus, time_window)
+        SpikeRaster(time_window, spikes, ylabel="Stimulus Event", ax_in=ax_in)
 
 
     def plot_summary(
@@ -70,6 +71,20 @@ class Unit:
         """"""
 
         UnitSummary(self, stimuli, kernels)
+
+
+    def plot_waveforms(
+            self, 
+            path="", 
+            ax_in=None, 
+        ):
+        """"""
+
+        mpl_use("Qt5Agg")
+        waveforms = self.get_waveforms(path=path)
+        fig, ax = plt.subplots()
+        ax.plot(waveforms.T, color=(0.2, 0.2, 0.9, 0.5))
+        plt.show(block=False)
 
 
     def get_response(
@@ -93,6 +108,43 @@ class Unit:
         return responses
 
 
+    def get_spikes(
+            self, 
+            stimulus, 
+            time_window=(-50, 200), 
+        ):
+        """"""
+
+        sample_window = np.array(time_window) * 30
+        num_samples = int(sample_window[1] - sample_window[0])
+        spikes = np.zeros((len(stimulus), num_samples))
+        for idx, event in enumerate(stimulus):
+            window = (sample_window + event.sample_onset).astype(int)
+            spk = self.get_spike_times(sample_window=window)
+            spikes[idx, :] = spk
+        return spikes
+
+
+    def get_waveforms(
+            self, 
+            path="", 
+        ):
+        """"""
+
+        # First, we load the TemplateModel.
+        model = load_model(path)  # first argument: path to params.py
+        # We obtain the cluster id from the command-line arguments.
+        cluster_id = int(self.ID)  # second argument: cluster index
+        # We get the waveforms of the cluster.
+        waveforms = model.get_cluster_spike_waveforms(cluster_id)
+        n_spikes, n_samples, n_channels_loc = waveforms.shape
+        # We get the channel ids where the waveforms are located.
+        channel_ids = model.get_cluster_channels(cluster_id)
+        # Get the waveforms from the peak channel.
+        (peak_idx,) = np.where(channel_ids == self.peak_channel)[0]
+        return waveforms[::100, :, peak_idx]
+
+
     def add_metric(
             self, 
             metric_name, 
@@ -114,7 +166,8 @@ class Unit:
         
         if self.spike_times.shape[0] == 0:
             spike_times_matrix = self._Spikes.spike_times.tocsr()
-            self.spike_times = spike_times_matrix[self.ID].tocsc()
+            (unit_idx,) = np.where(self._Population.units["unit_id"] == self.ID)[0]
+            self.spike_times = spike_times_matrix[unit_idx].tocsc()
         if (sample_window[0] is None) & (sample_window[1] is None):
             return self.spike_times[0, :].toarray().squeeze()
         else:
