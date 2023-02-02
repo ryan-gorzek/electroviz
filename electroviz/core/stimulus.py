@@ -335,66 +335,20 @@ class OptogeneticStimulus(Stimulus):
         ):
         """"""
 
-        super().__init__(
-                         btss=btss, 
-                         nidaq_ap=nidaq_ap, 
-                         nidaq_lf=nidaq_lf, 
-                        )
-
-        # Stack photodiode and vstim dataframes.
-        vstim_events = self._map_btss_vstim(self._VStim)
-        self.events = pd.concat((self._Photodiode.events, vstim_events), axis=1)
-        print(self._Photodiode.events, vstim_events, self.events)
-
-
-    def _map_btss_vstim(
-            self, 
-            vstim, 
-        ):
-        """"""
-
-        # Define stimulus parameters from rig log to keep.
-        param_names = ["contrast", "posx", "posy", "ori", "sf", "phase", "tf", "itrial", "istim"]
-        vstim_df_mapped = vstim.events[param_names]
-        return vstim_df_mapped
-
-
+        self.events = nidaq_ap[3].events[nidaq_ap[3].events["digital_value"] == 1].reset_index(drop=True)
+    
     def _get_events(
             self, 
-            params, 
         ):
         """"""
 
         self._Events = []
         for row in self.events.itertuples():
-            stim_indices = self._get_stim_indices(row[0], params=params)
-            self._Events.append(Event(stim_indices, *row))
+            stim_indices = (row[0])
+            stim_params = [None] * 9
+            self._Events.append(Event(stim_indices, *row, *stim_params))
         return None
 
-    
-    def _get_stim_indices(
-            self, 
-            row_index, 
-            params, 
-        ):
-        """"""
-
-        values = tuple(self.events[params].iloc[row_index])
-        indices = []
-        for val, param in zip(values, params):
-            (idx,) = np.where(np.unique(self.events[param]) == val)
-            indices.append(idx[0])
-        return tuple(indices)
-
-
-    def _get_shape(
-            self, 
-            params, 
-        ):
-        """"""
-        
-        self.shape = tuple(np.unique(self.events[param]).size for param in params)
-        return None
 
 
 
@@ -413,37 +367,9 @@ class SquarePulse(OptogeneticStimulus):
         ):
         """"""
 
-        btss = self._match_vstim_df(btss)
-
         super().__init__(
                          btss=btss, 
                          nidaq_ap=nidaq_ap, 
                          nidaq_lf=nidaq_lf, 
                         )
-
-        self._get_events(params=["itrial"])
-        self._get_shape(params=["itrial"])
-        self._get_unique()
-
-
-    def _get_unique(
-            self, 
-        ):
-        """"""
-        
-        self.unique = []
-        for itrial in sorted(np.unique(self.events["itrial"])):
-                    self.unique.append((itrial))
-        return None
-
-
-    def _match_vstim_df(
-            self, 
-            btss, 
-        ):
-        """"""
-
-        btss_out = btss
-        for col in ["ori", "sf", "phase", "tf"]:
-            btss_out[0].events[col] = np.zeros((btss[0].events.shape[0],))
-        return btss_out
+                        

@@ -62,14 +62,13 @@ class Experiment:
             elif "contrast_reversal" in name:
                 stimuli.append(ContrastReversal(btss, nidaq_ap, nidaq_lf))
             elif "opto_tagging" in name:
-                pass # stimuli.append(SquarePulse(btss, nidaq_ap, nidaq_lf))
+                stimuli.append(SquarePulse(btss, nidaq_ap, nidaq_lf))
         # Reorder Stimulus objects for convenience.
         stim_order = ["contra_random_squares", "ipsi_random_squares", 
                       "contra_random_gratings", "ipsi_random_gratings", 
                       "contrast_reversal", 
                       "opto_tagging_pulse"]
         self.stimuli = []
-        bTsS_names = [name for name in bTsS_names if name != "opto_tagging_pulse"]
         for stim in stim_order:
             for name, obj in zip(bTsS_names, stimuli):
                 if stim in name:
