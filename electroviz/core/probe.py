@@ -5,7 +5,7 @@
 # https://opensource.org/licenses/MIT
 
 import numpy as np
-from electroviz.viz.raster import Raster
+from electroviz.viz.raster import RateRaster
 import copy
 from scipy.signal import butter, lfilter
 from electroviz.utils.icsd import compute_csd
@@ -156,9 +156,9 @@ class Probe:
         responses = self.get_response(stimulus, time_window)
         if yscale == "Depth":
             depths = self.channel_positions[:, 1].astype(int)
-            Raster(time_window, responses, ylabel="Depth", cmap="RdBu_r", yscale=depths, fig_size=fig_size, save_path=save_path, ax_in=ax_in)
+            RateRaster(time_window, responses, ylabel="Depth", cmap="RdBu_r", yscale=depths, fig_size=fig_size, save_path=save_path, ax_in=ax_in)
         elif yscale == "Channel":
-            Raster(time_window, responses, ylabel="Channel", fig_size=fig_size, save_path=save_path, ax_in=ax_in)
+            RateRaster(time_window, responses, ylabel="Channel", fig_size=fig_size, save_path=save_path, ax_in=ax_in)
 
 
     def filter_channels(
