@@ -6,6 +6,7 @@
 
 import numpy as np
 from scipy import sparse
+from scipy.stats import mode
 
 class Spikes:
     """
@@ -22,19 +23,18 @@ class Spikes:
 
         # Get the total number of units identified by Kilosort (index starts at 0).
         self.total_units = np.unique(kilosort_dict["spike_clusters"]).size
+        # Store the cluster IDs.
+        self.cluster_id = kilosort_dict["cluster_id"]
+        # Store Kilosort quality labels.
+        self.cluster_quality = kilosort_dict["cluster_quality"]
         # Get the total number of samples in recording, passed from Imec data.
         self.total_samples = total_imec_samples
         # Build (sparse) spike times matrix in compressed sparse column format.
         self.spike_times = self._build_spike_times_matrix(kilosort_dict["spike_clusters"].squeeze(), 
                                                           kilosort_dict["spike_times"].squeeze())
-        print(self.spike_times.size)
-        # Store Kilosort quality labels.
-        self.cluster_quality = kilosort_dict["cluster_info"]
-        # Get depth (along the probe) of each spike.
-        self.peak_channels, self.cluster_positions = self._get_cluster_locations(kilosort_dict["templates"], kilosort_dict["whitening_mat_inv"], 
-                                                                                 kilosort_dict["channel_positions"], kilosort_dict["spike_templates"], 
-                                                                                 kilosort_dict["amplitudes"], kilosort_dict["spike_clusters"])
-        self.kilosort_dict = kilosort_dict
+        self.peak_channel = kilosort_dict["peak_channel"]
+        self.cluster_depth = kilosort_dict["depth"]
+        self._remove_noise()
 
 
     def _build_spike_times_matrix(
@@ -55,51 +55,16 @@ class Spikes:
         return spike_times_matrix
 
 
-    def _get_cluster_locations(
+    def _remove_noise(
             self, 
-            templates, 
-            inv_whitening_matrix, 
-            channel_positions, 
-            spike_templates, 
-            amplitudes, 
-            spike_clusters, 
         ):
         """"""
 
-        # Unwhiten the spike templates.
-        temps_unwhiten = np.empty(templates.shape)
-        for idx, temp in enumerate(templates):
-            temps_unwhiten[idx, :, :] = np.matmul(temp, inv_whitening_matrix)
-        # 
-        temp_channel_amps = temps_unwhiten.max(axis=1) - temps_unwhiten.min(axis=1)
-        # 
-        temp_amps_unsc = temp_channel_amps.max(axis=1)
-        #
-        thresh_vals = np.broadcast_to(temp_amps_unsc*0.3, tuple(reversed(temp_channel_amps.shape)))
-        #
-        temp_channel_amps[temp_channel_amps < thresh_vals.T] = 0
-        #
-        y_pos = channel_positions[:, 1]
-        temp_depths = np.sum(temp_channel_amps*y_pos.T, axis=1)/np.sum(temp_channel_amps, axis=1)
-        temp_chans = []
-        for depth in temp_depths:
-            dist = np.abs(y_pos - depth)
-            (idx,) = np.where(dist == np.min(dist))
-            try:
-                temp_chans.append(idx[0])
-            except:
-                temp_chans.append(np.nan)
-        spike_depths = np.array(temp_chans)[spike_templates]
-        # Map spike depths to cluster peak channels and depths.
-        peak_channels, cluster_positions = [], []
-        for cluster in range(self.total_units):
-            if cluster in spike_clusters:
-                cluster_idx = spike_clusters == cluster
-                peak_channel = int(np.nanmean(spike_depths[cluster_idx]))
-                peak_channels.append(peak_channel)
-                cluster_positions.append(channel_positions[peak_channel, :])
-            else:
-                peak_channels.append(np.nan)
-                cluster_positions.append(np.array([np.nan, np.nan]))
-        return peak_channels, cluster_positions
+        noise_mask = self.cluster_quality != "noise"
+        self.total_units = int(np.sum(noise_mask))
+        self.cluster_id = self.cluster_id[noise_mask]
+        self.cluster_quality = self.cluster_quality[noise_mask]
+        self.spike_times = self.spike_times[noise_mask, :]
+        self.peak_channel = self.peak_channel[noise_mask]
+        self.cluster_depth = self.cluster_depth[noise_mask]
 
