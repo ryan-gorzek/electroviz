@@ -19,7 +19,7 @@ plt.rcParams["ytick.major.width"] = 1
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.ticker import FormatStrFormatter
 from electroviz.viz.psth import PSTH
-from electroviz.viz.raster import Raster
+from electroviz.viz.raster import RateRaster
 from scipy.stats import zscore
 from math import remainder
 
@@ -44,16 +44,17 @@ class Population:
         self.spike_times = self._Spikes.spike_times.tocsc()
         # Create Unit objects.
         self._Units = []
-        for uid in range(self.total_units):
-            unit = Unit(uid, self._Sync, self._Spikes, self)
+        for unit_idx in range(self.total_units):
+            unit_id = self._Spikes.cluster_id[unit_idx]
+            peak_channel = self._Spikes.peak_channel[unit_idx]
+            unit = Unit(unit_id, peak_channel, self._Sync, self._Spikes, self)
             self._Units.append(unit)
         # Populate unit metrics dataframe.
         self.units = pd.DataFrame()
         self.units["unit_id"] = self._Spikes.cluster_id
         self.units["quality"] = self._Spikes.cluster_quality
-        self.units["peak_channel"] = np.array(self._Spikes.peak_channels)
-        self.units["x_position"] = np.array(self._Spikes.cluster_positions)[:, 0]
-        self.units["y_position"] = np.array(self._Spikes.cluster_positions)[:, 1]
+        self.units["peak_channel"] = self._Spikes.peak_channel.astype(int)
+        self.units["depth"] = self._Spikes.cluster_depth.astype(float).astype(int)
         self.units["total_spikes"] = self.spike_times.getnnz(1)
         self.units["spike_rate"] = self.units["total_spikes"] / self._Sync.total_time
         # Define current index for iteration.
@@ -135,28 +136,24 @@ class Population:
         else:
             self._responses = responses
             plot_responses = responses
+        RateRaster(time_window, plot_responses, ylabel="Unit", fig_size=fig_size, save_path=save_path, ax_in=ax_in)
 
-        if depth_norm is True:
-            _, peak_counts = np.unique(self.units["peak_channel"], return_counts=True)
-            max_count = np.max(peak_counts)
-            depth_responses = np.zeros((max_count*382, plot_responses.shape[1]))
-            depth_starts = np.arange(0, max_count*382, max_count)
-            channel_idx, prev_channel = 0, 0
-            for idx, (resp, depth) in enumerate(zip(plot_responses, self.units["peak_channel"])):
-                if idx == 0:
-                    mat_idx = 0
-                    prev_channel = 0
-                    channel_idx += 1
-                elif prev_channel == int(depth):
-                    mat_idx = depth_starts[int(depth)] + channel_idx
-                    channel_idx += 1
-                else:
-                    prev_channel = int(depth)
-                    channel_idx = 0
-                    mat_idx = depth_starts[int(depth)] + channel_idx
-                depth_responses[mat_idx, :] = resp
-            plot_responses = depth_responses
-        Raster(time_window, plot_responses, ylabel="Unit", fig_size=fig_size, save_path=save_path, ax_in=ax_in)
+
+    def plot_mean_waveforms(
+            self, 
+            path="", 
+        ):
+        """"""
+
+        mean_waveforms = []
+        for unit in self:
+            waveforms = unit.get_waveforms(path=path)
+            mean_waveforms.append(waveforms.mean(axis=0).squeeze())
+        
+        mpl_use("Qt5Agg")
+        fig, ax = plt.subplots()
+        ax.plot(range(82), np.array(mean_waveforms).T)
+        plt.show(block=False)
 
 
     def get_response(
