@@ -32,8 +32,9 @@ class Spikes:
         # Build (sparse) spike times matrix in compressed sparse column format.
         self.spike_times = self._build_spike_times_matrix(kilosort_dict["spike_clusters"].squeeze(), 
                                                           kilosort_dict["spike_times"].squeeze())
-        self.peak_channel = kilosort_dict["peak_channel"]
-        self.cluster_depth = kilosort_dict["depth"]
+        self.peak_channel = kilosort_dict["peak_channel"].astype(int)
+        self.cluster_depth = kilosort_dict["depth"].astype(float).astype(int)
+        self.phy_path = kilosort_dict["phy_path"]
         self._remove_noise()
 
 
