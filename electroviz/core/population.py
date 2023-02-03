@@ -22,6 +22,7 @@ from electroviz.viz.psth import PSTH
 from electroviz.viz.raster import RateRaster
 from scipy.stats import zscore
 from math import remainder
+from scipy.sparse import vstack
 
 class Population:
     """
@@ -100,6 +101,18 @@ class Population:
         return len(self._Units)
 
 
+    def __add__(self, other):
+        """"""
+
+        addpop = copy.deepcopy(self)
+        addpop._Units = self._Units + other._Units
+        for unit in addpop._Units:
+            unit._Population = addpop
+        # addpop.spike_times = vstack([self.spike_times.tocsr(), other.spike_times.tocsr()]).tocsc()
+        addpop.total_units = len(self._Units) + len(other._Units)
+        addpop.units = pd.concat((self.units, other.units), axis=0).reset_index(drop=True)
+        return addpop
+
     def plot_PSTH(
             self, 
             stimulus, 
@@ -126,7 +139,7 @@ class Population:
             save_path="", 
             ax_in=None, 
             responses=None, 
-            depth_norm=False, 
+            return_ax=False, 
         ):
         """"""
         
@@ -136,18 +149,22 @@ class Population:
         else:
             self._responses = responses
             plot_responses = responses
-        RateRaster(time_window, plot_responses, ylabel="Unit", fig_size=fig_size, save_path=save_path, ax_in=ax_in)
+        
+        if return_ax is True:
+            fig, ax = RateRaster(time_window, plot_responses, ylabel="Unit", fig_size=fig_size, save_path=save_path, ax_in=ax_in, return_ax=True)
+            return fig, ax
+        else:
+            RateRaster(time_window, plot_responses, ylabel="Unit", fig_size=fig_size, save_path=save_path, ax_in=ax_in)
 
 
     def plot_mean_waveforms(
             self, 
-            path="", 
         ):
         """"""
 
         mean_waveforms = []
         for unit in self:
-            waveforms = unit.get_waveforms(path=path)
+            waveforms = unit.get_waveforms()
             mean_waveforms.append(waveforms.mean(axis=0).squeeze())
         
         mpl_use("Qt5Agg")
@@ -175,6 +192,45 @@ class Population:
             responses[:, :, idx] = bin_resp
         return responses.mean(axis=2)
 
+
+    def get_mean_waveforms(
+            self, 
+            normalize=False, 
+            return_stats=False, 
+        ):
+        """"""
+
+
+        def normalize_waveforms(mean_waveforms):
+            norm_waveforms = []
+            for waveform in mean_waveforms:
+                trough = np.min(waveform)
+                peak = np.max(waveform - trough)
+                norm_waveform = (((waveform - trough) / peak) * 2) - 1
+                norm_waveforms.append(norm_waveform)
+            return norm_waveforms
+
+
+        mean_waveforms = []
+        for unit in self:
+            waveforms = unit.get_waveforms()
+            mean_waveforms.append(waveforms.mean(axis=0).squeeze())
+        if return_stats is True:
+            pt_time, pt_ratio = [], []
+            for waveform in mean_waveforms:
+                trough, peak = np.min(waveform), np.max(waveform)
+                pt_ratio.append(abs(peak) / abs(trough))
+                trough_idx, peak_idx = np.where(waveform == trough)[0][0], np.where(waveform == peak)[0][0]
+                pt_time.append((peak_idx - trough_idx) / 30)
+            if normalize is True:
+                return np.array(normalize_waveforms(mean_waveforms)).T, (pt_time, pt_ratio)
+            else:
+                return np.array(mean_waveforms).T, (pt_time, pt_ratio)
+        else:
+            if normalize is True:
+                return np.array(normalize_waveforms(mean_waveforms)).T
+            else:
+                return np.array(mean_waveforms).T
 
     def plot_corr_mat(
             self, 
@@ -252,7 +308,7 @@ class Population:
         ):
         """"""
 
-        subset = copy.copy(self)
+        subset = copy.deepcopy(self)
         subset._Units = list(np.array(self._Units)[slice_or_array])
         for unit in subset._Units:
             unit._Population = subset
