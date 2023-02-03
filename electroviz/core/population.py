@@ -195,42 +195,30 @@ class Population:
 
     def get_mean_waveforms(
             self, 
-            normalize=False, 
-            return_stats=False, 
+            save_path="", 
+            stat_in=None, 
         ):
         """"""
 
 
-        def normalize_waveforms(mean_waveforms):
-            norm_waveforms = []
-            for waveform in mean_waveforms:
-                trough = np.min(waveform)
-                peak = np.max(waveform - trough)
-                norm_waveform = (((waveform - trough) / peak) * 2) - 1
-                norm_waveforms.append(norm_waveform)
-            return norm_waveforms
+        def normalize(mean_waveform):
+            trough = np.min(mean_waveform)
+            peak = np.max(mean_waveform - trough)
+            norm_waveform = (((mean_waveform - trough) / peak) * 2) - 1
+            return norm_waveform
 
 
-        mean_waveforms = []
-        for unit in self:
+        for unit, stat in zip(self, stat_in):
             waveforms = unit.get_waveforms()
-            mean_waveforms.append(waveforms.mean(axis=0).squeeze())
-        if return_stats is True:
-            pt_time, pt_ratio = [], []
-            for waveform in mean_waveforms:
-                trough, peak = np.min(waveform), np.max(waveform)
-                pt_ratio.append(abs(peak) / abs(trough))
-                trough_idx, peak_idx = np.where(waveform == trough)[0][0], np.where(waveform == peak)[0][0]
-                pt_time.append((peak_idx - trough_idx) / 30)
-            if normalize is True:
-                return np.array(normalize_waveforms(mean_waveforms)).T, (pt_time, pt_ratio)
-            else:
-                return np.array(mean_waveforms).T, (pt_time, pt_ratio)
-        else:
-            if normalize is True:
-                return np.array(normalize_waveforms(mean_waveforms)).T
-            else:
-                return np.array(mean_waveforms).T
+            if waveforms is not None:
+                mean_waveform = waveforms.mean(axis=0).squeeze()
+                trough, peak = np.min(mean_waveform), np.max(mean_waveform)
+                pt_ratio = abs(peak) / abs(trough)
+                trough_idx, peak_idx = np.where(mean_waveform == trough)[0][0], np.where(mean_waveform == peak)[0][0]
+                pt_time = (peak_idx - trough_idx) / 30
+                np.save(save_path + "/Unit" + str(unit.ID) + "_WaveformMean.npy", normalize(mean_waveform))
+                np.save(save_path + "/Unit" + str(unit.ID) + "_WaveformStats.npy", np.array([pt_time, pt_ratio, stat]))
+
 
     def plot_corr_mat(
             self, 

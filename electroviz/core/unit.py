@@ -141,8 +141,11 @@ class Unit:
         # We get the channel ids where the waveforms are located.
         channel_ids = model.get_cluster_channels(cluster_id)
         # Get the waveforms from the peak channel.
-        (peak_idx,) = np.where(channel_ids == self.peak_channel)[0]
-        return waveforms[::100, :, peak_idx]
+        try:
+            (peak_idx,) = np.where(channel_ids == self.peak_channel)[0]
+            return waveforms[:, :, peak_idx]
+        except:
+            return None
 
 
     def add_metric(
