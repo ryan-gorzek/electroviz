@@ -35,6 +35,7 @@ class Unit:
         self._Population = population
         self.total_samples = self._Population.total_samples
         self.sampling_rate = self._Sync.sampling_rate
+        self._phy_path = self._Spikes.phy_path
         self.spike_times = np.empty((0, 0))
 
 
@@ -60,6 +61,7 @@ class Unit:
         """"""
 
         spikes = self.get_spikes(stimulus, time_window)
+        print(spikes.shape)
         SpikeRaster(time_window, spikes, ylabel="Stimulus Event", ax_in=ax_in)
 
 
@@ -75,13 +77,12 @@ class Unit:
 
     def plot_waveforms(
             self, 
-            path="", 
             ax_in=None, 
         ):
         """"""
 
         mpl_use("Qt5Agg")
-        waveforms = self.get_waveforms(path=path)
+        waveforms = self.get_waveforms()
         fig, ax = plt.subplots()
         ax.plot(waveforms.T, color=(0.2, 0.2, 0.9, 0.5))
         plt.show(block=False)
@@ -127,12 +128,11 @@ class Unit:
 
     def get_waveforms(
             self, 
-            path="", 
         ):
         """"""
 
         # First, we load the TemplateModel.
-        model = load_model(path)  # first argument: path to params.py
+        model = load_model(self._phy_path)  # first argument: path to params.py
         # We obtain the cluster id from the command-line arguments.
         cluster_id = int(self.ID)  # second argument: cluster index
         # We get the waveforms of the cluster.
@@ -165,7 +165,7 @@ class Unit:
         """"""
         
         if self.spike_times.shape[0] == 0:
-            spike_times_matrix = self._Spikes.spike_times.tocsr()
+            spike_times_matrix = self._Population.spike_times.tocsr()
             (unit_idx,) = np.where(self._Population.units["unit_id"] == self.ID)[0]
             self.spike_times = spike_times_matrix[unit_idx].tocsc()
         if (sample_window[0] is None) & (sample_window[1] is None):
