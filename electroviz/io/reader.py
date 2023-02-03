@@ -87,10 +87,10 @@ def read_Kilosort(
         for fname in kilosort_names:
             key, ext = Path(fname).stem, Path(fname).suffix
             if "cluster_info" in key:
-                kilosort_dict["cluster_id"] = np.loadtxt(path + "/" + fname, dtype=str, skiprows=1, usecols=0)
-                kilosort_dict["cluster_quality"] = np.loadtxt(path + "/" + fname, dtype=str, skiprows=1, usecols=3)
-                kilosort_dict["peak_channel"] = np.loadtxt(path + "/" + fname, dtype=str, skiprows=1, usecols=5)
-                kilosort_dict["depth"] = np.loadtxt(path + "/" + fname, dtype=str, skiprows=1, usecols=6)
+                col_names = np.loadtxt(path + "/" + fname, dtype=str, skiprows=0, max_rows=1)
+                for name in ["cluster_id", "KSLabel", "ch", "depth"]:
+                    col_idx = np.where(col_names == name)[0][0]
+                    kilosort_dict[name] = np.loadtxt(path + "/" + fname, dtype=str, skiprows=1, usecols=col_idx)
             elif ".npy" in ext:
                 kilosort_dict[key] = np.load(path + "/" + fname)
             elif "params" in key:
