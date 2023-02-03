@@ -82,7 +82,7 @@ def read_Kilosort(
     kilosort_dicts = []
     for path in kilosort_paths:
         # Read Kilosort spike data into numpy arrays.
-        kilosort_names = ["cluster_info.tsv", "spike_times.npy", "spike_clusters.npy"]
+        kilosort_names = ["cluster_info.tsv", "spike_times.npy", "spike_clusters.npy", "params.py"]
         kilosort_dict = {}
         for fname in kilosort_names:
             key, ext = Path(fname).stem, Path(fname).suffix
@@ -91,8 +91,10 @@ def read_Kilosort(
                 kilosort_dict["cluster_quality"] = np.loadtxt(path + "/" + fname, dtype=str, skiprows=1, usecols=3)
                 kilosort_dict["peak_channel"] = np.loadtxt(path + "/" + fname, dtype=str, skiprows=1, usecols=5)
                 kilosort_dict["depth"] = np.loadtxt(path + "/" + fname, dtype=str, skiprows=1, usecols=6)
-            else:
+            elif ".npy" in ext:
                 kilosort_dict[key] = np.load(path + "/" + fname)
+            elif "params" in key:
+                kilosort_dict["phy_path"] = path + "/" + fname
         kilosort_dicts.append(kilosort_dict)
     return kilosort_dicts
 
