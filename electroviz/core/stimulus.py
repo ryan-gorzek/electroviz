@@ -78,7 +78,7 @@ class Stimulus:
         """"""
 
         if self._lf is True:
-            swapped = copy.copy(self)
+            swapped = copy.deepcopy(self)
             swapped._Sync, swapped._Sync_ = self._Sync_, self._Sync
             swapped._PC_Clock, swapped._PC_Clock_ = self._PC_Clock_, self._PC_Clock
             swapped._Photodiode, swapped._Photodiode_ = self._Photodiode_, self._Photodiode
@@ -336,6 +336,7 @@ class OptogeneticStimulus(Stimulus):
         """"""
 
         self.events = nidaq_ap[3].events[nidaq_ap[3].events["digital_value"] == 1].reset_index(drop=True)
+        self._get_events()
     
     def _get_events(
             self, 
