@@ -49,9 +49,9 @@ def imec_sets(
                                         lf_meta)
         lf_sync = SyncChannel(lf_sync_signal, sampling_rate, 0, 0.0)
         lf_ons = np.array(lf_sync.events["sample_onset"]) + prev_lf
-        lf_offs = np.array(ap_sync.events["sample_offset"]) + prev_lf
-        lf_onsets = np.concatenate((ap_onsets, ap_ons))
-        lf_offsets = np.concatenate((ap_offsets, ap_offs))
+        lf_offs = np.array(lf_sync.events["sample_offset"]) + prev_lf
+        lf_onsets = np.concatenate((lf_onsets, lf_ons))
+        lf_offsets = np.concatenate((lf_offsets, lf_offs))
 
         prev_lf += lf_sync_signal.size
 
