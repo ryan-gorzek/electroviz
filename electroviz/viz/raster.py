@@ -31,6 +31,7 @@ class RateRaster:
             fig_size=(6, 9), 
             save_path="", 
             ax_in=None, 
+            return_ax=False, 
         ):
         """"""
 
@@ -59,6 +60,8 @@ class RateRaster:
             fig.set_size_inches(*fig_size)
             if save_path != "":
                 fig.savefig(save_path, bbox_inches="tight")
+        if return_ax is True:
+            return fig, ax
 
 
 class SpikeRaster:
