@@ -173,6 +173,32 @@ class Population:
         plt.show(block=False)
 
 
+    def plot_lines(
+            self, 
+            stimulus, 
+            time_window=(-50, 200), 
+            bin_size=1, 
+            save_path="", 
+            ax_in=None, 
+            line_color="k", 
+            bound_color=(0.8, 0.8, 0.8, 0.8), 
+        ):
+        """"""
+
+        responses = self.get_response(stimulus, time_window, bin_size=bin_size)
+        response_mean = responses.mean(axis=1).squeeze()
+        response_std = np.std(responses, axis=1)
+
+        mpl_use("Qt5Agg")
+        fig, ax = plt.subplots()
+        ax.plot(range(responses.shape[1]), response_mean, color=line_color)
+        ax.fill_between(response_mean, response_mean + response_std, color=bound_color)
+        ax.fill_between(response_mean, response_mean - response_std, color=bound_color)
+        ax.set_xticks(np.linspace(0, responses.shape[1], 6))
+        ax.set_xticklabels(np.linspace(*time_window, 6))
+        ax.set_xlabel("Time from Onset (ms)", fontsize=16)
+
+
     def get_response(
             self, 
             stimulus, 
