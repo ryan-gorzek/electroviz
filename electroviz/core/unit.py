@@ -61,7 +61,6 @@ class Unit:
         """"""
 
         spikes = self.get_spikes(stimulus, time_window)
-        print(spikes.shape)
         SpikeRaster(time_window, spikes, ylabel="Stimulus Event", ax_in=ax_in)
 
 
