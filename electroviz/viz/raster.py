@@ -88,7 +88,7 @@ class SpikeRaster:
         else:
             ax = ax_in
         spike_idx = []
-        for event in spikes:
+        for event in spikes[::-1, :]:
             spike_idx.append(np.where(event)[0])
         plt.eventplot(spike_idx, color="k")
         ax.set_xticks(np.linspace(0, spikes.shape[1], 6))
