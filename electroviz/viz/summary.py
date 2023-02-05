@@ -34,14 +34,15 @@ class UnitSummary:
         ax_raster = fig.add_subplot(gs_1[:13, :3])
         unit.plot_raster(list(chain(*stimuli)), ax_in=ax_raster)
         ax_raster.set_title("Stimulus Events")
-        ax_raster.set_xlim((-1.25 * 30, 53.25 * 30))
+        ax_raster.set_xlim((-150, 7649))
+        ax_raster.set_ylim((0, 14839))
         colors = ((0.2, 0.2, 0.9), (0.9, 0.2, 0.2), (0.7, 0.2, 0.7), (0.9, 0.5, 0.2))
-        prev_len = 0
-        for stim, color in zip(stimuli, colors):
-            stim_len = len(stim)
-            ax_raster.add_patch(Rectangle((51.25 * 30, prev_len), 2 * 30, stim_len, color=color))
-            prev_len += stim_len
-        ax_raster.spines["right"].set_visible(False)
+        stim_len = [len(stim) for stim in stimuli[:4]]
+        base_y = 0.08
+        for stim, color in zip(stimuli[3::-1], colors[3::-1]):
+            height = 0.85 * (len(stim) / sum(stim_len))
+            fig.patches.extend([Rectangle((0.201, base_y), 0.005, height, fill=True, color=color, transform=fig.transFigure, figure=fig)])
+            base_y += height
         ax_raster.set_yticklabels([])
         ax_raster.set_ylabel("")
         ax_raster.set_yticks([])
