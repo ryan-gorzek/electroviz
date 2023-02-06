@@ -29,26 +29,55 @@ class UnitSummary:
         mpl_use("Qt5Agg")
         fig = plt.figure()
 
+        # Waveforms.
+        gs_n1 = fig.add_gridspec(4, 3, hspace=1, wspace=1, left=0.04, right=0.20, top=0.93, bottom=0.65)
+        ax_waveforms = fig.add_subplot(gs_n1[:4, :3])
+        unit.plot_waveforms(ax_in=ax_waveforms)
+        ax_waveforms.set_title("Waveforms")
+        ax_waveforms.set_yticklabels([])
+        ax_waveforms.set_ylabel("")
+        ax_waveforms.set_yticks([])
+        
+        # Optotagging Raster.
+        gs_0 = fig.add_gridspec(9, 3, hspace=1, wspace=1, left=0.04, right=0.20, top=0.60, bottom=0.08)
+        ax_opto_raster = fig.add_subplot(gs_0[0:5, :3])
+        unit.plot_raster(stimuli[5], ax_in=ax_opto_raster)
+        ax_opto_raster.set_title("Optogenetic Stimulus Responses")
+        ax_opto_raster.set_xlim((-150, 7649))
+        ax_opto_raster.set_xticklabels([])
+        ax_opto_raster.set_xlabel("")
+        ax_opto_raster.set_ylim((0, 419))
+        ax_opto_raster.set_yticklabels([])
+        ax_opto_raster.set_ylabel("")
+        ax_opto_raster.set_yticks([])
+        # Optotagging PSTH.
+        ax_opto_psth = fig.add_subplot(gs_0[5:9, :3])
+        unit.plot_PSTH(stimuli[5], ax_in=ax_opto_psth)
+        ax_opto_psth.set_xlim((-0.75, 51.75))
+        ax_opto_psth.set_yticks([])
+        ax_opto_psth.set_yticklabels([])
+        ax_opto_psth.set_ylabel("")
+
         # Unit Raster.
-        gs_1 = fig.add_gridspec(12, 3, hspace=1, wspace=1, left=0.04, right=0.20, top=0.93, bottom=0.08)
+        gs_1 = fig.add_gridspec(12, 3, hspace=1, wspace=1, left=0.22, right=0.38, top=0.93, bottom=0.08)
         ax_raster = fig.add_subplot(gs_1[:13, :3])
-        unit.plot_raster(list(chain(*stimuli)), ax_in=ax_raster)
-        ax_raster.set_title("Stimulus Events")
+        unit.plot_raster(list(chain(*stimuli[:4])), ax_in=ax_raster)
+        ax_raster.set_title("Visual Stimulus Events")
         ax_raster.set_xlim((-150, 7649))
-        ax_raster.set_ylim((0, 14839))
+        ax_raster.set_ylim((0, 14319))
         colors = ((0.2, 0.2, 0.9), (0.9, 0.2, 0.2), (0.7, 0.2, 0.7), (0.9, 0.5, 0.2))
         stim_len = [len(stim) for stim in stimuli[:4]]
         base_y = 0.08
         for stim, color in zip(stimuli[3::-1], colors[3::-1]):
             height = 0.85 * (len(stim) / sum(stim_len))
-            fig.patches.extend([Rectangle((0.201, base_y), 0.005, height, fill=True, color=color, transform=fig.transFigure, figure=fig)])
+            fig.patches.extend([Rectangle((0.3805, base_y), 0.005, height, fill=True, color=color, transform=fig.transFigure, figure=fig)])
             base_y += height
         ax_raster.set_yticklabels([])
         ax_raster.set_ylabel("")
         ax_raster.set_yticks([])
 
         # Stimulus PSTHs.
-        gs_2 = fig.add_gridspec(12, 3, hspace=1, wspace=1, left=0.24, right=0.40, top=0.93, bottom=0.08)
+        gs_2 = fig.add_gridspec(12, 3, hspace=1, wspace=1, left=0.42, right=0.58, top=0.93, bottom=0.08)
         ax_psth_csn = fig.add_subplot(gs_2[:3, :3])
         unit.plot_PSTH(stimuli[0], ax_in=ax_psth_csn)
         ax_psth_csn.set_xticklabels([])
@@ -84,23 +113,24 @@ class UnitSummary:
             ax.set_ylim((0, np.max(ylims)))
 
         # Contra Sparse Noise Kernels.
-        gs_3 = fig.add_gridspec(3, 6, hspace=0.01, wspace=1, left=0.44, right=0.60, top=0.95, bottom=0.73)
+        ON_color, OFF_color = (1, 0.4, 0.4, 0.8), (0, 0.67, 0.8, 0.8)
+        gs_3 = fig.add_gridspec(3, 6, hspace=0.01, wspace=1, left=0.62, right=0.78, top=0.95, bottom=0.73)
         ax_kon_csn = fig.add_subplot(gs_3[:1, :3])
         ax_koff_csn = fig.add_subplot(gs_3[1:2, :3])
         ax_kdiff_csn = fig.add_subplot(gs_3[2:3, :3])
-        kernels[0].plot_raw(ax_in=np.array((ax_kon_csn, ax_koff_csn, ax_kdiff_csn)))
+        ON_t_peak, OFF_t_peak = kernels[0].plot_raw(ax_in=np.array((ax_kon_csn, ax_koff_csn, ax_kdiff_csn)), return_t=True)
         ax_kon_csn.axis("on")
         ax_kon_csn.set_frame_on(False)
         ax_kon_csn.set_xticks([])
         ax_kon_csn.set_yticks([])
         ax_kon_csn.set_title("Peak")
-        ax_kon_csn.set_ylabel("ON")
+        ax_kon_csn.set_ylabel("ON", color=ON_color)
         ax_koff_csn.axis("on")
         ax_koff_csn.set_frame_on(False)
         ax_koff_csn.set_xticks([])
         ax_koff_csn.set_yticks([])
         ax_koff_csn.set_title("")
-        ax_koff_csn.set_ylabel("OFF")
+        ax_koff_csn.set_ylabel("OFF", color=OFF_color)
         ax_kdiff_csn.axis("on")
         ax_kdiff_csn.set_frame_on(False)
         ax_kdiff_csn.set_xticks([])
@@ -110,30 +140,39 @@ class UnitSummary:
         ax_kon_csn_v = fig.add_subplot(gs_3[:1, 3:6])
         ax_koff_csn_v = fig.add_subplot(gs_3[1:2, 3:6])
         ax_kdiff_csn_v = fig.add_subplot(gs_3[2:3, 3:6])
-        kernels[0].plot_raw(ax_in=np.array((ax_kon_csn_v, ax_koff_csn_v, ax_kdiff_csn_v)), 
-                            type="valley")
+        ON_t_valley, OFF_t_valley = kernels[0].plot_raw(ax_in=np.array((ax_kon_csn_v, ax_koff_csn_v, ax_kdiff_csn_v)), 
+                                                        type="valley", return_t=True)
         ax_kon_csn_v.set_title("Valley")
         ax_koff_csn_v.set_title("")
         ax_kdiff_csn_v.set_title("")
+        if ON_t_peak is not None:
+            y_peak = np.max(ylims) - 0.075*np.max(ylims)
+            ax_psth_csn.text(ON_t_peak - 0.5, y_peak, "^", color=ON_color)
+            ax_psth_csn.text(OFF_t_peak - 0.5, y_peak, "^", color=OFF_color)
+        if ON_t_valley is not None:
+            y_valley = np.max(ylims) - 0.025*np.max(ylims)
+            ax_psth_csn.text(ON_t_valley - 0.5, y_valley, "^", color=ON_color, rotation=180)
+            ax_psth_csn.text(OFF_t_valley - 0.5, y_valley, "^", color=OFF_color, rotation=180)
 
         # Ipsi Sparse Noise Kernels.
-        gs_4 = fig.add_gridspec(3, 6, hspace=0.01, wspace=1, left=0.44, right=0.60, top=0.72, bottom=0.5)
+        gs_4 = fig.add_gridspec(3, 6, hspace=0.01, wspace=1, left=0.62, right=0.78, top=0.72, bottom=0.5)
         ax_kon_isn = fig.add_subplot(gs_4[:1, :3])
         ax_koff_isn = fig.add_subplot(gs_4[1:2, :3])
         ax_kdiff_isn = fig.add_subplot(gs_4[2:3, :3])
-        kernels[1].plot_raw(ax_in=np.array((ax_kon_isn, ax_koff_isn, ax_kdiff_isn)))
+        ON_t_peak, OFF_t_peak = kernels[1].plot_raw(ax_in=np.array((ax_kon_isn, ax_koff_isn, ax_kdiff_isn)), 
+                                                        return_t=True)
         ax_kon_isn.axis("on")
         ax_kon_isn.set_frame_on(False)
         ax_kon_isn.set_xticks([])
         ax_kon_isn.set_yticks([])
         ax_kon_isn.set_title("")
-        ax_kon_isn.set_ylabel("ON")
+        ax_kon_isn.set_ylabel("ON", color=ON_color)
         ax_koff_isn.axis("on")
         ax_koff_isn.set_frame_on(False)
         ax_koff_isn.set_xticks([])
         ax_koff_isn.set_yticks([])
         ax_koff_isn.set_title("")
-        ax_koff_isn.set_ylabel("OFF")
+        ax_koff_isn.set_ylabel("OFF", color=OFF_color)
         ax_kdiff_isn.axis("on")
         ax_kdiff_isn.set_frame_on(False)
         ax_kdiff_isn.set_xticks([])
@@ -143,14 +182,22 @@ class UnitSummary:
         ax_kon_isn_v = fig.add_subplot(gs_4[:1, 3:6])
         ax_koff_isn_v = fig.add_subplot(gs_4[1:2, 3:6])
         ax_kdiff_isn_v = fig.add_subplot(gs_4[2:3, 3:6])
-        kernels[1].plot_raw(ax_in=np.array((ax_kon_isn_v, ax_koff_isn_v, ax_kdiff_isn_v)), 
-                            type="valley")
+        ON_t_valley, OFF_t_valley = kernels[1].plot_raw(ax_in=np.array((ax_kon_isn_v, ax_koff_isn_v, ax_kdiff_isn_v)), 
+                                                        type="valley", return_t=True)
         ax_kon_isn_v.set_title("")
         ax_koff_isn_v.set_title("")
         ax_kdiff_isn_v.set_title("")
+        if ON_t_peak is not None:
+            y_peak = np.max(ylims) - 0.075*np.max(ylims)
+            ax_psth_isn.text(ON_t_peak - 0.5, y_peak, "^", color=ON_color)
+            ax_psth_isn.text(OFF_t_peak - 0.5, y_peak, "^", color=OFF_color)
+        if ON_t_valley is not None:
+            y_valley = np.max(ylims) - 0.025*np.max(ylims)
+            ax_psth_isn.text(ON_t_valley - 0.5, y_valley, "^", color=ON_color, rotation=180)
+            ax_psth_isn.text(OFF_t_valley - 0.5, y_valley, "^", color=OFF_color, rotation=180)
 
         # Orisf Kernels.
-        gs_5 = fig.add_gridspec(6, 6, hspace=1, wspace=1, left=0.44, right=0.60, top=0.48, bottom=0.08)
+        gs_5 = fig.add_gridspec(6, 6, hspace=1, wspace=1, left=0.62, right=0.78, top=0.48, bottom=0.08)
         ax_kern_csg = fig.add_subplot(gs_5[:3, :3])
         t_peak = kernels[2].plot_raw(ax_in=ax_kern_csg, return_t=True)
         ax_kern_csg.set_xticklabels([])
@@ -188,7 +235,7 @@ class UnitSummary:
             ax_psth_isg.text(t_valley - 0.5, y_valley, "^", rotation=180)
 
         plt.show(block=False)
-        fig.set_size_inches(30, 15)
+        fig.set_size_inches(35, 20)
         if save_path != "":
             fig.savefig(save_path, bbox_inches="tight")
 
