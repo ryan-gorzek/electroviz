@@ -80,11 +80,27 @@ class Unit:
         ):
         """"""
 
-        mpl_use("Qt5Agg")
         waveforms = self.get_waveforms()
-        fig, ax = plt.subplots()
-        ax.plot(waveforms.T, color=(0.2, 0.2, 0.9, 0.5))
-        plt.show(block=False)
+        if ax_in is None:
+            mpl_use("Qt5Agg")
+            fig, ax = plt.subplots()
+        else:
+            ax = ax_in
+        if waveforms is not None:
+            ax.plot(range(82), waveforms[::50, :].T, color=(0.7, 0.7, 0.7, 0.05), linewidth=2)
+            mean_waveform = waveforms.T.mean(axis=1)
+            ax.plot(range(82), mean_waveform, color=(0.4, 0.4, 0.4, 0.7), linewidth=4)
+            ax.set_xlim((0, 81))
+            ax.set_xticks(np.linspace(10, 71, 5))
+            ax.set_xticklabels(np.linspace(-1, 1, 5))
+            ax.set_xlabel("Time from Spike (ms)")
+            peak, trough = np.max(mean_waveform), np.min(mean_waveform)
+            wv_range = peak - trough
+            ax.set_ylim((trough - 1.25*wv_range, peak + 1.25*wv_range))
+        else:
+            ax.axis("off")
+        if ax_in is None:
+            plt.show(block=False)
 
 
     def get_response(
