@@ -162,7 +162,10 @@ class SparseNoiseKernel(Kernel):
             plt.show(block=False)
             fig.set_size_inches(4.5, 10)
         if return_t is True:
-            return (ON_t[0], OFF_t[0])
+            if (ON_t is not None) and (OFF_t is not None):
+                return (ON_t[0], OFF_t[0])
+            else:
+                return (ON_t, OFF_t)
 
 
     def plot_raw_delay(
