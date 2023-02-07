@@ -12,16 +12,25 @@ from matplotlib import use as mpl_use
 def cross_corr(
         units, 
         time_window=(-50, 50), 
-        bin_size=1, 
+        drop_stim=None, 
     ):
     """"""
 
-    spikes_0 = units[0].bin_spikes(bin_size=bin_size, type="count")
-    spikes_1 = units[1].bin_spikes(bin_size=bin_size, type="count")
+    if drop_stim is not None:
+        drop_onset = drop_stim[0].sample_onset - (500 * 30)
+        drop_offset = drop_stim[-1].sample_onset + (500 * 30)
+        drop_idx = np.arange(drop_onset, drop_offset, 1, dtype=int)
+    else:
+        drop_idx = []
+    spikes_0 = units[0].get_spike_times(drop_idx=drop_idx).astype(int)
+    spikes_1 = units[1].get_spike_times(drop_idx=drop_idx).astype(int)
     xcorr = correlate(spikes_0, spikes_1, mode="same", method="fft")
     lags = correlation_lags(spikes_0.size, spikes_1.size, mode="same")
-    window = np.logical_and(lags >= time_window[0]/bin_size, lags <= time_window[1]/bin_size)
-    b, a = butter(1, (75.0, 499.99), fs=1000/bin_size, btype="bandpass")
+    window = np.logical_and(lags >= time_window[0]*30, lags < time_window[1]*30)
+    xcorr = xcorr[window].reshape(200, 15).sum(axis=1)
+    b, a = butter(1, (75.0, 700), fs=2000, btype="bandpass")
     xcorr_filt = lfilter(b, a, xcorr)
-    return xcorr[window], xcorr_filt[window]
+    xcorr_filt[0:10] = 0
+    xcorr_filt[191:201] = 0
+    return xcorr, xcorr_filt
 
