@@ -179,6 +179,7 @@ class Unit:
     def get_spike_times(
             self, 
             sample_window=(None, None), 
+            drop_idx=[], 
         ):
         """"""
         
@@ -186,22 +187,35 @@ class Unit:
             spike_times_matrix = self._Population.spike_times.tocsr()
             (unit_idx,) = np.where(self._Population.units["unit_id"] == self.ID)[0]
             self.spike_times = spike_times_matrix[unit_idx].tocsc()
-        if (sample_window[0] is None) & (sample_window[1] is None):
-            return self.spike_times[0, :].toarray().squeeze()
+            if len(drop_idx) > 0:
+                mask = np.array([True] * spike_times.size)
+                mask[drop_idx.astype(int)] = False
+                spike_times = self.spike_times[mask]
+            else:
+                spike_times = self.spike_times
         else:
-            return self.spike_times[0, sample_window[0]:sample_window[1]].toarray().squeeze()
+            spike_times = self.spike_times
+        if (sample_window[0] is None) & (sample_window[1] is None):
+            return spike_times[0, :].toarray().squeeze()
+        else:
+            return spike_times[0, sample_window[0]:sample_window[1]].toarray().squeeze()
 
 
     def bin_spikes(
             self, 
             bin_size=100, 
             type="rate", 
+            drop_idx=[], 
         ):
         """"""
         
-        drop_end = int(self.total_samples % (bin_size * 30))
-        num_bins = int((self.total_samples - drop_end)/(bin_size * 30))
+        drop_end = int((self.total_samples - len(drop_idx)) % (bin_size * 30))
+        num_bins = int((self.total_samples - len(drop_idx) - drop_end)/(bin_size * 30))
         spike_times = self.get_spike_times()
+        if len(drop_idx) > 0:
+            mask = np.array([True] * spike_times.size)
+            mask[drop_idx.astype(int)] = False
+            spike_times = spike_times[mask]
         spike_times = spike_times[:-drop_end]
         if type == "rate":
             spikes = spike_times.reshape((num_bins, -1)).sum(axis=1) / (bin_size / 1000)
