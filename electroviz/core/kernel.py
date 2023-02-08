@@ -108,6 +108,7 @@ class SparseNoiseKernel(Kernel):
         kerns, norms = self._compute_kernels(self.response_windows)
         self.ONs, self.OFFs = kerns
         self.ON_norms, self.OFF_norms = norms
+        self._normalizer = [None, None]
 
 
     def plot_raw(
@@ -136,9 +137,20 @@ class SparseNoiseKernel(Kernel):
                 (OFF_t,) = np.where(self.OFF_norms == self.OFF_norms.min())
             ON = gaussian_filter(self.ONs[ON_t[0], :, :].squeeze(), 1)
             OFF = gaussian_filter(self.OFFs[ON_t[0], :, :].squeeze(), 1)
+            ON -= ON.min()
+            OFF -= OFF.min()
+            joint_max = np.maximum(ON.max(), OFF.max())
+            if self._normalizer[0] is None:
+                self._normalizer[0] = joint_max
+            ON /= self._normalizer[0]
+            OFF /= self._normalizer[0]
             DIFF = ON - OFF
-            clim = [np.minimum(ON.min(), OFF.min()), np.maximum(ON.max(), OFF.max())]
-            clim_diff = [DIFF.min(), DIFF.max()]
+            diff_max = np.maximum(np.abs(DIFF.min()), np.abs(DIFF.max()))
+            if self._normalizer[1] is None:
+                self._normalizer[1] = diff_max
+            DIFF /= self._normalizer[1]
+            clim = [0, 1]
+            clim_diff = [-1, 1]
         else:
             ON_t, OFF_t = None, None
             ON = np.tile(0.25, self.ONs[0].shape)
@@ -256,6 +268,41 @@ class SparseNoiseKernel(Kernel):
             fig.set_size_inches(6, 6)
 
 
+    def set_normalizer(
+            self, 
+            normalizer, 
+        ):
+        """"""
+
+        self._normalizer = normalizer
+
+
+    def get_normalizer(
+            self, 
+            type="peak", 
+        ):
+        """"""
+
+        if not all((np.isinf(self.ON_norms) | np.isnan(self.ON_norms)) |
+                   (np.isinf(self.OFF_norms) | np.isnan(self.OFF_norms))):
+            if type == "peak":
+                (ON_t,) = np.where(self.ON_norms == self.ON_norms.max())
+                (OFF_t,) = np.where(self.OFF_norms == self.OFF_norms.max())
+            elif type == "valley":
+                (ON_t,) = np.where(self.ON_norms == self.ON_norms.min())
+                (OFF_t,) = np.where(self.OFF_norms == self.OFF_norms.min())
+            ON = gaussian_filter(self.ONs[ON_t[0], :, :].squeeze(), 1)
+            OFF = gaussian_filter(self.OFFs[ON_t[0], :, :].squeeze(), 1)
+            ON -= ON.min()
+            OFF -= OFF.min()
+            joint_max = np.maximum(ON.max(), OFF.max())
+            ON /= joint_max
+            OFF /= joint_max
+            DIFF = ON - OFF
+            diff_max = np.maximum(np.abs(DIFF.min()), np.abs(DIFF.max()))
+        return [joint_max, diff_max]
+
+
     def _compute_kernels(
             self, 
             response_windows, 
@@ -310,6 +357,7 @@ class StaticGratingsKernel(Kernel):
         self.kerns, self.norms = self._compute_kernels(self.response_windows)
         if avg_gratings is True:
             self.avg_gratings = self._compute_average_gratings(self.response_windows, self.norms)
+        self._normalizer = None
 
 
     def plot_raw(
@@ -333,7 +381,12 @@ class StaticGratingsKernel(Kernel):
             elif type == "valley":
                 (t,) = np.where(self.norms == self.norms.min())
             orisf = gaussian_filter(self.kerns[t[0], :, :].squeeze(), 1)
-            clim = [orisf.min(), orisf.max()]
+            orisf -= orisf.min()
+            orisf_max = orisf.max()
+            if self._normalizer is None:
+                self._normalizer = orisf_max
+            orisf /= self._normalizer
+            clim = [0, 1]
         else:
             t = None
             orisf = np.tile(0.25, self.kerns[0].shape)
@@ -419,7 +472,6 @@ class StaticGratingsKernel(Kernel):
             fig.set_size_inches(6, 6)
 
 
-
     def plot_average_gratings(
             self, 
             ax_in=None, 
@@ -434,6 +486,33 @@ class StaticGratingsKernel(Kernel):
         ax.imshow(self.avg_gratings)
         ax.axis("off")
         plt.show(block=False)
+
+
+    def set_normalizer(
+            self, 
+            normalizer, 
+        ):
+        """"""
+
+        self._normalizer = normalizer
+
+
+    def get_normalizer(
+            self, 
+            type="peak", 
+        ):
+        """"""
+
+        if not all((np.isinf(self.norms) | np.isnan(self.norms))):
+            if type == "peak":
+                (t,) = np.where(self.norms == self.norms.max())
+            elif type == "valley":
+                (t,) = np.where(self.norms == self.norms.min())
+            orisf = gaussian_filter(self.kerns[t[0], :, :].squeeze(), 1)
+            orisf -= orisf.min()
+            orisf_max = orisf.max()
+            return orisf_max
+
 
     def _compute_kernels(
             self, 
