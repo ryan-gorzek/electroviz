@@ -22,6 +22,7 @@ class UnitSummary:
             unit, 
             stimuli, 
             kernels, 
+            opto=True, 
             save_path="", 
         ):
         """"""
@@ -37,26 +38,27 @@ class UnitSummary:
         ax_waveforms.set_yticklabels([])
         ax_waveforms.set_ylabel("")
         ax_waveforms.set_yticks([])
-        
-        # Optotagging Raster.
-        gs_0 = fig.add_gridspec(9, 3, hspace=1, wspace=1, left=0.04, right=0.20, top=0.60, bottom=0.08)
-        ax_opto_raster = fig.add_subplot(gs_0[0:5, :3])
-        unit.plot_raster(stimuli[5], ax_in=ax_opto_raster)
-        ax_opto_raster.set_title("Optogenetic Stimulus Responses")
-        ax_opto_raster.set_xlim((-150, 7649))
-        ax_opto_raster.set_xticklabels([])
-        ax_opto_raster.set_xlabel("")
-        ax_opto_raster.set_ylim((0, 419))
-        ax_opto_raster.set_yticklabels([])
-        ax_opto_raster.set_ylabel("")
-        ax_opto_raster.set_yticks([])
-        # Optotagging PSTH.
-        ax_opto_psth = fig.add_subplot(gs_0[5:9, :3])
-        unit.plot_PSTH(stimuli[5], ax_in=ax_opto_psth)
-        ax_opto_psth.set_xlim((-0.75, 51.75))
-        ax_opto_psth.set_yticks([])
-        ax_opto_psth.set_yticklabels([])
-        ax_opto_psth.set_ylabel("")
+
+        if opto is True:
+            # Optotagging Raster.
+            gs_0 = fig.add_gridspec(9, 3, hspace=1, wspace=1, left=0.04, right=0.20, top=0.60, bottom=0.08)
+            ax_opto_raster = fig.add_subplot(gs_0[0:5, :3])
+            unit.plot_raster(stimuli[5], ax_in=ax_opto_raster)
+            ax_opto_raster.set_title("Optogenetic Stimulus Responses")
+            ax_opto_raster.set_xlim((-150, 7649))
+            ax_opto_raster.set_xticklabels([])
+            ax_opto_raster.set_xlabel("")
+            ax_opto_raster.set_ylim((0, 419))
+            ax_opto_raster.set_yticklabels([])
+            ax_opto_raster.set_ylabel("")
+            ax_opto_raster.set_yticks([])
+            # Optotagging PSTH.
+            ax_opto_psth = fig.add_subplot(gs_0[5:9, :3])
+            unit.plot_PSTH(stimuli[5], ax_in=ax_opto_psth)
+            ax_opto_psth.set_xlim((-0.75, 51.75))
+            ax_opto_psth.set_yticks([])
+            ax_opto_psth.set_yticklabels([])
+            ax_opto_psth.set_ylabel("")
 
         # Unit Raster.
         gs_1 = fig.add_gridspec(12, 3, hspace=1, wspace=1, left=0.22, right=0.38, top=0.93, bottom=0.08)
