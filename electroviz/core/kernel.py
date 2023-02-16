@@ -113,7 +113,7 @@ class SparseNoiseKernel(Kernel):
 
     def plot_raw(
             self, 
-            cmap="viridis", 
+            cmap="magma", 
             save_path="", 
             ax_in=None, 
             type="peak", 
@@ -362,7 +362,7 @@ class StaticGratingsKernel(Kernel):
 
     def plot_raw(
             self, 
-            cmap="viridis", 
+            cmap="magma", 
             save_path="", 
             ax_in=None, 
             type="peak", 

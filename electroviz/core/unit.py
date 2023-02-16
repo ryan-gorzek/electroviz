@@ -11,6 +11,7 @@ from electroviz.viz.psth import PSTH
 from electroviz.viz.raster import SpikeRaster
 from electroviz.viz.summary import UnitSummary
 from phylib.io.model import load_model
+from scipy.stats import zscore
 
 class Unit:
     """
@@ -99,6 +100,42 @@ class Unit:
             ax.set_ylim((trough - 1.25*wv_range, peak + 1.25*wv_range))
         else:
             ax.axis("off")
+        if ax_in is None:
+            plt.show(block=False)
+
+
+    def plot_lines(
+            self, 
+            stimulus, 
+            time_window=(-50, 200), 
+            bin_size=1, 
+            save_path="", 
+            ax_in=None, 
+            line_color="k", 
+            bound_color=(0.8, 0.8, 0.8, 0.8), 
+            nan_idx = [], 
+        ):
+        """"""
+
+        responses = self.get_response(stimulus, time_window, bin_size=bin_size)
+        response_mean = responses.mean(axis=0).squeeze()
+        response_mean -= response_mean[:5].mean()
+        response_sem = np.std(responses, axis=0) / np.sqrt(responses.shape[0])
+        if len(nan_idx) > 0:
+            response_mean[nan_idx.astype(int)] = np.nan
+            response_sem[nan_idx.astype(int)] = np.nan
+
+        if ax_in is None:
+            mpl_use("Qt5Agg")
+            fig, ax = plt.subplots()
+        else:
+            ax = ax_in
+        ax.plot(range(responses.shape[1]), response_mean, color=line_color)
+        ax.fill_between(range(responses.shape[1]), response_mean, y2=response_mean + response_sem, color=bound_color)
+        ax.fill_between(range(responses.shape[1]), response_mean, y2=response_mean - response_sem, color=bound_color)
+        ax.set_xticks(np.linspace(0, responses.shape[1], 6))
+        ax.set_xticklabels(np.linspace(*time_window, 6))
+        ax.set_xlabel("Time from Onset (ms)", fontsize=16)
         if ax_in is None:
             plt.show(block=False)
 

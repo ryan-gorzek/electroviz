@@ -187,16 +187,21 @@ class Population:
 
         responses = self.get_response(stimulus, time_window, bin_size=bin_size)
         response_mean = responses.mean(axis=1).squeeze()
-        response_std = np.std(responses, axis=1)
+        response_sem = np.std(responses, axis=1) / np.sqrt(responses.shape[0])
 
-        mpl_use("Qt5Agg")
-        fig, ax = plt.subplots()
+        if ax_in is None:
+            mpl_use("Qt5Agg")
+            fig, ax = plt.subplots()
+        else:
+            ax = ax_in
         ax.plot(range(responses.shape[1]), response_mean, color=line_color)
-        ax.fill_between(response_mean, response_mean + response_std, color=bound_color)
-        ax.fill_between(response_mean, response_mean - response_std, color=bound_color)
+        ax.fill_between(range(responses.shape[1]), response_mean, y2=response_mean + response_std, color=bound_color)
+        ax.fill_between(range(responses.shape[1]), response_mean, y2=response_mean - response_std, color=bound_color)
         ax.set_xticks(np.linspace(0, responses.shape[1], 6))
         ax.set_xticklabels(np.linspace(*time_window, 6))
-        ax.set_xlabel("Time from Onset (ms)", fontsize=16)
+        ax.set_xlabel("Time from Stimulus Onset (ms)", fontsize=16)
+        if ax_in is None:
+            plt.show(block=False)
 
 
     def get_response(
