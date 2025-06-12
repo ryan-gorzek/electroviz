@@ -78,8 +78,11 @@ for unit in pop_sub:
 ```
 
 ➡️ Visualization Spot 1: Raster plot showing stimulus-aligned spikes
+
 ➡️ Visualization Spot 2: Tuning curve for one unit
+
 ➡️ Visualization Spot 3: Kernel fit vs. observed firing rate
+
 🧰 Supported Data Types and Sources
 
 - SpikeGLX: IMEC, NIDAQ readers for binary data and metadata
@@ -115,14 +118,14 @@ Each class in electroviz is designed for inheritance and modular use. You can:
 
 - Swap in custom sorting or behavioral formats
 
-- Use electroviz with external tools like PyTorch, scikit-learn, or napari
+- Use electroviz with external tools like scikit-learn or PyTorch
 
 📌 Potential Roadmap
 
-    🧹 Signal preprocessing tools (e.g. spike artifact removal, filtering)
+🧹 Signal preprocessing tools (e.g. spike artifact removal, filtering)
 
-    🧠 Trial-level modeling and GLMs
+🧠 Trial-level modeling and GLMs
 
-    📂 NWB and HDF5 export
+📂 NWB and HDF5 export
 
-    📉 GUI browser for spike trains and LFPs
+📉 GUI browser for spike trains and LFPs
