@@ -20,7 +20,7 @@ pip install -e .
 
 electroviz abstracts complex experiments into interoperable Python classes. At the lowest level, data streams from SpikeGLX, bTsS, and NI DAQs are parsed by dedicated loaders classes (Imec, bTsS, NIDAQ, etc.). These are then assembled into higher-level objects such as Unit, Stimulus, Spikes, and Experiment.
 
-🧩 Modular Data Ingestion
+## 🧩 Modular Data Ingestion
 
 ```python
 from electroviz import NIDAQ, IMEC, Kilosort, VStim
@@ -40,7 +40,7 @@ from electroviz import Experiment
 exp = Experiment(imec=imec, nidaq=nidaq, spikes=spikes, stim=vstim)
 ```
 
-📂 Key Objects
+## 📂 Key Objects
 Class	Description
 Experiment	High-level organizer tying together probe data, spike sorting, stimulus timing, and more
 Unit	Single neuron object with spike times, tuning curves, and more
@@ -50,7 +50,7 @@ Spikes	Handles spike times, binning, and alignment
 Kernel	Encodes stimulus-response models (e.g., receptive field fitting)
 Probe	Stores physical geometry and mapping of recording sites
 Event	General-purpose container for binary or timestamped experimental events
-🧪 Example Workflow
+## 🧪 Example Workflow
 
 ```python
 # Load experiment
@@ -83,7 +83,7 @@ for unit in pop_sub:
 
 ➡️ Visualization Spot 3: Kernel fit vs. observed firing rate
 
-🧰 Supported Data Types and Sources
+## 🧰 Supported Data Types and Sources
 
 - SpikeGLX: IMEC, NIDAQ readers for binary data and metadata
 
@@ -97,7 +97,7 @@ for unit in pop_sub:
 
 - Digital and analog channels: Via digitalchannel.py
 
-🧭 Why Use This Framework?
+## 🧭 Why Use This Package?
 
 electroviz is particularly useful when:
 
@@ -111,7 +111,7 @@ electroviz is particularly useful when:
 
 This framework was originally designed for multi-area visual coding experiments in rodents, but its architecture generalizes across tasks and sensory modalities.
 
-🧑‍🔬 Extending the Framework
+## 🧑‍🔬 Extending the Framework
 
 Each class in electroviz is designed for inheritance and modular use. You can:
 
@@ -121,7 +121,7 @@ Each class in electroviz is designed for inheritance and modular use. You can:
 
 - Use electroviz with external tools like scikit-learn or PyTorch
 
-📌 Potential Roadmap
+## 📌 Potential Roadmap
 
 🧹 Signal preprocessing tools (e.g. spike artifact removal, filtering)
 
