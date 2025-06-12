@@ -41,15 +41,17 @@ exp = Experiment(imec=imec, nidaq=nidaq, spikes=spikes, stim=vstim)
 ```
 
 ## 📂 Key Objects
-Class	Description
-Experiment	High-level organizer tying together probe data, spike sorting, stimulus timing, and more
-Unit	Single neuron object with spike times, tuning curves, and more
-Population	Collection of Unit objects for aggregate analyses
-Stimulus / VStim	Represent visual/sensory stimulus conditions and timing
-Spikes	Handles spike times, binning, and alignment
-Kernel	Encodes stimulus-response models (e.g., receptive field fitting)
-Probe	Stores physical geometry and mapping of recording sites
-Event	General-purpose container for binary or timestamped experimental events
+
+Class | Description
+Experiment | High-level organizer tying together probe data, spike sorting, stimulus timing, and more
+Unit | Single neuron object with spike times, tuning curves, and more
+Population | Collection of Unit objects for aggregate analyses
+Stimulus / VStim | Represent visual/sensory stimulus conditions and timing
+Spikes | Handles spike times, binning, and alignment
+Kernel | Encodes stimulus-response models (e.g., receptive field fitting)
+Probe | Stores physical geometry and mapping of recording sites
+Event | General-purpose container for binary or timestamped experimental events
+
 ## 🧪 Example Workflow
 
 ```python
