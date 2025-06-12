@@ -82,40 +82,40 @@ for unit in pop_sub:
 ➡️ Visualization Spot 3: Kernel fit vs. observed firing rate
 🧰 Supported Data Types and Sources
 
-    SpikeGLX: IMEC, NIDAQ readers for binary data and metadata
+- SpikeGLX: IMEC, NIDAQ readers for binary data and metadata
 
-    bTsS: BTSS for behavioral task logs
+- bTsS: BTSS for behavioral task logs
 
-    Kilosort: Spike sorting outputs via Kilosort
+- Kilosort: Spike sorting outputs via Kilosort
 
-    Visual stimuli: Frame/condition logs via VStim
+- Visual stimuli: Frame/condition logs via VStim
 
-    Local field potential (LFP): Accessed via lfp.py
+- Local field potential (LFP): Accessed via lfp.py
 
-    Digital and analog channels: Via digitalchannel.py
+- Digital and analog channels: Via digitalchannel.py
 
 🧭 Why Use This Framework?
 
 electroviz is particularly useful when:
 
-    You're recording with Neuropixels and delivering visual or sensory stimuli
+- You're recording with Neuropixels and delivering visual or sensory stimuli
 
-    You want a clear, object-oriented approach to neural data
+- You want a clear, object-oriented approach to neural data
 
-    You’re building reproducible pipelines for analysis across experiments
+- You’re building reproducible pipelines for analysis across experiments
 
-    You need to integrate raw data access with high-level analysis tools
+- You need to integrate raw data access with high-level analysis tools
 
 This framework was originally designed for multi-area visual coding experiments in rodents, but its architecture generalizes across tasks and sensory modalities.
 🧑‍🔬 Extending the Framework
 
 Each class in electroviz is designed for inheritance and modular use. You can:
 
-    Subclass core objects like Unit, Stimulus, Experiment
+- Subclass core objects like Unit, Stimulus, Experiment
 
-    Swap in custom sorting or behavioral formats
+- Swap in custom sorting or behavioral formats
 
-    Use electroviz with external tools like PyTorch, scikit-learn, or napari
+- Use electroviz with external tools like PyTorch, scikit-learn, or napari
 
 📌 Potential Roadmap
 
