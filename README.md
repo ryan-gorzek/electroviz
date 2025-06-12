@@ -43,6 +43,7 @@ exp = Experiment(imec=imec, nidaq=nidaq, spikes=spikes, stim=vstim)
 ## 📂 Key Objects
 
 | Class | Description |
+| ----- | ----------- |
 | Experiment | High-level organizer tying together the various data types |
 | Unit | Single neuron object with spike times, tuning curves, and more |
 | Population | Collection of Unit objects for aggregate analyses |
