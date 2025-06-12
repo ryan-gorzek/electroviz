@@ -16,7 +16,7 @@ conda create -n electroviz python=3.9
 conda activate electroviz
 pip install -e .
 ```
-🧠 Core Concept
+## 🧠 Core Concept
 
 electroviz abstracts complex experiments into interoperable Python classes. At the lowest level, data streams from SpikeGLX, bTsS, and NI DAQs are parsed by dedicated loaders classes (Imec, bTsS, NIDAQ, etc.). These are then assembled into higher-level objects such as Unit, Stimulus, Spikes, and Experiment.
 
