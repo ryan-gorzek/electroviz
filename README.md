@@ -110,6 +110,7 @@ electroviz is particularly useful when:
 - You need to integrate raw data access with high-level analysis tools
 
 This framework was originally designed for multi-area visual coding experiments in rodents, but its architecture generalizes across tasks and sensory modalities.
+
 🧑‍🔬 Extending the Framework
 
 Each class in electroviz is designed for inheritance and modular use. You can:
