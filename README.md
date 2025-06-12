@@ -3,7 +3,7 @@
 **electroviz** is a Python package for processing, analyzing, and visualizing extracellular electrophysiology experiments — currently those involving **Neuropixels recordings paired with visual stimuli**. It offers an object-oriented framework that makes it easy to load, organize, and analyze large-scale neural data alongside sensory or behavioral context.
 
 > **Why use electroviz?**  
-> If you're looking to manage multimodal data clearly and produce fast and effective visualizations alongside higher-level analyses, `electroviz` serves both as a **toolkit** and a **conceptual framework** for organizing neurophysiology experiments in Python.
+> If you're looking to manage multimodal neural data clearly and produce fast and effective visualizations alongside higher-level analyses, `electroviz` serves both as a **toolkit** and a **conceptual framework** for organizing neurophysiology experiments in Python.
 
 ---
 
