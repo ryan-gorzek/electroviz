@@ -8,7 +8,6 @@
 ---
 
 ![plot](https://github.com/ryan-gorzek/electroviz/blob/development/plots/electroviz.png)
-
 ## Installation
 
 ```bash
