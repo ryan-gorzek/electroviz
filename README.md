@@ -100,7 +100,7 @@ for unit in pop_sub:
 
 - Digital and analog channels: Via digitalchannel.py
 
-## 🧭 Why Use This Package?
+## Why Use This Package?
 
 electroviz is particularly useful when:
 
