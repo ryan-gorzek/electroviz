@@ -56,6 +56,8 @@ exp = Experiment(imec=imec, nidaq=nidaq, spikes=spikes, stim=vstim)
 ## Example Workflow
 
 ```python
+from electroviz.core.kernel import StaticGratingsKernel
+
 # Load experiment
 exp = Experiment('/path/to/recording/')
 
@@ -72,19 +74,10 @@ for unit in pop_sub:
     # Plot spike raster aligned to stimulus
     unit.plot_raster(event_times=stim.onset_times)
 
-    # Compute and plot tuning curve
-    unit.plot_tuning_curve()
+    # Compute and plot tuning curve for flashed (static) gratings
+    StaticGratingsKernel(unit, stim).plot_raw()
 
-    # Fit a stimulus kernel
-    kernel = unit.fit_kernel(stimulus='drifting_gratings')
-    unit.plot_prediction(kernel.predict(stim))
 ```
-
-![Alt text](https://github.com/ryan-gorzek/electroviz/blob/development/plots/ProbeRaster.png)
-
-➡️ Visualization Spot 2: Tuning curve for one unit
-
-➡️ Visualization Spot 3: Kernel fit vs. observed firing rate
 
 ## Supported Data Types and Sources
 
