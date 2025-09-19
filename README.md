@@ -7,7 +7,7 @@
 
 ---
 
-## 📦 Installation
+## Installation
 
 ```bash
 git clone https://github.com/ryan-gorzek/electroviz.git
@@ -16,11 +16,11 @@ conda create -n electroviz python=3.9
 conda activate electroviz
 pip install -e .
 ```
-## 🧠 Core Concept
+## Core Concept
 
 electroviz abstracts complex experiments into interoperable Python classes. At the lowest level, data streams from SpikeGLX, bTsS, and NI DAQs are parsed by dedicated loaders classes (Imec, bTsS, NIDAQ, etc.). These are then assembled into higher-level objects such as Unit, Stimulus, Spikes, and Experiment.
 
-## 🧩 Modular Data Ingestion
+## Modular Data Ingestion
 
 ```python
 from electroviz import NIDAQ, IMEC, Kilosort, VStim
@@ -40,7 +40,7 @@ from electroviz import Experiment
 exp = Experiment(imec=imec, nidaq=nidaq, spikes=spikes, stim=vstim)
 ```
 
-## 📂 Key Objects
+## Key Objects
 
 | Class | Description |
 | ----- | ----------- |
@@ -53,7 +53,7 @@ exp = Experiment(imec=imec, nidaq=nidaq, spikes=spikes, stim=vstim)
 | Probe | Stores physical geometry and mapping of recording sites |
 | Event | General-purpose container for binary or timestamped experimental events |
 
-## 🧪 Example Workflow
+## Example Workflow
 
 ```python
 # Load experiment
@@ -86,7 +86,7 @@ for unit in pop_sub:
 
 ➡️ Visualization Spot 3: Kernel fit vs. observed firing rate
 
-## 🧰 Supported Data Types and Sources
+## Supported Data Types and Sources
 
 - SpikeGLX: IMEC, NIDAQ readers for binary data and metadata
 
@@ -114,7 +114,7 @@ electroviz is particularly useful when:
 
 This framework was originally designed for multi-area visual coding experiments in rodents, but its architecture generalizes across tasks and sensory modalities.
 
-## 🧑‍🔬 Extending the Framework
+## Extending the Framework
 
 Each class in electroviz is designed for inheritance and modular use. You can:
 
@@ -124,12 +124,12 @@ Each class in electroviz is designed for inheritance and modular use. You can:
 
 - Use electroviz with external tools like scikit-learn or PyTorch
 
-## 📌 Potential Roadmap
+## Potential Roadmap
 
-🧹 Signal preprocessing tools (e.g. spike artifact removal, filtering)
+- Signal preprocessing tools (e.g. spike artifact removal, filtering)
 
-🧠 Trial-level modeling and GLMs
+- Trial-level modeling and GLMs
 
-📂 NWB and HDF5 export
+- NWB and HDF5 export
 
-📉 GUI browser for spike trains and LFPs
+- GUI browser for spikes and LFP
