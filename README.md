@@ -80,7 +80,7 @@ for unit in pop_sub:
     unit.plot_prediction(kernel.predict(stim))
 ```
 
-➡️ Visualization Spot 1: Raster plot showing stimulus-aligned spikes
+![Alt text](https://github.com/ryan-gorzek/electroviz/blob/development/plots/ProbeRaster.png)
 
 ➡️ Visualization Spot 2: Tuning curve for one unit
 
