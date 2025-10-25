@@ -127,3 +127,7 @@ Each class in electroviz is designed for inheritance and modular use. You can:
 - NWB and HDF5 export
 
 - GUI browser for spikes and LFP
+
+## License
+
+MIT. See `LICENSE`.
